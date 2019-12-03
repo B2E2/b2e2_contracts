@@ -14,6 +14,9 @@ contract IdentityContractFactory {
     BalanceAuthority_P public balanceAuthority_P;
     BalanceAuthority_C public balanceAuthority_C;
     
+    mapping (address => bool) plantExistenceLookup;
+    mapping (address => PlantType) plantTypeLookup;
+    
     enum PlantType { GenerationPlant, ConsumptionPlant }
     event PlantCreation(PlantType plantType, address plantAddress, address owner);
 
@@ -38,6 +41,17 @@ contract IdentityContractFactory {
         // TODO: require(plant != null); // How can this be done in Solidity? Is the line below correct?
         require(plant != Plant(0));
         
+        // Register plant.
+        plantExistenceLookup[address(plant)] = true;
+        plantTypeLookup[address(plant)] = plantType;
         emit PlantCreation(plantType, address(plant), msg.sender);
+    }
+    
+    function isValidPlant(address plantAddress, PlantType plantType) public returns (bool) {
+        return isValidPlant(plantAddress) && (plantTypeLookup[plantAddress] == plantType);
+    }
+    
+    function isValidPlant(address plantAddress) public returns (bool) {
+        return plantExistenceLookup[plantAddress];
     }
 }
