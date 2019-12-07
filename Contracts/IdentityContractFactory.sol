@@ -8,6 +8,7 @@ import "./Plant.sol";
 import "./GenerationPlant.sol";
 import "./ConsumptionPlant.sol";
 
+// Implements 735
 contract IdentityContractFactory {
     PhysicalAssetAuthority public physicalAssetAuthority;
     MeteringAuthority public meteringAuthority;
