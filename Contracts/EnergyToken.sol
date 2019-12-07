@@ -67,18 +67,19 @@ contract EnergyToken is ERC1155 {
     /**
      * tokenId: zeros (24 bit) || tokenKind number (8 bit) || balancePeriod (64 bit) || address of IdentityContract (160 bit)
      */
-    function getTokenId(TokenKind tokenKind, uint64 balancePeriod, address identityContractAddress) public pure returns (uint256 tokenId) {
-        tokenId = 0;
+    function getTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _identityContractAddress) public pure returns (uint256 __tokenId) {
+        __tokenId = 0;
         
-        tokenId += tokenKind2Number(tokenKind);
-        tokenId = tokenId << 64;
-        tokenId += balancePeriod;
-        tokenId = tokenId << 160;
-        tokenId += uint256(identityContractAddress);
+        __tokenId += tokenKind2Number(_tokenKind);
+        __tokenId = __tokenId << 64;
+        __tokenId += _balancePeriod;
+        __tokenId = __tokenId << 160;
+        __tokenId += uint256(_identityContractAddress);
     }
     
     /**
      * | Bit (rtl) | Meaning                                         |
+     * |-----------+-------------------------------------------------|
      * |         0 | Genus (Generation-based 0; Consumption-based 1) |
      * |         1 | Genus (Absolute 0; Relative 1)                  |
      * |         2 | Family (Forwards 0; Certificates 1)             |
@@ -90,17 +91,17 @@ contract EnergyToken is ERC1155 {
      * 
      * Bits are zero unless specified otherwise.
      */
-    function tokenKind2Number(TokenKind tokenKind) public pure returns (uint8) {
-        if(tokenKind == TokenKind.AbsoluteForward) {
+    function tokenKind2Number(TokenKind _tokenKind) public pure returns (uint8) {
+        if(_tokenKind == TokenKind.AbsoluteForward) {
             return 0;
         }
-        if(tokenKind == TokenKind.GenerationBasedForward) {
+        if(_tokenKind == TokenKind.GenerationBasedForward) {
             return 2;
         }
-        if(tokenKind == TokenKind.AbsoluteForward) {
+        if(_tokenKind == TokenKind.AbsoluteForward) {
             return 3;
         }
-        if(tokenKind == TokenKind.AbsoluteForward) {
+        if(_tokenKind == TokenKind.AbsoluteForward) {
             return 4;
         }
         
