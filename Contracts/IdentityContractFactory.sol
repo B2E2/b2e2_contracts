@@ -1,13 +1,14 @@
 pragma solidity ^0.5.0;
+pragma experimental ABIEncoderV2;
+
 
 import "./IdentityContract.sol";
+import "./erc725-735/contracts/Identity.sol";
+
 
 // Implements 735
 contract IdentityContractFactory {
-    IdentityContract public physicalAssetAuthority;
-    IdentityContract public meteringAuthority;
-    IdentityContract public balanceAuthority_P;
-    IdentityContract public balanceAuthority_C;
+    Identity public identity;
     
     mapping (address => bool) plantExistenceLookup;
     mapping (address => PlantType) plantTypeLookup;
@@ -15,11 +16,28 @@ contract IdentityContractFactory {
     enum PlantType { GenerationPlant, ConsumptionPlant }
     event PlantCreation(PlantType plantType, address plantAddress, address owner);
 
-    constructor() public {
-       physicalAssetAuthority = new IdentityContract();
-       meteringAuthority = new IdentityContract();
-       balanceAuthority_P = new IdentityContract();
-       balanceAuthority_C = new IdentityContract();
+    constructor
+    (
+        bytes32[] memory _keys,
+        uint256[] memory _purposes,
+        uint256 _managementRequired,
+        uint256 _executionRequired,
+        address[] memory _issuers,
+        uint256[] memory _topics,
+        bytes[] memory _signatures,
+        bytes[] memory _datas,
+        string[] memory _uris
+    ) public {
+       identity = new Identity(
+        _keys,
+        _purposes,
+        _managementRequired,
+        _executionRequired,
+        _issuers,
+        _topics,
+        _signatures,
+        _datas,
+        _uris);
     }
     
     function createPlant(PlantType plantType) public {
