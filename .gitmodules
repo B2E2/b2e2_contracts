@@ -1,3 +1,6 @@
 [submodule "Contracts/erc-725"]
 	path = Contracts/erc-725
 	url = git@github.com:ERC725Alliance/erc725.git
+[submodule "Contracts/erc-1155"]
+	path = Contracts/erc-1155
+	url = git@github.com:BlockInfinity/erc-1155.git
