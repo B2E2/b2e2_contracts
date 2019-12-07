@@ -9,10 +9,17 @@ contract EnergyToken is ERC1155 {
     
     enum TokenKind {AbsoluteForward, GenerationBasedForward, ConsumptionBasedForward, Certificate}
     
+    struct EnergyDocumentation {
+        uint256 value;
+        string signature;
+        bool corrected;
+        bool generated;
+    }
+    
     IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
-    mapping(address => mapping(uint256 => uint256)) energyConsumption; // TODO: powerConsumption or energyConsumption? Document talks about energy and uses units of energy but uses the word "power".
-    
+    mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations; // TODO: powerConsumption or energyConsumption? Document talks about energy and uses units of energy but uses the word "power".
+
     function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) onlyCreators public returns(uint256 __id) {
         for(uint32 i=0; i < _to.length; i++) {
             require(identityContractFactory.isValidPlant(_to[i]));
@@ -33,8 +40,28 @@ contract EnergyToken is ERC1155 {
         _;
     }
     
-    function addMeasuredPowerConsumption(address _plant, uint256 _value, uint256 _balancePeriod, string memory _signature, bool _corrected) onlyMeteringAuthorities public returns (bool success) {
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, string memory _signature, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
+        // Don't allow a corrected value to be overwritten with a non-corrected value.
+        if(!energyDocumentations[_plant][_balancePeriod].corrected || _corrected) {
+            return false;
+        }
         
+        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _signature, _corrected, false);
+        energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
+        
+        return true;
+    }
+    
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, string memory _signature, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
+        // Don't allow a corrected value to be overwritten with a non-corrected value.
+        if(!energyDocumentations[_plant][_balancePeriod].corrected || _corrected) {
+            return false;
+        }
+        
+        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _signature, _corrected, true);
+        energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
+        
+        return true;
     }
     
     /**
