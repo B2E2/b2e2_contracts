@@ -40,6 +40,11 @@ contract EnergyToken is ERC1155 {
         _;
     }
     
+    function createCertificates(address _generationPlant, uint64 _balancePeriod) onlyMeteringAuthorities public returns(uint256 __id) {
+        __id = getTokenId(TokenKind.Certificate, _balancePeriod, _generationPlant);
+        // TODO: What do I have to do here?
+    }
+    
     function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, string memory _signature, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(!energyDocumentations[_plant][_balancePeriod].corrected || _corrected) {
