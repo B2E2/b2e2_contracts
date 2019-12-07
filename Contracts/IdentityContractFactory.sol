@@ -1,19 +1,13 @@
 pragma solidity ^0.5.0;
 
-import "./PhysicalAssetAuthority.sol";
-import "./MeteringAuthority.sol";
-import "./BalanceAuthority_P.sol";
-import "./BalanceAuthority_C.sol";
-import "./Plant.sol";
-import "./GenerationPlant.sol";
-import "./ConsumptionPlant.sol";
+import "./IdentityContract.sol";
 
 // Implements 735
 contract IdentityContractFactory {
-    PhysicalAssetAuthority public physicalAssetAuthority;
-    MeteringAuthority public meteringAuthority;
-    BalanceAuthority_P public balanceAuthority_P;
-    BalanceAuthority_C public balanceAuthority_C;
+    IdentityContract public physicalAssetAuthority;
+    IdentityContract public meteringAuthority;
+    IdentityContract public balanceAuthority_P;
+    IdentityContract public balanceAuthority_C;
     
     mapping (address => bool) plantExistenceLookup;
     mapping (address => PlantType) plantTypeLookup;
@@ -22,26 +16,15 @@ contract IdentityContractFactory {
     event PlantCreation(PlantType plantType, address plantAddress, address owner);
 
     constructor() public {
-       physicalAssetAuthority = new PhysicalAssetAuthority();
-       meteringAuthority = new MeteringAuthority();
-       balanceAuthority_P = new BalanceAuthority_P();
-       balanceAuthority_C = new BalanceAuthority_C();
+       physicalAssetAuthority = new IdentityContract();
+       meteringAuthority = new IdentityContract();
+       balanceAuthority_P = new IdentityContract();
+       balanceAuthority_C = new IdentityContract();
     }
     
     function createPlant(PlantType plantType) public {
-        Plant plant;
-        if(plantType == PlantType.GenerationPlant) {
-            plant = new GenerationPlant();
-        }
-        
-        if(plantType == PlantType.ConsumptionPlant) {
-            plant = new ConsumptionPlant();
-        }
-        
-        // Make sure that this code doesn't break when new types of plants are added.
-        // TODO: require(plant != null); // How can this be done in Solidity? Is the line below correct?
-        require(plant != Plant(0));
-        
+        IdentityContract plant = new IdentityContract();
+
         // Register plant.
         plantExistenceLookup[address(plant)] = true;
         plantTypeLookup[address(plant)] = plantType;

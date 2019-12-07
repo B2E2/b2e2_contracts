@@ -2,7 +2,6 @@ pragma solidity ^0.5.0;
 
 import "./erc-1155/contracts/ERC1155.sol";
 import "./IdentityContractFactory.sol";
-import "./MeteringAuthority.sol";
 
 contract EnergyToken is ERC1155 {
     using SafeMath for uint256;
