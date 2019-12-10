@@ -47,4 +47,27 @@ contract ClaimCommons {
 
         require(false);
     }
+    
+    function getHigherLevelClaim(ClaimType _claimType) public pure returns (ClaimType __higherLevelClaimType) {
+        if(_claimType == ClaimType.MeteringClaim) {
+            return ClaimType.IsMeteringAuthority;
+        }
+        if(_claimType == ClaimType.BalanceClaim) {
+            return ClaimType.IsBalanceAuthority;
+        }
+        if(_claimType == ClaimType.ExistenceClaim) {
+            return ClaimType.IsPhysicalAssetAuthority;
+        }
+        if(_claimType == ClaimType.GenerationTypeClaim) {
+            return ClaimType.IsPhysicalAssetAuthority;
+        }
+        if(_claimType == ClaimType.LocationClaim) {
+            return ClaimType.IsPhysicalAssetAuthority;
+        }
+        if(_claimType == ClaimType.AcceptedDistributorContractsClaim) {
+            return ClaimType.IsBalanceAuthority;
+        }
+
+        require(false);
+    }
 }

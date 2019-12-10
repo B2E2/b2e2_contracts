@@ -38,19 +38,19 @@ contract EnergyToken is ERC1155, ClaimCommons {
     }
     
     modifier onlyMeteringAuthorities {
-        require(isSecondLevelAuthority(msg.sender, ClaimType.IsMeteringAuthority));
+        require(verifyFirstLevelClaim(msg.sender, ClaimType.IsMeteringAuthority));
         _;
     }
     
-    function isSecondLevelAuthority(address payable _secondLevelAuthority, ClaimType _authorityClaimKind) internal view returns(bool) {
-        // Make sure the given claim actually is about _secondLevelAuthority being a second level authority.
-        require(_authorityClaimKind == ClaimType.IsBalanceAuthority || _authorityClaimKind == ClaimType.IsMeteringAuthority || _authorityClaimKind == ClaimType.IsPhysicalAssetAuthority);
+    function verifyFirstLevelClaim(address payable _subject, ClaimType _firstLevelClaim) internal view returns(bool) {
+        // Make sure the given claim actually is a first level claim.
+        require(_firstLevelClaim == ClaimType.IsBalanceAuthority || _firstLevelClaim == ClaimType.IsMeteringAuthority || _firstLevelClaim == ClaimType.IsPhysicalAssetAuthority || _firstLevelClaim == ClaimType.IdentityContractFactoryClaim || _firstLevelClaim == ClaimType.EnergyTokenContractClaim || _firstLevelClaim == ClaimType.MarketRulesClaim);
         
-        uint256 topic = claimType2Topic(_authorityClaimKind);
-        bytes32[] memory claimIds = IdentityContract(_secondLevelAuthority).getClaimIdsByType(topic);
+        uint256 topic = claimType2Topic(_firstLevelClaim);
+        bytes32[] memory claimIds = IdentityContract(_subject).getClaimIdsByType(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
-            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_secondLevelAuthority).getClaim(claimIds[i]);
+            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;
@@ -66,20 +66,20 @@ contract EnergyToken is ERC1155, ClaimCommons {
         return false;
     }
     
-    function isGenerationPlant(address payable _generationPlant) internal view returns(bool) {
-        uint256 topic = claimType2Topic(ClaimType.ExistenceClaim);
-        bytes32[] memory claimIds = IdentityContract(_generationPlant).getClaimIdsByType(topic);
+    function verifySecondLevelClaim(address payable _subject, ClaimType _secondLevelClaim) internal view returns(bool) {
+        // Make sure the given claim actually is a second level claim.
+        require(_secondLevelClaim == ClaimType.MeteringClaim || _secondLevelClaim == ClaimType.BalanceClaim || _secondLevelClaim == ClaimType.ExistenceClaim || _secondLevelClaim == ClaimType.GenerationTypeClaim || _secondLevelClaim == ClaimType.LocationClaim || _secondLevelClaim == ClaimType.AcceptedDistributorContractsClaim);
+        uint256 topic = claimType2Topic(_secondLevelClaim);
+        bytes32[] memory claimIds = IdentityContract(_subject).getClaimIdsByType(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
-            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_generationPlant).getClaim(claimIds[i]);
+            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;
                 
-            address physicalAssetAuthority = cIssuer;
-            bool correctAccordingToPhysicalAssetAuthority = IdentityContract(address(uint160(physicalAssetAuthority))).verifySignature(cTopic, cScheme, cIssuer, cSignature, cData);
-            
-            if(correctAccordingToPhysicalAssetAuthority && isSecondLevelAuthority(address(uint160(physicalAssetAuthority)), ClaimType.IsPhysicalAssetAuthority)) {
+            bool correctAccordingToSecondLevelAuthority = IdentityContract(address(uint160(cIssuer))).verifySignature(cTopic, cScheme, cIssuer, cSignature, cData);
+            if(correctAccordingToSecondLevelAuthority && verifyFirstLevelClaim(address(uint160(cIssuer)), getHigherLevelClaim(_secondLevelClaim))) {
                 return true;
             }
         }
@@ -88,7 +88,8 @@ contract EnergyToken is ERC1155, ClaimCommons {
     }
     
     modifier onlyGenerationPlants {
-        require(isGenerationPlant(msg.sender));
+        require(verifySecondLevelClaim(msg.sender, ClaimType.ExistenceClaim));
+        // Todo: Don't only check ExistenceClaim but also whether it's a generation plant (as opposed to being a consumption plant).
         _;
     }
     
@@ -98,7 +99,7 @@ contract EnergyToken is ERC1155, ClaimCommons {
         balances[__id][_distributor] = 100E18;
     }
     
-    function createCertificates(address _generationPlant, uint64 _balancePeriod) public onlyMeteringAuthorities returns(uint256 __id) {
+    function createCertificates(address _generationPlant, uint64 _balancePeriod) public view onlyMeteringAuthorities returns(uint256 __id) {
         __id = getTokenId(TokenKind.Certificate, _balancePeriod, _generationPlant);
         // Nothing to do. All balances of this token remain zero.
     }
