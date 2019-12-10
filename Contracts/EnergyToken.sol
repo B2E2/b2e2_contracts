@@ -48,7 +48,7 @@ contract EnergyToken is ERC1155, ClaimCommons {
         bytes32[] memory claimIds = IdentityContract(_physicalAssetAuthority).getClaimIdsByType(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
-            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData, string memory cUri) = IdentityContract(msg.sender).getClaim(claimIds[i]);
+            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData, string memory cUri) = IdentityContract(_physicalAssetAuthority).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;
@@ -64,13 +64,12 @@ contract EnergyToken is ERC1155, ClaimCommons {
         return false;
     }
     
-    modifier onlyGenerationPlants {
+    function isGenerationPlant(address payable _generationPlant) internal returns(bool) {
         uint256 topic = claimType2Topic(ClaimType.ExistenceClaim);
-        bytes32[] memory claimIds = IdentityContract(msg.sender).getClaimIdsByType(topic);
+        bytes32[] memory claimIds = IdentityContract(_generationPlant).getClaimIdsByType(topic);
         
-        bool isGenerationPlant = false;
         for(uint64 i = 0; i < claimIds.length; i++) {
-            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData, string memory cUri) = IdentityContract(msg.sender).getClaim(claimIds[i]);
+            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData, string memory cUri) = IdentityContract(_generationPlant).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;
@@ -79,12 +78,15 @@ contract EnergyToken is ERC1155, ClaimCommons {
             bool correctAccordingToPhysicalAssetAuthority = IdentityContract(address(uint160(physicalAssetAuthority))).verifySignature(cTopic, cScheme, cIssuer, cSignature, cData);
             
             if(correctAccordingToPhysicalAssetAuthority && isPhysicalAssetAuthority(address(uint160(physicalAssetAuthority)))) {
-                isGenerationPlant = true;
-                break;
+                return true;
             }
         }
         
-        require(isGenerationPlant);
+        return false;
+    }
+    
+    modifier onlyGenerationPlants {
+        require(isGenerationPlant(msg.sender));
         _;
     }
     
