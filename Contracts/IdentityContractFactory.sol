@@ -2,12 +2,13 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./IdentityContract.sol";
+import "./ClaimCommons.sol";
 import "./erc725-735/contracts/Identity.sol";
 import "./erc725-735/contracts/ERC735.sol";
 
 
 // Implements 735
-contract IdentityContractFactory {
+contract IdentityContractFactory is ClaimCommons {
     mapping (address => bool) plantExistenceLookup;
     mapping (address => PlantType) plantTypeLookup;
     
@@ -16,9 +17,6 @@ contract IdentityContractFactory {
     
     address owner;
     
-    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorContractsClaim }
-    
-
     constructor() public {
         owner = msg.sender;
     }
@@ -31,47 +29,6 @@ contract IdentityContractFactory {
     function registerAuthority(address payable _authorityAddress, ClaimType _claimType, bytes memory _signature, bytes memory _data) public ownerOwnly {
         require(_claimType == ClaimType.IsBalanceAuthority || _claimType == ClaimType.IsMeteringAuthority || _claimType == ClaimType.IsPhysicalAssetAuthority);
         IdentityContract(_authorityAddress).addClaim(claimType2Topic(_claimType), IdentityContract(_authorityAddress).ECDSA_SCHEME(), msg.sender, _signature, _data, "");
-    }
-
-    function claimType2Topic(ClaimType _claimType) public pure returns (uint256 __topic) {
-        if(_claimType == ClaimType.IsBalanceAuthority) {
-            return 10010;
-        }
-        if(_claimType == ClaimType.IsMeteringAuthority) {
-            return 10020;
-        }
-        if(_claimType == ClaimType.IsPhysicalAssetAuthority) {
-            return 10030;
-        }
-        if(_claimType == ClaimType.MeteringClaim) {
-            return 10040;
-        }
-        if(_claimType == ClaimType.BalanceClaim) {
-            return 10050;
-        }
-        if(_claimType == ClaimType.ExistenceClaim) {
-            return 10060;
-        }
-        if(_claimType == ClaimType.GenerationTypeClaim) {
-            return 10070;
-        }
-        if(_claimType == ClaimType.LocationClaim) {
-            return 10080;
-        }
-        if(_claimType == ClaimType.IdentityContractFactoryClaim) {
-            return 10090;
-        }
-        if(_claimType == ClaimType.EnergyTokenContractClaim) {
-            return 10100;
-        }
-        if(_claimType == ClaimType.MarketRulesClaim) {
-            return 10110;
-        }
-        if(_claimType == ClaimType.AcceptedDistributorContractsClaim) {
-            return 10120;
-        }
-
-        require(false);
     }
     
     function createPlant(

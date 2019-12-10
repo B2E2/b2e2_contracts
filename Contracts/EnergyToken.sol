@@ -1,9 +1,11 @@
 pragma solidity ^0.5.0;
 
-import "./erc-1155/contracts/ERC1155.sol";
 import "./IdentityContractFactory.sol";
+import "./IdentityContract.sol";
+import "./ClaimCommons.sol";
+import "./erc-1155/contracts/ERC1155.sol";
 
-contract EnergyToken is ERC1155 {
+contract EnergyToken is ERC1155, ClaimCommons {
     using SafeMath for uint256;
     using Address for address;
     
@@ -16,7 +18,8 @@ contract EnergyToken is ERC1155 {
         bool generated;
     }
     
-    IdentityContractFactory identityContractFactory;
+    IdentityContractFactory identityContractFactory; // TODO: Set value.
+    IdentityContract marketAuthority; // TODO: Set value.
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations; // TODO: powerConsumption or energyConsumption? Document talks about energy and uses units of energy but uses the word "power".
 
@@ -40,11 +43,62 @@ contract EnergyToken is ERC1155 {
         _;
     }
     
-    function createCertificates(address _generationPlant, uint64 _balancePeriod) onlyMeteringAuthorities public returns(uint256 __id) {
-        __id = getTokenId(TokenKind.Certificate, _balancePeriod, _generationPlant);
-        // TODO: What do I have to do here?
+    function isPhysicalAssetAuthority(address payable _physicalAssetAuthority) internal returns(bool) {
+        uint256 topic = claimType2Topic(ClaimType.IsPhysicalAssetAuthority);
+        bytes32[] memory claimIds = IdentityContract(_physicalAssetAuthority).getClaimIdsByType(topic);
+        
+        for(uint64 i = 0; i < claimIds.length; i++) {
+            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData, string memory cUri) = IdentityContract(msg.sender).getClaim(claimIds[i]);
+            
+            if(cTopic != topic)
+                continue;
+                
+            if(cIssuer != address(identityContractFactory))
+                continue;
+            
+            bool correct = marketAuthority.verifySignature(cTopic, cScheme, cIssuer, cSignature, cData);
+            if(correct)
+                return true;
+        }
+        
+        return false;
     }
     
+    modifier onlyGenerationPlants {
+        uint256 topic = claimType2Topic(ClaimType.ExistenceClaim);
+        bytes32[] memory claimIds = IdentityContract(msg.sender).getClaimIdsByType(topic);
+        
+        bool isGenerationPlant = false;
+        for(uint64 i = 0; i < claimIds.length; i++) {
+            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData, string memory cUri) = IdentityContract(msg.sender).getClaim(claimIds[i]);
+            
+            if(cTopic != topic)
+                continue;
+                
+            address physicalAssetAuthority = cIssuer;
+            bool correctAccordingToPhysicalAssetAuthority = IdentityContract(address(uint160(physicalAssetAuthority))).verifySignature(cTopic, cScheme, cIssuer, cSignature, cData);
+            
+            if(correctAccordingToPhysicalAssetAuthority && isPhysicalAssetAuthority(address(uint160(physicalAssetAuthority)))) {
+                isGenerationPlant = true;
+                break;
+            }
+        }
+        
+        require(isGenerationPlant);
+        _;
+    }
+    
+    function createForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants returns(uint256 __id) {
+        // Todo: Wie funktioniert "Der Distributor Contract bestimmt die Gattung der Forwards Art."?
+        __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, _distributor);
+        balances[__id][_distributor] = 100E18;
+    }
+    
+    function createCertificates(address _generationPlant, uint64 _balancePeriod) public onlyMeteringAuthorities returns(uint256 __id) {
+        __id = getTokenId(TokenKind.Certificate, _balancePeriod, _generationPlant);
+        // Nothing to do. All balances of this token remain zero.
+    }
+
     function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, string memory _signature, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(!energyDocumentations[_plant][_balancePeriod].corrected || _corrected) {

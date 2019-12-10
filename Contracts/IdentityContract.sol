@@ -2,8 +2,9 @@ pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./erc725-735/contracts/Identity.sol";
+import "./erc725-735/contracts/SignatureVerifier.sol";
 
-contract IdentityContract is Identity {
+contract IdentityContract is Identity, SignatureVerifier {
     constructor
     (
         bytes32[] memory _keys,
