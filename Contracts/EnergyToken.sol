@@ -50,7 +50,7 @@ contract EnergyToken is ERC1155, ClaimCommons {
         bytes32[] memory claimIds = IdentityContract(_secondLevelAuthority).getClaimIdsByType(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
-            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData, string memory cUri) = IdentityContract(_secondLevelAuthority).getClaim(claimIds[i]);
+            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_secondLevelAuthority).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;
@@ -71,7 +71,7 @@ contract EnergyToken is ERC1155, ClaimCommons {
         bytes32[] memory claimIds = IdentityContract(_generationPlant).getClaimIdsByType(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
-            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData, string memory cUri) = IdentityContract(_generationPlant).getClaim(claimIds[i]);
+            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_generationPlant).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;
