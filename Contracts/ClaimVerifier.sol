@@ -4,9 +4,13 @@ import "./IdentityContract.sol";
 import "./ClaimCommons.sol";
 
 contract ClaimVerifier is ClaimCommons {
-    IdentityContract marketAuthority; // TODO: Set value.
+    IdentityContract marketAuthority;
+    
+    constructor(IdentityContract _marketAuthority) public {
+        marketAuthority = _marketAuthority;
+    }
 
-    function verifyFirstLevelClaim(address payable _subject, ClaimType _firstLevelClaim) internal view returns(bool) {
+    function verifyFirstLevelClaim(address payable _subject, ClaimType _firstLevelClaim) public view returns(bool) {
         // Make sure the given claim actually is a first level claim.
         require(_firstLevelClaim == ClaimType.IsBalanceAuthority || _firstLevelClaim == ClaimType.IsMeteringAuthority || _firstLevelClaim == ClaimType.IsPhysicalAssetAuthority || _firstLevelClaim == ClaimType.IdentityContractFactoryClaim || _firstLevelClaim == ClaimType.EnergyTokenContractClaim || _firstLevelClaim == ClaimType.MarketRulesClaim);
         
@@ -30,7 +34,7 @@ contract ClaimVerifier is ClaimCommons {
         return false;
     }
     
-    function verifySecondLevelClaim(address payable _subject, ClaimType _secondLevelClaim) internal view returns(bool) {
+    function verifySecondLevelClaim(address payable _subject, ClaimType _secondLevelClaim) public view returns(bool) {
         // Make sure the given claim actually is a second level claim.
         require(_secondLevelClaim == ClaimType.MeteringClaim || _secondLevelClaim == ClaimType.BalanceClaim || _secondLevelClaim == ClaimType.ExistenceClaim || _secondLevelClaim == ClaimType.GenerationTypeClaim || _secondLevelClaim == ClaimType.LocationClaim || _secondLevelClaim == ClaimType.AcceptedDistributorContractsClaim);
         uint256 topic = claimType2Topic(_secondLevelClaim);

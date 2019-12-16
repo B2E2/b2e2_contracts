@@ -5,7 +5,7 @@ import "./IdentityContract.sol";
 import "./ClaimVerifier.sol";
 import "./erc-1155/contracts/ERC1155.sol";
 
-contract EnergyToken is ERC1155, ClaimVerifier {
+contract EnergyToken is ERC1155, ClaimCommons {
     using SafeMath for uint256;
     using Address for address;
     
@@ -19,8 +19,13 @@ contract EnergyToken is ERC1155, ClaimVerifier {
     }
     
     IdentityContractFactory identityContractFactory; // TODO: Set value.
+    ClaimVerifier claimVerifier;
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations; // TODO: powerConsumption or energyConsumption? Document talks about energy and uses units of energy but uses the word "power".
+
+    constructor(IdentityContract _marketAuthority) public {
+        claimVerifier = new ClaimVerifier(_marketAuthority);
+    }
 
     function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) onlyCreators public returns(uint256 __id) {
         for(uint32 i=0; i < _to.length; i++) {
@@ -37,12 +42,12 @@ contract EnergyToken is ERC1155, ClaimVerifier {
     }
     
     modifier onlyMeteringAuthorities {
-        require(verifyFirstLevelClaim(msg.sender, ClaimType.IsMeteringAuthority));
+        require(claimVerifier.verifyFirstLevelClaim(msg.sender, ClaimType.IsMeteringAuthority));
         _;
     }
     
     modifier onlyGenerationPlants {
-        require(verifySecondLevelClaim(msg.sender, ClaimType.ExistenceClaim));
+        require(claimVerifier.verifySecondLevelClaim(msg.sender, ClaimType.ExistenceClaim));
         // Todo: Don't only check ExistenceClaim but also whether it's a generation plant (as opposed to being a consumption plant).
         _;
     }
