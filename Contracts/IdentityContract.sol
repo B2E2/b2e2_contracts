@@ -4,9 +4,11 @@ pragma experimental ABIEncoderV2;
 import "./erc725-735/contracts/Identity.sol";
 import "./erc725-735/contracts/SignatureVerifier.sol";
 import "./ClaimCommons.sol";
+import "./ClaimVerifier.sol";
 
 contract IdentityContract is Identity, SignatureVerifier, ClaimCommons {
     IdentityContract marketAuthority;
+    ClaimVerifier claimVerifier;
     
     constructor
     (
@@ -33,12 +35,13 @@ contract IdentityContract is Identity, SignatureVerifier, ClaimCommons {
         public
     {
             marketAuthority = _marketAuthority;
+            claimVerifier = new ClaimVerifier(_marketAuthority);
     }
     
     function addClaim(
         uint256 _topic,
         uint256 _scheme,
-        address issuer,
+        address _issuer,
         bytes memory _signature,
         bytes memory _data,
         string memory _uri
@@ -46,12 +49,9 @@ contract IdentityContract is Identity, SignatureVerifier, ClaimCommons {
         public
         returns (uint256 claimRequestId)
     {
-        // Make sure that operative authority claims are only added by the market authority.
         ClaimType claimType = topic2ClaimType(_topic);
-        if(claimType == ClaimType.IsBalanceAuthority || claimType == ClaimType.IsMeteringAuthority || claimType == ClaimType.IsPhysicalAssetAuthority) {
-            require(issuer == address(marketAuthority));
-        }
+        require(claimVerifier.validateClaim(claimType, _topic, _scheme, _issuer, _signature, _data));
         
-        return super.addClaim(_topic, _scheme, issuer, _signature, _data, _uri);
+        return super.addClaim(_topic, _scheme, _issuer, _signature, _data, _uri);
     }
 }
