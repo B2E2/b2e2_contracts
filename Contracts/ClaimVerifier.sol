@@ -54,4 +54,16 @@ contract ClaimVerifier is ClaimCommons {
         
         return false;
     }
+    
+    function verifyClaim(address payable _subject, ClaimType _claimType) public view returns(bool) {
+        if(_claimType == ClaimType.IsBalanceAuthority || _claimType == ClaimType.IsMeteringAuthority || _claimType == ClaimType.IsPhysicalAssetAuthority || _claimType == ClaimType.IdentityContractFactoryClaim || _claimType == ClaimType.EnergyTokenContractClaim || _claimType == ClaimType.MarketRulesClaim) {
+            return verifyFirstLevelClaim(_subject, _claimType);
+        }
+        
+        if(_claimType == ClaimType.MeteringClaim || _claimType == ClaimType.BalanceClaim || _claimType == ClaimType.ExistenceClaim || _claimType == ClaimType.GenerationTypeClaim || _claimType == ClaimType.LocationClaim || _claimType == ClaimType.AcceptedDistributorContractsClaim) {
+            return verifySecondLevelClaim(_subject, _claimType);
+        }
+        
+        require(false);
+    }
 }
