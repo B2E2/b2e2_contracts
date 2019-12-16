@@ -65,7 +65,7 @@ contract EnergyToken is ERC1155, ClaimCommons {
 
     function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, string memory _signature, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
-        if(!energyDocumentations[_plant][_balancePeriod].corrected || _corrected) {
+        if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
             return false;
         }
         
@@ -77,7 +77,7 @@ contract EnergyToken is ERC1155, ClaimCommons {
     
     function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, string memory _signature, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
-        if(!energyDocumentations[_plant][_balancePeriod].corrected || _corrected) {
+        if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
             return false;
         }
         
