@@ -48,6 +48,47 @@ contract ClaimCommons {
         require(false);
     }
     
+    function topic2ClaimType(uint256 _topic) public pure returns (ClaimType __claimType) {
+        if(_topic == 10010) {
+            return ClaimType.IsBalanceAuthority;
+        }
+        if(_topic == 10020) {
+            return ClaimType.IsMeteringAuthority;
+        }
+        if(_topic == 10030) {
+            return ClaimType.IsPhysicalAssetAuthority;
+        }
+        if(_topic == 10040) {
+            return ClaimType.MeteringClaim;
+        }
+        if(_topic == 10050) {
+            return ClaimType.BalanceClaim;
+        }
+        if(_topic == 10060) {
+            return ClaimType.ExistenceClaim;
+        }
+        if(_topic == 10070) {
+            return ClaimType.GenerationTypeClaim;
+        }
+        if(_topic == 10080) {
+            return ClaimType.LocationClaim;
+        }
+        if(_topic == 10090) {
+            return ClaimType.IdentityContractFactoryClaim;
+        }
+        if(_topic == 10100) {
+            return ClaimType.EnergyTokenContractClaim;
+        }
+        if(_topic == 10110) {
+            return ClaimType.MarketRulesClaim;
+        }
+        if(_topic == 10120) {
+            return ClaimType.AcceptedDistributorContractsClaim;
+        }
+
+        require(false);
+    }
+    
     function getHigherLevelClaim(ClaimType _claimType) public pure returns (ClaimType __higherLevelClaimType) {
         if(_claimType == ClaimType.MeteringClaim) {
             return ClaimType.IsMeteringAuthority;

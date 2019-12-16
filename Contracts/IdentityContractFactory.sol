@@ -20,9 +20,11 @@ contract IdentityContractFactory is ClaimCommons {
     event PlantCreation(PlantType plantType, address plantAddress, address owner);
 
     address owner;
+    IdentityContract marketAuthority;
     
-    constructor() public {
+    constructor(IdentityContract _marketAuthority) public {
         owner = msg.sender;
+        marketAuthority = _marketAuthority;
     }
     
     modifier ownerOwnly {
@@ -43,6 +45,7 @@ contract IdentityContractFactory is ClaimCommons {
         string[] memory _uris
         ) public {
         IdentityContract authority = new IdentityContract(
+            marketAuthority,
             _keys,
             _purposes,
             _managementRequired,
@@ -71,6 +74,7 @@ contract IdentityContractFactory is ClaimCommons {
         string[] memory _uris
         ) public {
         IdentityContract plant = new IdentityContract(
+            marketAuthority,
             _keys,
             _purposes,
             _managementRequired,
