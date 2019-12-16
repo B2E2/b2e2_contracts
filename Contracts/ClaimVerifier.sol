@@ -72,7 +72,7 @@ contract ClaimVerifier is ClaimCommons {
      * 
      * Use this method before adding claims to make sure that only valid claims are added.
      */
-    function validateClaim(address payable _subject, ClaimType _claimType, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns(bool) {
+    function validateClaim(ClaimType _claimType, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data) public view returns(bool) {
         if(claimType2Topic(_claimType) != _topic)
             return false;
         
