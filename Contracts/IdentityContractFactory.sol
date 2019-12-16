@@ -99,7 +99,7 @@ contract IdentityContractFactory is ClaimCommons {
         else
             require(false);
         
-        require(isValidAuthority(_authorityAddress, authorityType));
+        require(isValidAuthority(_authorityAddress, _authorityType));
         
         IdentityContract(_authorityAddress).addClaim(claimType2Topic(claimType), IdentityContract(_authorityAddress).ECDSA_SCHEME(), msg.sender, _signature, _data, "");
     }
