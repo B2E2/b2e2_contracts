@@ -18,27 +18,51 @@ contract EnergyToken is ERC1155, ClaimCommons {
         bool generated;
     }
     
-    IdentityContractFactory identityContractFactory; // TODO: Set value.
     ClaimVerifier claimVerifier;
+    IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations; // TODO: powerConsumption or energyConsumption? Document talks about energy and uses units of energy but uses the word "power".
 
-    constructor(IdentityContract _marketAuthority) public {
+    constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {
         claimVerifier = new ClaimVerifier(_marketAuthority);
+        identityContractFactory = _identityContractFactory;
     }
 
-    function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) onlyCreators public returns(uint256 __id) {
-        for(uint32 i=0; i < _to.length; i++) {
-            require(identityContractFactory.isValidPlant(_to[i]));
-            balances[_id][_to[i]]   = _quantities[i].add(balances[_id][_to[i]]);
+    function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public returns(uint256 __id) {
+        // Token needs to be mintable.
+        (TokenKind tokenKind, uint64 balancePeriod, address identityContractAddress) = getTokenIdConstituents(_id);
+        require(tokenKind == TokenKind.AbsoluteForward);
+        
+        // msg.sender needs to be allowed to mint.
+        require(msg.sender == identityContractAddress);
+        require(claimVerifier.verifySecondLevelClaim(msg.sender, ClaimType.ExistenceClaim));
+        require(claimVerifier.verifySecondLevelClaim(msg.sender, ClaimType.GenerationTypeClaim));
+        require(claimVerifier.verifySecondLevelClaim(msg.sender, ClaimType.LocationClaim));
+        
+        // balancePeriod must not be in the past.
+        require(balancePeriod >= getBalancePeriod());
+        
+        for (uint256 i = 0; i < _to.length; ++i) {
+            address to = _to[i];
+            uint256 quantity = _quantities[i];
+            
+            require(to != address(0x0), "_to must be non-zero.");
+            consumeReceptionApproval(_id, to, msg.sender, quantity);
+
+            // Grant the items to the caller
+            balances[_id][to] = quantity.add(balances[_id][to]);
+
+            // Emit the Transfer/Mint event.
+            // the 0x0 source address implies a mint
+            // It will also provide the circulating supply info.
+            emit TransferSingle(msg.sender, address(0x0), to, _id, quantity);
+
+            if (to.isContract()) {
+                _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, to, _id, quantity, ''); // TOOD: Prüfen
+            }
         }
         
         __id = _id;
-    }
-    
-    modifier onlyCreators {
-        // TODO: Implement
-        _;
     }
     
     modifier onlyMeteringAuthorities {
@@ -52,6 +76,7 @@ contract EnergyToken is ERC1155, ClaimCommons {
         _;
     }
     
+    // TODO: Emissions
     function createForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants returns(uint256 __id) {
         // Todo: Wie funktioniert "Der Distributor Contract bestimmt die Gattung der Forwards Art."?
         __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, _distributor);
@@ -100,6 +125,16 @@ contract EnergyToken is ERC1155, ClaimCommons {
         __tokenId += uint256(_identityContractAddress);
     }
     
+    function getTokenIdConstituents(uint256 _tokenId) public pure returns(TokenKind __tokenKind, uint64 __balancePeriod, address __identityContractAddress) {
+        __identityContractAddress = address(uint160(_tokenId));
+        __balancePeriod = uint64(_tokenId >> 160);
+        __tokenKind = number2TokenKind(uint8(_tokenId >> (160 + 64)));
+        
+        // Make sure that the tokenId can actually be derived via getTokenId().
+        // Without this check, it would be possible to create a second but different tokenId with the same constituents as not all bits are used.
+        require(getTokenId(__tokenKind, __balancePeriod, __identityContractAddress) == _tokenId);
+    }
+    
     /**
      * | Bit (rtl) | Meaning                                         |
      * |-----------+-------------------------------------------------|
@@ -114,21 +149,39 @@ contract EnergyToken is ERC1155, ClaimCommons {
      * 
      * Bits are zero unless specified otherwise.
      */
-    function tokenKind2Number(TokenKind _tokenKind) public pure returns (uint8) {
+    function tokenKind2Number(TokenKind _tokenKind) public pure returns (uint8 __number) {
         if(_tokenKind == TokenKind.AbsoluteForward) {
             return 0;
         }
         if(_tokenKind == TokenKind.GenerationBasedForward) {
             return 2;
         }
-        if(_tokenKind == TokenKind.AbsoluteForward) {
+        if(_tokenKind == TokenKind.ConsumptionBasedForward) {
             return 3;
         }
-        if(_tokenKind == TokenKind.AbsoluteForward) {
+        if(_tokenKind == TokenKind.Certificate) {
             return 4;
         }
         
         // Invalid TokenKind.
+        require(false);
+    }
+    
+    function number2TokenKind(uint8 _number) public pure returns (TokenKind __tokenKind) {
+        if(_number == 0) {
+            return TokenKind.AbsoluteForward;
+        }
+        if(_number == 2) {
+            return TokenKind.GenerationBasedForward;
+        }
+        if(_number == 3) {
+            return TokenKind.ConsumptionBasedForward;
+        }
+        if(_number == 4) {
+            return TokenKind.Certificate;
+        }
+        
+        // Invalid number.
         require(false);
     }
 
