@@ -55,7 +55,9 @@ contract EnergyToken is ERC1155, ClaimCommons {
             uint256 quantity = _quantities[i];
             
             require(to != address(0x0), "_to must be non-zero.");
-            consumeReceptionApproval(_id, to, msg.sender, quantity);
+            
+            if(_to != msg.sender)
+                consumeReceptionApproval(_id, to, msg.sender, quantity);
 
             // Grant the items to the caller
             balances[_id][to] = quantity.add(balances[_id][to]);
