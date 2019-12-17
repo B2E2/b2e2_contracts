@@ -11,6 +11,14 @@ contract EnergyToken is ERC1155, ClaimCommons {
     
     enum TokenKind {AbsoluteForward, GenerationBasedForward, ConsumptionBasedForward, Certificate}
     
+    // id => (receiver => (sender => PerishableValue))
+    mapping (uint256 => mapping(address => mapping(address => PerishableValue))) receptionApproval;
+    
+    struct PerishableValue {
+        uint256 value;
+        uint64 expiryBlock;
+    }
+    
     struct EnergyDocumentation {
         uint256 value;
         string signature;
@@ -187,5 +195,37 @@ contract EnergyToken is ERC1155, ClaimCommons {
 
     function getBalancePeriod() public view returns(uint64) {
         return uint64(now - (now % 900));
+    }
+    
+    function approveSender(address _sender, uint64 _expiryBlock, uint256 _value, uint256 _id) public returns (bool __success) {
+        receptionApproval[_id][msg.sender][_sender] = PerishableValue(_value, _expiryBlock);
+        return true;
+    }
+    
+    function approveBatchSender(address _sender, uint64 _expiryBlock, uint256[] memory _values, uint256[] memory _ids) public {
+        require(_values.length < 4294967295);
+        
+        for(uint32 i; i < _values.length; i++) {
+            receptionApproval[_ids[i]][msg.sender][_sender] = PerishableValue(_values[i], _expiryBlock);
+        }
+    }
+    
+    function consumeReceptionApproval(uint256 _id, address _to, address _from, uint256 _value) internal {
+        require(receptionApproval[_id][_to][_from].expiryBlock <= block.number);
+        require(receptionApproval[_id][_to][_from].value >= _value);
+        
+        receptionApproval[_id][_to][_from].value = receptionApproval[_id][_to][_from].value.sub(_value);
+    }
+    
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
+        consumeReceptionApproval(_id, _to, _from, _value);
+        ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
+    }
+    
+    function safeBatchTransferFrom(address _from, address _to, uint256[] memory _ids, uint256[] memory _values, bytes memory _data) public {
+        for (uint256 i = 0; i < _ids.length; ++i) {
+            consumeReceptionApproval(_ids[i], _to, _from, _values[i]);
+        }
+        ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
     }
 }
