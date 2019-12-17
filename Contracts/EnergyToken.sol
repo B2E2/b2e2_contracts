@@ -9,6 +9,8 @@ contract EnergyToken is ERC1155, ClaimCommons {
     using SafeMath for uint256;
     using Address for address;
     
+    event RequestTransfer(address recipient, address sender, uint256 value, uint64 expiryDate, uint256 tokenId);
+    
     enum TokenKind {AbsoluteForward, GenerationBasedForward, ConsumptionBasedForward, Certificate}
     
     // id => (receiver => (sender => PerishableValue))
@@ -203,8 +205,9 @@ contract EnergyToken is ERC1155, ClaimCommons {
         return uint64(_timestamp - (_timestamp % 900));
     }
     
-    function approveSender(address _sender, uint64 _expiryBlock, uint256 _value, uint256 _id) public returns (bool __success) {
-        receptionApproval[_id][msg.sender][_sender] = PerishableValue(_value, _expiryBlock);
+    function approveSender(address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) public returns (bool __success) {
+        receptionApproval[_id][msg.sender][_sender] = PerishableValue(_value, _expiryDate);
+        emit RequestTransfer(msg.sender, _sender, _value, _expiryDate, _id);
         return true;
     }
     
