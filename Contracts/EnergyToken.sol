@@ -214,7 +214,14 @@ contract EnergyToken is ERC1155, ClaimCommons {
         }
     }
     
+    /**
+     * Only consumes reception approval when handling forwards. Fails iff granted reception approval is insufficient.
+     */
     function consumeReceptionApproval(uint256 _id, address _to, address _from, uint256 _value) internal {
+        (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
+        if(tokenKind == TokenKind.Certificate)
+            return;
+        
         require(receptionApproval[_id][_to][_from].expiryBlock <= block.number);
         require(receptionApproval[_id][_to][_from].value >= _value);
         
