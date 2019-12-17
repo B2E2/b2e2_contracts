@@ -220,7 +220,7 @@ contract EnergyToken is ERC1155, ClaimCommons {
      * Only consumes reception approval when handling forwards. Fails iff granted reception approval is insufficient.
      */
     function consumeReceptionApproval(uint256 _id, address _to, address _from, uint256 _value) internal {
-        (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
+        (TokenKind tokenKind, ,) = getTokenIdConstituents(_id); // Can be optimized by simply checking the bit that determines whether it's a forward or a certificate via a bit mask. Useful when tokenId format doesn't change anymore.
         if(tokenKind == TokenKind.Certificate)
             return;
         
