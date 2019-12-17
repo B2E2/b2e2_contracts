@@ -66,7 +66,7 @@ contract EnergyToken is ERC1155, ClaimCommons {
             emit TransferSingle(msg.sender, address(0x0), to, _id, quantity);
 
             if (to.isContract()) {
-                _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, to, _id, quantity, ''); // TOOD: Prüfen
+                _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, to, _id, quantity, '');
             }
         }
         
