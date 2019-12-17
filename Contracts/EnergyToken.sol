@@ -194,7 +194,11 @@ contract EnergyToken is ERC1155, ClaimCommons {
     }
 
     function getBalancePeriod() public view returns(uint64) {
-        return uint64(now - (now % 900));
+        return getBalancePeriod(now);
+    }
+    
+    function getBalancePeriod(uint256 _timestamp) public pure returns(uint64) {
+        return uint64(_timestamp - (_timestamp % 900));
     }
     
     function approveSender(address _sender, uint64 _expiryBlock, uint256 _value, uint256 _id) public returns (bool __success) {
