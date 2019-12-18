@@ -2,6 +2,8 @@ pragma solidity ^0.5.0;
 
 import "./IdentityContract.sol";
 import "./ClaimCommons.sol";
+import "./jsmnSol/contracts/JsmnSolLib.sol";
+import "./dapp-bin/library/stringUtils.sol";
 
 contract ClaimVerifier is ClaimCommons {
     IdentityContract marketAuthority;
@@ -106,5 +108,25 @@ contract ClaimVerifier is ClaimCommons {
         }
         
         return false;
+    }
+    
+    function getExpiryDate(bytes memory data) public pure returns(uint64) {
+        string memory json = string(data);
+        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 5); // TODO: Check whether this works as there is a comment on SE saying it doesn't: https://ethereum.stackexchange.com/questions/2519/how-to-convert-a-bytes32-to-string#comment78462_59335
+        assert(exitCode == 0);
+        
+        for(uint i = 1; i <= numberOfTokensFound; i += 2) { // TODO: check value of numberOfTokensFound. Maybe subtract something here.
+            JsmnSolLib.Token memory keyToken = tokens[i];
+            JsmnSolLib.Token memory valueToken = tokens[i+1];
+            
+            if(StringUtils.equal(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end), "expiryDate")) {
+                int expiryDateAsInt = JsmnSolLib.parseInt(JsmnSolLib.getBytes(json, valueToken.start, valueToken.end));
+                require(expiryDateAsInt >= 0);
+                require(expiryDateAsInt < 0x10000000000000000);
+                return uint64(expiryDateAsInt);
+            }
+        }
+        
+        require(false);
     }
 }
