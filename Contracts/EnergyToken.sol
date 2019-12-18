@@ -233,6 +233,25 @@ contract EnergyToken is ERC1155, ClaimCommons {
         receptionApproval[_id][_to][_from].value = receptionApproval[_id][_to][_from].value.sub(_value);
     }
     
+    /**
+     * Checking a claim only makes sure that it exists. It does not verify the claim.
+     */
+    function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id, uint256 _value) public view {
+        // TODO: check whether expired
+        (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
+        if(tokenKind == TokenKind.AbsoluteForward) {
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.BalanceClaim);
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.ExistenceClaim);
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.GenerationTypeClaim);
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.LocationClaim);
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.MeteringClaim);
+            
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.AcceptedDistributorContractsClaim);
+            
+            // TODO: check whether address of absolute distributor is accepted by balancer of producer
+        }
+    }
+    
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
         consumeReceptionApproval(_id, _to, _from, _value);
         ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
