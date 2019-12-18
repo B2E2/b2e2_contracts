@@ -7,3 +7,6 @@
 [submodule "Contracts/erc725-735"]
 	path = Contracts/erc725-735
 	url = git@github.com:BlockInfinity/erc725-735.git
+[submodule "Contracts/jsmnSol"]
+	path = Contracts/jsmnSol
+	url = git@github.com:BlockInfinity/jsmnSol.git
