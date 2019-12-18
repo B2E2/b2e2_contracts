@@ -1,11 +1,12 @@
 pragma solidity ^0.5.0;
 
+import "./Commons.sol";
 import "./IdentityContractFactory.sol";
 import "./IdentityContract.sol";
 import "./ClaimVerifier.sol";
 import "./erc-1155/contracts/ERC1155.sol";
 
-contract EnergyToken is ERC1155, ClaimCommons {
+contract EnergyToken is Commons, ERC1155, ClaimCommons {
     using SafeMath for uint256;
     using Address for address;
     
@@ -196,14 +197,6 @@ contract EnergyToken is ERC1155, ClaimCommons {
         // Invalid number.
         require(false);
     }
-
-    function getBalancePeriod() public view returns(uint64) {
-        return getBalancePeriod(now);
-    }
-    
-    function getBalancePeriod(uint256 _timestamp) public pure returns(uint64) {
-        return uint64(_timestamp - (_timestamp % 900));
-    }
     
     function approveSender(address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) public returns (bool __success) {
         receptionApproval[_id][msg.sender][_sender] = PerishableValue(_value, _expiryDate);
@@ -234,19 +227,20 @@ contract EnergyToken is ERC1155, ClaimCommons {
     }
     
     /**
-     * Checking a claim only makes sure that it exists. It does not verify the claim.
+     * Checks all claims required for the particular given transfer.
+     * 
+     * Checking a claim only makes sure that it exists. It does not verify the claim. However, this method makes sure that only non-expired claims are considered.
      */
     function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id, uint256 _value) public view {
-        // TODO: check whether expired
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward) {
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.BalanceClaim);
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.ExistenceClaim);
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.GenerationTypeClaim);
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.LocationClaim);
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.MeteringClaim);
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.BalanceClaim, true);
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.ExistenceClaim, true);
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.GenerationTypeClaim, true);
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.LocationClaim, true);
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.MeteringClaim, true);
             
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.AcceptedDistributorContractsClaim);
+            claimVerifier.checkHasClaimOfType(_from, ClaimType.AcceptedDistributorContractsClaim, true);
             
             // TODO: check whether address of absolute distributor is accepted by balancer of producer
         }

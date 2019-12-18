@@ -1,11 +1,12 @@
 pragma solidity ^0.5.0;
 
+import "./Commons.sol";
 import "./IdentityContract.sol";
 import "./ClaimCommons.sol";
 import "./jsmnSol/contracts/JsmnSolLib.sol";
 import "./dapp-bin/library/stringUtils.sol";
 
-contract ClaimVerifier is ClaimCommons {
+contract ClaimVerifier is Commons, ClaimCommons {
     IdentityContract marketAuthority;
     
     constructor(IdentityContract _marketAuthority) public {
@@ -93,8 +94,10 @@ contract ClaimVerifier is ClaimCommons {
     
     /**
      * Checking a claim only makes sure that it exists. It does not verify the claim.
+     * 
+     * Iff requireNonExpired is set, only claims that have not yet expired are considered.
      */
-    function checkHasClaimOfType(address payable _subject, ClaimType _claimType) public view returns (bool) {
+    function checkHasClaimOfType(address payable _subject, ClaimType _claimType, bool requireNonExpired) public view returns (bool) {
         uint256 topic = claimType2Topic(_claimType);
         bytes32[] memory claimIds = IdentityContract(_subject).getClaimIdsByType(topic);
         
@@ -102,6 +105,9 @@ contract ClaimVerifier is ClaimCommons {
             (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
             
             if(cTopic != topic)
+                continue;
+                
+            if(requireNonExpired && getExpiryDate(cData) > getBalancePeriod())
                 continue;
             
             return true;
