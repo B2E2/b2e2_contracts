@@ -10,3 +10,6 @@
 [submodule "Contracts/jsmnSol"]
 	path = Contracts/jsmnSol
 	url = git@github.com:BlockInfinity/jsmnSol.git
+[submodule "Contracts/dapp-bin"]
+	path = Contracts/dapp-bin
+	url = git@github.com:BlockInfinity/dapp-bin.git
