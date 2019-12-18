@@ -88,4 +88,23 @@ contract ClaimVerifier is ClaimCommons {
         
         require(false);
     }
+    
+    /**
+     * Checking a claim only makes sure that it exists. It does not verify the claim.
+     */
+    function checkHasClaimOfType(address payable _subject, ClaimType _claimType) public view returns (bool) {
+        uint256 topic = claimType2Topic(_claimType);
+        bytes32[] memory claimIds = IdentityContract(_subject).getClaimIdsByType(topic);
+        
+        for(uint64 i = 0; i < claimIds.length; i++) {
+            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
+            
+            if(cTopic != topic)
+                continue;
+            
+            return true;
+        }
+        
+        return false;
+    }
 }
