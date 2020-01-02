@@ -6,7 +6,7 @@ import "./ClaimCommons.sol";
 import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
 import "./../dependencies/dapp-bin/library/stringUtils.sol";
 
-contract ClaimVerifier {
+library ClaimVerifier {
     function verifyFirstLevelClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _firstLevelClaim) public view returns(bool) {
         // Make sure the given claim actually is a first-level claim.
         require(_firstLevelClaim == ClaimCommons.ClaimType.IsBalanceAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IsMeteringAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IdentityContractFactoryClaim || _firstLevelClaim == ClaimCommons.ClaimType.EnergyTokenContractClaim || _firstLevelClaim == ClaimCommons.ClaimType.MarketRulesClaim);

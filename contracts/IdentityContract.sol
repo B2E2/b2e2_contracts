@@ -8,8 +8,7 @@ import "./ClaimVerifier.sol";
 
 contract IdentityContract is Identity, SignatureVerifier {
     IdentityContract marketAuthority;
-    ClaimVerifier claimVerifier;
-    
+
     constructor
     (
         IdentityContract _marketAuthority,
@@ -35,7 +34,6 @@ contract IdentityContract is Identity, SignatureVerifier {
         public
     {
             marketAuthority = _marketAuthority;
-            claimVerifier = new ClaimVerifier();
     }
     
     function addClaim(
@@ -50,7 +48,7 @@ contract IdentityContract is Identity, SignatureVerifier {
         returns (uint256 claimRequestId)
     {
         ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(_topic);
-        require(claimVerifier.validateClaim(marketAuthority, claimType, _topic, _scheme, _issuer, _signature, _data));
+        require(ClaimVerifier.validateClaim(marketAuthority, claimType, _topic, _scheme, _issuer, _signature, _data));
         
         return super.addClaim(_topic, _scheme, _issuer, _signature, _data, _uri);
     }

@@ -30,14 +30,12 @@ contract EnergyToken is ERC1155 {
     }
     
     IdentityContract marketAuthority;
-    ClaimVerifier claimVerifier;
     IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations; // TODO: powerConsumption or energyConsumption? Document talks about energy and uses units of energy but uses the word "power".
 
     constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {
         marketAuthority = _marketAuthority;
-        claimVerifier = new ClaimVerifier();
         identityContractFactory = _identityContractFactory;
     }
 
@@ -48,9 +46,9 @@ contract EnergyToken is ERC1155 {
         
         // msg.sender needs to be allowed to mint.
         require(msg.sender == identityContractAddress);
-        require(claimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim));
-        require(claimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.GenerationTypeClaim));
-        require(claimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.LocationClaim));
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim));
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.GenerationTypeClaim));
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.LocationClaim));
         
         // balancePeriod must not be in the past.
         require(balancePeriod >= Commons.getBalancePeriod());
@@ -81,12 +79,12 @@ contract EnergyToken is ERC1155 {
     }
     
     modifier onlyMeteringAuthorities {
-        require(claimVerifier.verifyFirstLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority));
+        require(ClaimVerifier.verifyFirstLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority));
         _;
     }
     
     modifier onlyGenerationPlants {
-        require(claimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim));
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim));
         // Todo: Don't only check ExistenceClaim but also whether it's a generation plant (as opposed to being a consumption plant).
         _;
     }
@@ -236,13 +234,13 @@ contract EnergyToken is ERC1155 {
     function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id, uint256 _value) public view {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward) {
-            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.BalanceClaim, true);
-            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.ExistenceClaim, true);
-            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.GenerationTypeClaim, true);
-            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.LocationClaim, true);
-            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.MeteringClaim, true);
+            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.BalanceClaim, true);
+            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.ExistenceClaim, true);
+            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.GenerationTypeClaim, true);
+            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.LocationClaim, true);
+            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.MeteringClaim, true);
             
-            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.AcceptedDistributorContractsClaim, true);
+            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.AcceptedDistributorContractsClaim, true);
             
             // TODO: check whether address of absolute distributor is accepted by balancer of producer
         }
