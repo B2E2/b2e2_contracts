@@ -1,8 +1,8 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import "./erc725-735/contracts/Identity.sol";
-import "./erc725-735/contracts/SignatureVerifier.sol";
+import "./../dependencies/erc725-735/contracts/Identity.sol";
+import "./../dependencies/erc725-735/contracts/SignatureVerifier.sol";
 import "./ClaimCommons.sol";
 import "./ClaimVerifier.sol";
 

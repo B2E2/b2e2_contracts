@@ -3,8 +3,8 @@ pragma solidity ^0.5.0;
 import "./Commons.sol";
 import "./IdentityContract.sol";
 import "./ClaimCommons.sol";
-import "./jsmnSol/contracts/JsmnSolLib.sol";
-import "./dapp-bin/library/stringUtils.sol";
+import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
+import "./../dependencies/dapp-bin/library/stringUtils.sol";
 
 contract ClaimVerifier is Commons, ClaimCommons {
     IdentityContract marketAuthority;

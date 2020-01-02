@@ -1,15 +1,15 @@
 [submodule "contracts/erc-725"]
-	path = contracts/erc-725
+	path = dependencies/erc-725
 	url = git@github.com:ERC725Alliance/erc725.git
 [submodule "contracts/erc-1155"]
-	path = contracts/erc-1155
+	path = dependencies/erc-1155
 	url = git@github.com:BlockInfinity/erc-1155.git
 [submodule "contracts/erc725-735"]
-	path = contracts/erc725-735
+	path = dependencies/erc725-735
 	url = git@github.com:BlockInfinity/erc725-735.git
 [submodule "contracts/jsmnSol"]
-	path = contracts/jsmnSol
+	path = dependencies/jsmnSol
 	url = git@github.com:BlockInfinity/jsmnSol.git
 [submodule "contracts/dapp-bin"]
-	path = contracts/dapp-bin
+	path = dependencies/dapp-bin
 	url = git@github.com:BlockInfinity/dapp-bin.git

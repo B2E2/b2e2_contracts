@@ -4,7 +4,7 @@ import "./Commons.sol";
 import "./IdentityContractFactory.sol";
 import "./IdentityContract.sol";
 import "./ClaimVerifier.sol";
-import "./erc-1155/contracts/ERC1155.sol";
+import "./../dependencies/erc-1155/contracts/ERC1155.sol";
 
 contract EnergyToken is Commons, ERC1155, ClaimCommons {
     using SafeMath for uint256;
