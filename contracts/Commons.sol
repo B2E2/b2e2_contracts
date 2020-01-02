@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-contract Commons {
+library Commons {
 
     function getBalancePeriod() public view returns(uint64) {
         return getBalancePeriod(now);

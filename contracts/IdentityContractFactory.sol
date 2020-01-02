@@ -8,7 +8,7 @@ import "./../dependencies/erc725-735/contracts/ERC735.sol";
 
 
 // Implements 735
-contract IdentityContractFactory is ClaimCommons {
+contract IdentityContractFactory {
     mapping (address => bool) authorityExistenceLookup;
     mapping (address => bool) plantExistenceLookup;
     mapping (address => AuthorityType) authorityTypeLookup;
@@ -93,29 +93,29 @@ contract IdentityContractFactory is ClaimCommons {
     function registerAuthority(address payable _authorityAddress, AuthorityType _authorityType, bytes memory _signature, bytes memory _data) public ownerOwnly {
         require(_authorityType == AuthorityType.BalanceAuthority || _authorityType == AuthorityType.MeteringAuthority || _authorityType == AuthorityType.PhysicalAssetAuthority);
         
-        ClaimType claimType;
+        ClaimCommons.ClaimType claimType;
         if(_authorityType == AuthorityType.BalanceAuthority)
-            claimType = ClaimType.IsBalanceAuthority;
+            claimType = ClaimCommons.ClaimType.IsBalanceAuthority;
         else if(_authorityType == AuthorityType.MeteringAuthority)
-            claimType = ClaimType.IsMeteringAuthority;
+            claimType = ClaimCommons.ClaimType.IsMeteringAuthority;
         else if(_authorityType == AuthorityType.PhysicalAssetAuthority)
-            claimType = ClaimType.IsPhysicalAssetAuthority;
+            claimType = ClaimCommons.ClaimType.IsPhysicalAssetAuthority;
         else
             require(false);
         
         require(isValidAuthority(_authorityAddress, _authorityType));
         
-        IdentityContract(_authorityAddress).addClaim(claimType2Topic(claimType), IdentityContract(_authorityAddress).ECDSA_SCHEME(), msg.sender, _signature, _data, "");
+        IdentityContract(_authorityAddress).addClaim(ClaimCommons.claimType2Topic(claimType), IdentityContract(_authorityAddress).ECDSA_SCHEME(), msg.sender, _signature, _data, "");
     }
 
     function registerPlant(address payable _plantAddress, PlantType _plantType, bytes memory _signature, bytes memory _data) public ownerOwnly {
         require(_plantType == PlantType.GenerationPlant || _plantType == PlantType.ConsumptionPlant);
         
-        ClaimType claimType = ClaimType.ExistenceClaim;
+        ClaimCommons.ClaimType claimType = ClaimCommons.ClaimType.ExistenceClaim;
         
         require(isValidPlant(_plantAddress, _plantType));
         
-        IdentityContract(_plantAddress).addClaim(claimType2Topic(claimType), IdentityContract(_plantAddress).ECDSA_SCHEME(), msg.sender, _signature, _data, "");
+        IdentityContract(_plantAddress).addClaim(ClaimCommons.claimType2Topic(claimType), IdentityContract(_plantAddress).ECDSA_SCHEME(), msg.sender, _signature, _data, "");
     }
     
     function isValidAuthority(address _authorityAddress, AuthorityType _authorityType) public view returns (bool) {

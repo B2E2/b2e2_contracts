@@ -4,7 +4,7 @@ pragma solidity ^0.5.0;
 * Everything in this contract actually shouldn't be its own contract but static members of IdentityContractFactory. However, Solidity seems to be lacking this feature.
 * So all contracts which need to access these enums and methods instead are subcontracts of this contract.
 */
-contract ClaimCommons {
+library ClaimCommons {
     enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorContractsClaim }
 
     function claimType2Topic(ClaimType _claimType) public pure returns (uint256 __topic) {

@@ -6,7 +6,7 @@ import "./IdentityContract.sol";
 import "./ClaimVerifier.sol";
 import "./../dependencies/erc-1155/contracts/ERC1155.sol";
 
-contract EnergyToken is Commons, ERC1155, ClaimCommons {
+contract EnergyToken is ERC1155 {
     using SafeMath for uint256;
     using Address for address;
     
@@ -29,13 +29,15 @@ contract EnergyToken is Commons, ERC1155, ClaimCommons {
         bool generated;
     }
     
+    IdentityContract marketAuthority;
     ClaimVerifier claimVerifier;
     IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations; // TODO: powerConsumption or energyConsumption? Document talks about energy and uses units of energy but uses the word "power".
 
     constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {
-        claimVerifier = new ClaimVerifier(_marketAuthority);
+        marketAuthority = _marketAuthority;
+        claimVerifier = new ClaimVerifier();
         identityContractFactory = _identityContractFactory;
     }
 
@@ -46,12 +48,12 @@ contract EnergyToken is Commons, ERC1155, ClaimCommons {
         
         // msg.sender needs to be allowed to mint.
         require(msg.sender == identityContractAddress);
-        require(claimVerifier.verifySecondLevelClaim(msg.sender, ClaimType.ExistenceClaim));
-        require(claimVerifier.verifySecondLevelClaim(msg.sender, ClaimType.GenerationTypeClaim));
-        require(claimVerifier.verifySecondLevelClaim(msg.sender, ClaimType.LocationClaim));
+        require(claimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim));
+        require(claimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.GenerationTypeClaim));
+        require(claimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.LocationClaim));
         
         // balancePeriod must not be in the past.
-        require(balancePeriod >= getBalancePeriod());
+        require(balancePeriod >= Commons.getBalancePeriod());
         
         for (uint256 i = 0; i < _to.length; ++i) {
             address to = _to[i];
@@ -79,12 +81,12 @@ contract EnergyToken is Commons, ERC1155, ClaimCommons {
     }
     
     modifier onlyMeteringAuthorities {
-        require(claimVerifier.verifyFirstLevelClaim(msg.sender, ClaimType.IsMeteringAuthority));
+        require(claimVerifier.verifyFirstLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority));
         _;
     }
     
     modifier onlyGenerationPlants {
-        require(claimVerifier.verifySecondLevelClaim(msg.sender, ClaimType.ExistenceClaim));
+        require(claimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim));
         // Todo: Don't only check ExistenceClaim but also whether it's a generation plant (as opposed to being a consumption plant).
         _;
     }
@@ -234,13 +236,13 @@ contract EnergyToken is Commons, ERC1155, ClaimCommons {
     function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id, uint256 _value) public view {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward) {
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.BalanceClaim, true);
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.ExistenceClaim, true);
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.GenerationTypeClaim, true);
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.LocationClaim, true);
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.MeteringClaim, true);
+            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.BalanceClaim, true);
+            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.ExistenceClaim, true);
+            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.GenerationTypeClaim, true);
+            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.LocationClaim, true);
+            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.MeteringClaim, true);
             
-            claimVerifier.checkHasClaimOfType(_from, ClaimType.AcceptedDistributorContractsClaim, true);
+            claimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.AcceptedDistributorContractsClaim, true);
             
             // TODO: check whether address of absolute distributor is accepted by balancer of producer
         }

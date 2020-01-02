@@ -6,7 +6,7 @@ import "./../dependencies/erc725-735/contracts/SignatureVerifier.sol";
 import "./ClaimCommons.sol";
 import "./ClaimVerifier.sol";
 
-contract IdentityContract is Identity, SignatureVerifier, ClaimCommons {
+contract IdentityContract is Identity, SignatureVerifier {
     IdentityContract marketAuthority;
     ClaimVerifier claimVerifier;
     
@@ -35,7 +35,7 @@ contract IdentityContract is Identity, SignatureVerifier, ClaimCommons {
         public
     {
             marketAuthority = _marketAuthority;
-            claimVerifier = new ClaimVerifier(_marketAuthority);
+            claimVerifier = new ClaimVerifier();
     }
     
     function addClaim(
@@ -49,8 +49,8 @@ contract IdentityContract is Identity, SignatureVerifier, ClaimCommons {
         public
         returns (uint256 claimRequestId)
     {
-        ClaimType claimType = topic2ClaimType(_topic);
-        require(claimVerifier.validateClaim(claimType, _topic, _scheme, _issuer, _signature, _data));
+        ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(_topic);
+        require(claimVerifier.validateClaim(marketAuthority, claimType, _topic, _scheme, _issuer, _signature, _data));
         
         return super.addClaim(_topic, _scheme, _issuer, _signature, _data, _uri);
     }
