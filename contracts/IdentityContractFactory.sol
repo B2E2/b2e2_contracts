@@ -4,10 +4,7 @@ pragma experimental ABIEncoderV2;
 import "./IdentityContract.sol";
 import "./ClaimCommons.sol";
 import "./../dependencies/erc725-735/contracts/Identity.sol";
-import "./../dependencies/erc725-735/contracts/ERC735.sol";
 
-
-// Implements 735
 contract IdentityContractFactory {
     mapping (address => bool) authorityExistenceLookup;
     mapping (address => bool) plantExistenceLookup;
