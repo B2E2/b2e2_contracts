@@ -18,7 +18,8 @@
  *
  */
 
-// const HDWalletProvider = require('truffle-hdwallet-provider');
+const HDWalletProvider = require('truffle-hdwallet-provider');
+const mnemonic = 'gas october undo antenna obvious turtle sunny lazy blanket near liberty august';
 // const infuraKey = "fj4jll3k.....";
 //
 // const fs = require('fs');
@@ -53,7 +54,7 @@ module.exports = {
       port: 8545,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
 	  from: "0x0AD9485d9382eE8081aEc5Db4011854e91D2bf4c",
-	  gas: 1000000000,
+	  gas: 12200000,
     },
     // Another network with more advanced options...
     // advanced: {
@@ -82,6 +83,13 @@ module.exports = {
       // network_id: 2111,   // This network is yours, in the cloud.
       // production: true    // Treats this network as if it was a public net. (default: false)
     // }
+
+	volta: {
+	  provider: () => new HDWalletProvider(mnemonic, 'https://volta-rpc.energyweb.org'),
+	  network_id: 73799,
+	  gas: 12200000, // required for deployment
+	  gas: 8000000, // maximum on chain
+	}
   },
 
   // Set default mocha options here, use special reporters etc.

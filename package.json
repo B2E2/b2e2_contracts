@@ -4,7 +4,8 @@
   "description": "",
   "main": "truffle-config.js",
   "dependencies": {
-    "remixd": "^0.1.8-alpha.14"
+    "remixd": "^0.1.8-alpha.14",
+    "truffle-hdwallet-provider": "^1.0.17"
   },
   "devDependencies": {},
   "scripts": {
