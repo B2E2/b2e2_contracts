@@ -3,7 +3,6 @@ pragma experimental ABIEncoderV2;
 
 import "./IdentityContract.sol";
 import "./ClaimCommons.sol";
-import "./../dependencies/erc725-735/contracts/Identity.sol";
 
 contract IdentityContractFactory {
     mapping (address => bool) authorityExistenceLookup;
@@ -29,58 +28,16 @@ contract IdentityContractFactory {
         _;
     }
     
-    function createAuthority(
-        AuthorityType authorityType,
-        bytes32[] memory _keys,
-        uint256[] memory _purposes,
-        uint256 _managementRequired,
-        uint256 _executionRequired,
-        address[] memory _issuers,
-        uint256[] memory _topics,
-        bytes[] memory _signatures,
-        bytes[] memory _datas,
-        string[] memory _uris
-        ) public {
-        IdentityContract authority = new IdentityContract(
-            marketAuthority,
-            _keys,
-            _purposes,
-            _managementRequired,
-            _executionRequired,
-            _issuers,
-            _topics,
-            _signatures,
-            _datas,
-            _uris);
+    function createAuthority(AuthorityType authorityType) public {
+        IdentityContract authority = new IdentityContract(marketAuthority);
 
         authorityExistenceLookup[address(authority)] = true;
         authorityTypeLookup[address(authority)] = authorityType;
         emit AuthorityCreation(authorityType, address(authority), msg.sender);
     }
     
-    function createPlant(
-        PlantType plantType,
-        bytes32[] memory _keys,
-        uint256[] memory _purposes,
-        uint256 _managementRequired,
-        uint256 _executionRequired,
-        address[] memory _issuers,
-        uint256[] memory _topics,
-        bytes[] memory _signatures,
-        bytes[] memory _datas,
-        string[] memory _uris
-        ) public {
-        IdentityContract plant = new IdentityContract(
-            marketAuthority,
-            _keys,
-            _purposes,
-            _managementRequired,
-            _executionRequired,
-            _issuers,
-            _topics,
-            _signatures,
-            _datas,
-            _uris);
+    function createPlant(PlantType plantType) public {
+        IdentityContract plant = new IdentityContract(marketAuthority);
 
         plantExistenceLookup[address(plant)] = true;
         plantTypeLookup[address(plant)] = plantType;

@@ -4,6 +4,7 @@
   "description": "",
   "main": "truffle-config.js",
   "dependencies": {
+    "openzeppelin-solidity": "^2.4.0",
     "remixd": "^0.1.8-alpha.14",
     "truffle-hdwallet-provider": "^1.0.17"
   },
