@@ -54,7 +54,7 @@ module.exports = {
       port: 8545,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
 	  from: "0xa48189e2bc7E70d69a536879d30680036716FDd7",
-	  gas: 12200000,
+	  gas: 7000000,
     },
     // Another network with more advanced options...
     // advanced: {
@@ -87,8 +87,7 @@ module.exports = {
 	volta: {
 	  provider: () => new HDWalletProvider(mnemonic, 'https://volta-rpc.energyweb.org'),
 	  network_id: 73799,
-	  gas: 12200000, // required for deployment
-	  gas: 8000000, // maximum on chain
+	  gas: 7000000,
 	}
   },
 
