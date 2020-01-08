@@ -1,9 +1,7 @@
 pragma solidity ^0.5.0;
 pragma experimental ABIEncoderV2;
 
-import "../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
-import "./ClaimCommons.sol";
-import "./ClaimVerifier.sol";
+import "./IdentityContractLib.sol";
 
 contract IdentityContract {
     // Events ERC-725
@@ -17,18 +15,8 @@ contract IdentityContract {
     event ClaimRemoved(bytes32 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     event ClaimChanged(bytes32 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     
-    // Structs ERC-735
-    struct Claim {
-        uint256 topic;
-        uint256 scheme;
-        address issuer; // msg.sender
-        bytes signature; // this.address + topic + data
-        bytes data;
-        string uri;
-    }
-    
     // Constants ERC-735
-    bytes constant internal ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
+    bytes constant public ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
     uint256 constant public ECDSA_SCHEME = 1;
     
     // Attributes ERC-725
@@ -36,7 +24,7 @@ contract IdentityContract {
     mapping (bytes32 => bytes) public data;
     
     // Attributes ERC-735
-    mapping (bytes32 => Claim) claims;
+    mapping (bytes32 => IdentityContractLib.Claim) claims;
     mapping (uint256 => bytes32[]) topics2ClaimIds;
 
     // Other attributes
@@ -102,45 +90,15 @@ contract IdentityContract {
         return topics2ClaimIds[_topic];
     }
     
-    bytes32 public constant bytes32_ = "Hello World!";
-    bytes32 public constant anotherBytes32 = "Hello World!";
-
-    function areTheyEqual() public pure returns(bool) {
-        return (bytes32_ == anotherBytes32);
-    }
-    
     function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (bytes32 claimRequestId) {
-        ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(_topic);
-        require(keccak256(_signature) != keccak256(new bytes(32))); // Just to be safe. (See existence check below.)
-        require(ClaimVerifier.validateClaim(marketAuthority, claimType, _topic, _scheme, _issuer, _signature, _data));
-        
-        // TODO: Addition or concatenation?
-        uint256 preimageUint = uint256(_issuer) + _topic;
-        bytes memory preimageBytes;
-        assembly {
-             mstore(add(preimageBytes, 32), preimageUint)
-        }
-        claimRequestId = keccak256(preimageBytes);
-        
-        // Emit and modify before adding to save gas.
-        if(keccak256(claims[claimRequestId].signature) != keccak256(new bytes(32))) { // Claim existence check since signature cannot be 0.
-            emit ClaimAdded(claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
-            
-            uint256 prevTopicCardinality = topics2ClaimIds[_topic].length;
-            topics2ClaimIds[_topic].length = prevTopicCardinality + 1;
-            topics2ClaimIds[_topic][prevTopicCardinality] = claimRequestId;
-        } else {
-            emit ClaimChanged(claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
-        }
-        
-        claims[claimRequestId] = Claim(_topic, _scheme, _issuer, _signature, _data, _uri);
+        return IdentityContractLib.addClaim(claims, topics2ClaimIds, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
     function removeClaim(bytes32 _claimId) public returns (bool success) {
         require(msg.sender == owner || msg.sender == claims[_claimId].issuer);
         
         // Emit before deleting to save gas for copy.
-        Claim memory claim = claims[_claimId];
+        IdentityContractLib.Claim memory claim = claims[_claimId];
         emit ClaimRemoved(_claimId, claim.topic, claim.scheme, claim.issuer, claim.signature, claim.data, claim.uri);
         
         delete claims[_claimId];
@@ -156,7 +114,7 @@ contract IdentityContract {
     
     function verifySignature(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data) public view returns (bool __valid) {
          // Check for currently unsupported signature.
-        if(_scheme != ECDSA_SCHEME) 
+        if(_scheme != ECDSA_SCHEME)
             return false;
         
         address signer = getSignerAddress(claimAttributes2SigningFormat(address(this), _topic, _data), _signature);
