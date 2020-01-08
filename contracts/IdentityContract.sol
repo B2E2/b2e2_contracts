@@ -31,7 +31,11 @@ contract IdentityContract {
     IdentityContract marketAuthority;
 
     constructor(IdentityContract _marketAuthority) public {
-        marketAuthority = _marketAuthority;
+        if(_marketAuthority == IdentityContract(0)) {
+            marketAuthority = this;
+        } else {
+            marketAuthority = _marketAuthority;
+        }
     }
     
     // Modifiers ERC-725
