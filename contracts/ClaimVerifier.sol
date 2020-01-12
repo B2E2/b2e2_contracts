@@ -96,7 +96,7 @@ library ClaimVerifier {
         bytes32[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
-            (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
+            (uint256 cTopic, , , , bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;

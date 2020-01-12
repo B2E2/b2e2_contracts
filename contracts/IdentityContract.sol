@@ -1,5 +1,4 @@
 pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2;
 
 import "./IdentityContractLib.sol";
 
@@ -62,17 +61,19 @@ contract IdentityContract {
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) external onlyOwner {
         if(_operationType == 0) {
-            _to.call.value(_value)(_data);
+            (bool success, ) = _to.call.value(_value)(_data);
+            if(!success)
+                require(false);
             return;
         }
         
         // Copy calldata to memory so it can easily be accessed via assembly.
-        bytes memory data = _data;
+        bytes memory dataMemory = _data;
         
         if(_operationType == 1) {
             address newContract;
             assembly {
-                newContract := create(0, add(data, 0x20), mload(data))
+                newContract := create(0, add(dataMemory, 0x20), mload(dataMemory))
             }
             emit ContractCreated(newContract);
             return;
@@ -108,6 +109,7 @@ contract IdentityContract {
         burnedSignatures[claim.signature] = true; // Make sure that this same claim cannot be added again.
         
         delete claims[_claimId];
+        return true;
     }
     
     function claimAttributes2SigningFormat(address _subject, uint256 _topic, bytes memory _data) public pure returns (bytes32 __claimInSigningFormat) {
@@ -124,7 +126,7 @@ contract IdentityContract {
             return false;
         
         address signer = getSignerAddress(claimAttributes2SigningFormat(address(this), _topic, _data), _signature);
-        return signer == address(this);
+        return signer == address(this) && _issuer == address(this);
     }
     
 

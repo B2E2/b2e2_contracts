@@ -1,5 +1,4 @@
 pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2;
 
 import "./IdentityContract.sol";
 import "./ClaimCommons.sol";
@@ -24,7 +23,7 @@ contract IdentityContractFactory {
         _;
     }
     
-    function createIdentityContract(address _ownerAddress) public {
+    function createIdentityContract() public {
         IdentityContract idc = new IdentityContract(marketAuthority);
 
         identityContracts[address(idc)] = true;
