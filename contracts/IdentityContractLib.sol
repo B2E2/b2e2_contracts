@@ -52,6 +52,8 @@ library IdentityContractLib {
             topics2ClaimIds[_topic].length = prevTopicCardinality + 1;
             topics2ClaimIds[_topic][prevTopicCardinality] = claimRequestId;
         } else {
+            // Make sure that only issuer or holder can change claims
+            require(msg.sender == address(this) || msg.sender == _issuer);
             emit ClaimChanged(claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
         }
         
