@@ -31,7 +31,7 @@ library IdentityContractLib {
     bytes constant public ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
     uint256 constant public ECDSA_SCHEME = 1;
     
-    function addClaim(mapping (bytes32 => Claim) storage claims, mapping (uint256 => bytes32[]) storage topics2ClaimIds, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (bytes32 claimRequestId) {
+    function addClaim(mapping (bytes32 => Claim) storage claims, mapping (uint256 => bytes32[]) storage topics2ClaimIds, mapping (bytes => bool) storage burnedSignatures, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (bytes32 claimRequestId) {
         ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(_topic);
         require(keccak256(_signature) != keccak256(new bytes(32))); // Just to be safe. (See existence check below.)
         
@@ -60,6 +60,10 @@ library IdentityContractLib {
             // Make sure that only issuer or holder can change claims
             require(msg.sender == address(this) || msg.sender == _issuer);
             emit ClaimChanged(claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
+            
+            // Make sure that the old signature cannot be used again later. But do not burn the signature when adding the same claim as is currently in effect or when only changing the URI.
+            if(keccak256(claims[claimRequestId].signature) != keccak256(_signature))
+                burnedSignatures[_signature] = true;
         }
         
         claims[claimRequestId] = Claim(_topic, _scheme, _issuer, _signature, _data, _uri);

@@ -26,6 +26,7 @@ contract IdentityContract {
     // Attributes ERC-735
     mapping (bytes32 => IdentityContractLib.Claim) claims;
     mapping (uint256 => bytes32[]) topics2ClaimIds;
+    mapping (bytes => bool) burnedSignatures;
 
     // Other attributes
     IdentityContract marketAuthority;
@@ -95,15 +96,16 @@ contract IdentityContract {
     }
     
     function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (bytes32 claimRequestId) {
-        return IdentityContractLib.addClaim(claims, topics2ClaimIds, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
+        return IdentityContractLib.addClaim(claims, topics2ClaimIds, burnedSignatures, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
     function removeClaim(bytes32 _claimId) public returns (bool success) {
         require(msg.sender == owner || msg.sender == claims[_claimId].issuer);
         
-        // Emit before deleting to save gas for copy.
+        // Emit event and store burned signature before deleting to save gas for copy.
         IdentityContractLib.Claim memory claim = claims[_claimId];
         emit ClaimRemoved(_claimId, claim.topic, claim.scheme, claim.issuer, claim.signature, claim.data, claim.uri);
+        burnedSignatures[claim.signature] = true; // Make sure that this same claim cannot be added again.
         
         delete claims[_claimId];
     }
