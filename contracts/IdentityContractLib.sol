@@ -37,12 +37,13 @@ library IdentityContractLib {
         require(ClaimVerifier.validateClaim(marketAuthority, claimType, _topic, _scheme, _issuer, _signature, _data));
         
         // TODO: Addition or concatenation?
-        uint256 preimageUint = uint256(_issuer) + _topic;
-        bytes memory preimageBytes;
+        bytes memory preimageIssuer;
+        bytes memory preimageTopic;
         assembly {
-             mstore(add(preimageBytes, 32), preimageUint)
+             mstore(add(preimageIssuer, 20), _issuer)
+             mstore(add(preimageTopic, 32), _topic)
         }
-        claimRequestId = keccak256(preimageBytes);
+        claimRequestId = keccak256(abi.encodePacked(preimageIssuer, preimageTopic));
         
         // Emit and modify before adding to save gas.
         if(keccak256(claims[claimRequestId].signature) != keccak256(new bytes(32))) { // Claim existence check since signature cannot be 0.
