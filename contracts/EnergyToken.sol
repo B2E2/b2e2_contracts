@@ -33,6 +33,7 @@ contract EnergyToken is ERC1155 {
     IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations; // TODO: powerConsumption or energyConsumption? Document talks about energy and uses units of energy but uses the word "power".
+    mapping(uint64 => uint256) energyConsumpedInBalancePeriod;
 
     constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {
         marketAuthority = _marketAuthority;
@@ -89,11 +90,11 @@ contract EnergyToken is ERC1155 {
         _;
     }
     
-    // TODO: Emissions
     function createForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants returns(uint256 __id) {
-        // Todo: Wie funktioniert "Der Distributor Contract bestimmt die Gattung der Forwards Art."?
         __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, _distributor);
-        balances[__id][_distributor] = 100E18;
+        uint256 value = 100E18;
+        balances[__id][_distributor] = value;
+        emit TransferSingle(msg.sender, address(0x0), _distributor, __id, value);
     }
     
     function createCertificates(address _generationPlant, uint64 _balancePeriod) public view onlyMeteringAuthorities returns(uint256 __id) {
@@ -110,6 +111,8 @@ contract EnergyToken is ERC1155 {
         EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _signature, _corrected, false);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
+        energyConsumpedInBalancePeriod[_balancePeriod] = energyConsumpedInBalancePeriod[_balancePeriod].add(_value);
+        
         return true;
     }
     
@@ -123,6 +126,10 @@ contract EnergyToken is ERC1155 {
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
         return true;
+    }
+    
+    function getConsumedEnergyOfBalancePeriod(uint64 _balancePeriod) public view returns (uint256) {
+        return energyConsumpedInBalancePeriod[_balancePeriod];
     }
     
     /**
