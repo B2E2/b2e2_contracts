@@ -28,7 +28,7 @@ contract IdentityContract {
     mapping (bytes => bool) burnedSignatures;
 
     // Other attributes
-    IdentityContract marketAuthority;
+    IdentityContract public marketAuthority;
 
     constructor(IdentityContract _marketAuthority) public {
         if(_marketAuthority == IdentityContract(0)) {
@@ -36,6 +36,8 @@ contract IdentityContract {
         } else {
             marketAuthority = _marketAuthority;
         }
+        
+        owner = msg.sender;
     }
     
     // Modifiers ERC-725

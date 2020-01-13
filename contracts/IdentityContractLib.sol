@@ -32,11 +32,11 @@ library IdentityContractLib {
     uint256 constant public ECDSA_SCHEME = 1;
     
     function addClaim(mapping (bytes32 => Claim) storage claims, mapping (uint256 => bytes32[]) storage topics2ClaimIds, mapping (bytes => bool) storage burnedSignatures, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (bytes32 claimRequestId) {
-        ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(_topic);
         require(keccak256(_signature) != keccak256(new bytes(32))); // Just to be safe. (See existence check below.)
         
         // Make sure that claim is correct if the topic is in the relevant range.
-        if(_topic > 10000 && _topic < 11000) {
+        if(_topic >= 10000 && _topic <= 11000) {
+            ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(_topic);
             require(ClaimVerifier.validateClaim(marketAuthority, claimType, _topic, _scheme, _issuer, _signature, _data));
         }
         
