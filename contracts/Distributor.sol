@@ -3,8 +3,9 @@ import "./IdentityContract.sol";
 import "./IdentityContractFactory.sol";
 import "./EnergyToken.sol";
 
-// Todo: SafeMath
 contract Distributor {
+    using SafeMath for uint256;
+    
     IdentityContractFactory public identityContractFactory;
     IdentityContract public marketAuthority;
     EnergyToken public energyToken;
@@ -32,7 +33,7 @@ contract Distributor {
             uint256 absoluteForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             uint256 generatedEnergy = energyToken.balanceOf(address(this), certificateTokenId);
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer/totalForwards)*generatedEnergy), additionalData);
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer.div(totalForwards)).mul(generatedEnergy)), additionalData);
             return;
         }
         
@@ -40,7 +41,7 @@ contract Distributor {
             uint256 generationBasedForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             uint256 generatedEnergy = energyToken.balanceOf(address(this), certificateTokenId);
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, (generationBasedForwardsOfConsumer*generatedEnergy)/(100E18), additionalData);
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, (generationBasedForwardsOfConsumer.mul(generatedEnergy)).div(100E18), additionalData);
             return;
         }
         
@@ -50,7 +51,7 @@ contract Distributor {
             uint256 consumedEnergy = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             uint256 totalConsumedEnergy = energyToken.getConsumedEnergyOfBalancePeriod(balancePeriod);
             
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min((consumptionBasedForwards*consumedEnergy)/(100E18), ((consumptionBasedForwards*consumedEnergy)/(100E18))*generatedEnergy / totalConsumedEnergy), additionalData);
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min((consumptionBasedForwards.mul(consumedEnergy)).div(100E18), (((consumptionBasedForwards.mul(consumedEnergy)).div(100E18)).mul(generatedEnergy)).div(totalConsumedEnergy)), additionalData);
             return;
         }
         
