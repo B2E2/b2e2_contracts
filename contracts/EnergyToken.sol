@@ -65,6 +65,7 @@ contract EnergyToken is ERC1155 {
 
             // Grant the items to the caller
             balances[_id][to] = quantity.add(balances[_id][to]);
+            supply[_id] = supply[_id].add(balances[_id][to]);
 
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
@@ -94,6 +95,7 @@ contract EnergyToken is ERC1155 {
         __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, _distributor);
         uint256 value = 100E18;
         balances[__id][_distributor] = value;
+        supply[__id] = supply[__id].add(value);
         emit TransferSingle(msg.sender, address(0x0), _distributor, __id, value);
     }
     
