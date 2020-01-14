@@ -51,7 +51,10 @@ contract Distributor {
             uint256 consumedEnergy = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             uint256 totalConsumedEnergy = energyToken.getConsumedEnergyOfBalancePeriod(balancePeriod);
             
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min((consumptionBasedForwards.mul(consumedEnergy)).div(100E18), (((consumptionBasedForwards.mul(consumedEnergy)).div(100E18)).mul(generatedEnergy)).div(totalConsumedEnergy)), additionalData);
+            uint256 option1 = (consumptionBasedForwards.mul(consumedEnergy)).div(100E18);
+            uint256 option2 = (((consumptionBasedForwards.mul(consumedEnergy)).div(100E18)).mul(generatedEnergy)).div(totalConsumedEnergy);
+            
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min(option1, option2), additionalData);
             return;
         }
         
