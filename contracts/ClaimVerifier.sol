@@ -7,12 +7,12 @@ import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
 import "./../dependencies/dapp-bin/library/stringUtils.sol";
 
 library ClaimVerifier {
-    function verifyFirstLevelClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _firstLevelClaim) public view returns(bool) {
+    function verifyFirstLevelClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _firstLevelClaim) public view returns(uint256 __claimId) {
         // Make sure the given claim actually is a first-level claim.
         require(_firstLevelClaim == ClaimCommons.ClaimType.IsBalanceAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IsMeteringAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IdentityContractFactoryClaim || _firstLevelClaim == ClaimCommons.ClaimType.EnergyTokenContractClaim || _firstLevelClaim == ClaimCommons.ClaimType.MarketRulesClaim);
         
         uint256 topic = ClaimCommons.claimType2Topic(_firstLevelClaim);
-        bytes32[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
+        uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
             (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
@@ -25,17 +25,17 @@ library ClaimVerifier {
             
             bool correct = marketAuthority.verifySignature(cTopic, cScheme, cIssuer, cSignature, cData);
             if(correct)
-                return true;
+                return claimIds[i];
         }
         
-        return false;
+        return 0;
     }
     
-    function verifySecondLevelClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _secondLevelClaim) public view returns(bool) {
+    function verifySecondLevelClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _secondLevelClaim) public view returns(uint256 __claimId) {
         // Make sure the given claim actually is a second-level claim.
         require(_secondLevelClaim == ClaimCommons.ClaimType.MeteringClaim || _secondLevelClaim == ClaimCommons.ClaimType.BalanceClaim || _secondLevelClaim == ClaimCommons.ClaimType.ExistenceClaim || _secondLevelClaim == ClaimCommons.ClaimType.GenerationTypeClaim || _secondLevelClaim == ClaimCommons.ClaimType.LocationClaim || _secondLevelClaim == ClaimCommons.ClaimType.AcceptedDistributorContractsClaim);
         uint256 topic = ClaimCommons.claimType2Topic(_secondLevelClaim);
-        bytes32[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
+        uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
             (uint256 cTopic, uint256 cScheme, address cIssuer, bytes memory cSignature, bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
@@ -44,15 +44,16 @@ library ClaimVerifier {
                 continue;
                 
             bool correctAccordingToSecondLevelAuthority = IdentityContract(address(uint160(cIssuer))).verifySignature(cTopic, cScheme, cIssuer, cSignature, cData);
-            if(correctAccordingToSecondLevelAuthority && verifyFirstLevelClaim(marketAuthority, address(uint160(cIssuer)), ClaimCommons.getHigherLevelClaim(_secondLevelClaim))) {
-                return true;
+            __claimId = verifyFirstLevelClaim(marketAuthority, address(uint160(cIssuer)), ClaimCommons.getHigherLevelClaim(_secondLevelClaim));
+            if(correctAccordingToSecondLevelAuthority && __claimId != 0) {
+                return __claimId;
             }
         }
         
-        return false;
+        return 0;
     }
     
-    function verifyClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _claimType) public view returns(bool) {
+    function verifyClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _claimType) public view returns(uint256) {
         if(_claimType == ClaimCommons.ClaimType.IsBalanceAuthority || _claimType == ClaimCommons.ClaimType.IsMeteringAuthority || _claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || _claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || _claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || _claimType == ClaimCommons.ClaimType.MarketRulesClaim) {
             return verifyFirstLevelClaim(marketAuthority, _subject, _claimType);
         }
@@ -80,7 +81,7 @@ library ClaimVerifier {
         
         if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorContractsClaim) {
             bool correctAccordingToSecondLevelAuthority = IdentityContract(address(uint160(_issuer))).verifySignature(_topic, _scheme, _issuer, _signature, _data);
-            return correctAccordingToSecondLevelAuthority && verifyFirstLevelClaim(marketAuthority, address(uint160(_issuer)), ClaimCommons.getHigherLevelClaim(_claimType));
+            return correctAccordingToSecondLevelAuthority && (verifyFirstLevelClaim(marketAuthority, address(uint160(_issuer)), ClaimCommons.getHigherLevelClaim(_claimType)) != 0);
         }
         
         require(false);
@@ -93,7 +94,7 @@ library ClaimVerifier {
      */
     function checkHasClaimOfType(address payable _subject, ClaimCommons.ClaimType _claimType, bool requireNonExpired) public view returns (bool) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
-        bytes32[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
+        uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
             (uint256 cTopic, , , , bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);

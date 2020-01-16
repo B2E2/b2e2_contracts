@@ -10,9 +10,9 @@ contract IdentityContract {
     
     // Events ERC-735
     event ClaimRequested(uint256 indexed claimRequestId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimAdded(bytes32 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimRemoved(bytes32 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimChanged(bytes32 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     
     // Constants ERC-735
     bytes constant public ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
@@ -23,8 +23,8 @@ contract IdentityContract {
     mapping (bytes32 => bytes) public data;
     
     // Attributes ERC-735
-    mapping (bytes32 => IdentityContractLib.Claim) claims;
-    mapping (uint256 => bytes32[]) topics2ClaimIds;
+    mapping (uint256 => IdentityContractLib.Claim) claims;
+    mapping (uint256 => uint256[]) topics2ClaimIds;
     mapping (bytes => bool) burnedSignatures;
 
     // Other attributes
@@ -85,7 +85,7 @@ contract IdentityContract {
     }
     
     // Functions ERC-735
-    function getClaim(bytes32 _claimId) public view returns(uint256 __topic, uint256 __scheme, address __issuer, bytes memory __signature, bytes memory __data, string memory __uri) {
+    function getClaim(uint256 _claimId) public view returns(uint256 __topic, uint256 __scheme, address __issuer, bytes memory __signature, bytes memory __data, string memory __uri) {
         __topic = claims[_claimId].topic;
         __scheme = claims[_claimId].scheme;
         __issuer = claims[_claimId].issuer;
@@ -94,15 +94,15 @@ contract IdentityContract {
         __uri = claims[_claimId].uri;
     }
     
-    function getClaimIdsByTopic(uint256 _topic) public view returns(bytes32[] memory claimIds) {
+    function getClaimIdsByTopic(uint256 _topic) public view returns(uint256[] memory claimIds) {
         return topics2ClaimIds[_topic];
     }
     
-    function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (bytes32 claimRequestId) {
+    function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
         return IdentityContractLib.addClaim(claims, topics2ClaimIds, burnedSignatures, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
-    function removeClaim(bytes32 _claimId) public returns (bool success) {
+    function removeClaim(uint256 _claimId) public returns (bool success) {
         require(msg.sender == owner || msg.sender == claims[_claimId].issuer);
         
         // Emit event and store burned signature before deleting to save gas for copy.

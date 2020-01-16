@@ -47,11 +47,11 @@ contract EnergyToken is ERC1155 {
         
         // msg.sender needs to be allowed to mint.
         require(msg.sender == identityContractAddress);
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim));
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim));
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.GenerationTypeClaim));
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.LocationClaim));
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim));
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim) != 0);
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim) != 0);
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.GenerationTypeClaim) != 0);
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.LocationClaim) != 0);
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim) != 0);
         
         // balancePeriod must not be in the past.
         require(balancePeriod >= Commons.getBalancePeriod());
@@ -83,14 +83,14 @@ contract EnergyToken is ERC1155 {
     }
     
     modifier onlyMeteringAuthorities {
-        require(ClaimVerifier.verifyFirstLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority));
+        require(ClaimVerifier.verifyFirstLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0);
         _;
     }
     
     modifier onlyGenerationPlants {
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim));
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim));
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim));
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim) != 0);
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim) != 0);
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim) != 0);
         _;
     }
     

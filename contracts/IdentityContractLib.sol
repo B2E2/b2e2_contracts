@@ -13,9 +13,9 @@ library IdentityContractLib {
     
     // Events ERC-735
     event ClaimRequested(uint256 indexed claimRequestId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimAdded(bytes32 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimRemoved(bytes32 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimChanged(bytes32 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     
     // Structs ERC-735
     struct Claim {
@@ -31,7 +31,7 @@ library IdentityContractLib {
     bytes constant public ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
     uint256 constant public ECDSA_SCHEME = 1;
     
-    function addClaim(mapping (bytes32 => Claim) storage claims, mapping (uint256 => bytes32[]) storage topics2ClaimIds, mapping (bytes => bool) storage burnedSignatures, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (bytes32 claimRequestId) {
+    function addClaim(mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (bytes => bool) storage burnedSignatures, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
         require(keccak256(_signature) != keccak256(new bytes(32))); // Just to be safe. (See existence check below.)
         
         // Make sure that claim is correct if the topic is in the relevant range.
@@ -47,7 +47,7 @@ library IdentityContractLib {
              mstore(add(preimageIssuer, 20), _issuer)
              mstore(add(preimageTopic, 32), _topic)
         }
-        claimRequestId = keccak256(abi.encodePacked(preimageIssuer, preimageTopic));
+        claimRequestId = uint256(keccak256(abi.encodePacked(preimageIssuer, preimageTopic)));
         
         // Emit and modify before adding to save gas.
         if(keccak256(claims[claimRequestId].signature) != keccak256(new bytes(32))) { // Claim existence check since signature cannot be 0.
