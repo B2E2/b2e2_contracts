@@ -43,13 +43,15 @@ contract EnergyToken is ERC1155 {
     function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public returns(uint256 __id) {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address identityContractAddress) = getTokenIdConstituents(_id);
-        require(tokenKind == TokenKind.AbsoluteForward);
+        require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward);
         
         // msg.sender needs to be allowed to mint.
         require(msg.sender == identityContractAddress);
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim));
         require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim));
         require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.GenerationTypeClaim));
         require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.LocationClaim));
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim));
         
         // balancePeriod must not be in the past.
         require(balancePeriod >= Commons.getBalancePeriod());
@@ -87,7 +89,8 @@ contract EnergyToken is ERC1155 {
     
     modifier onlyGenerationPlants {
         require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim));
-        // Todo: Don't only check ExistenceClaim but also whether it's a generation plant (as opposed to being a consumption plant).
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim));
+        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim));
         _;
     }
     
@@ -256,12 +259,16 @@ contract EnergyToken is ERC1155 {
     }
     
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
+        checkClaimsForTransfer(address(uint160(_from)), address(uint160(_to)), _id, _value);
         consumeReceptionApproval(_id, _to, _from, _value);
         ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
     }
     
     function safeBatchTransferFrom(address _from, address _to, uint256[] memory _ids, uint256[] memory _values, bytes memory _data) public {
+        address payable fromPayable = address(uint160(_from));
+        address payable toPayable = address(uint160(_to));
         for (uint256 i = 0; i < _ids.length; ++i) {
+            checkClaimsForTransfer(fromPayable, toPayable, _ids[i], _values[i]);
             consumeReceptionApproval(_ids[i], _to, _from, _values[i]);
         }
         ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
