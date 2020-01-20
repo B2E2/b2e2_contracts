@@ -49,12 +49,27 @@ contract('Tests', function(accounts) {
   });
 
   it("accepts any claims outside of relevant range.", async function() {
-	await idcs[0].addClaim(7, 11, "0x0000000000000000000000000000000000000013", "0x17192329", "0x31374143", "example.com");
+	await idcs[2].addClaim(1, 11, "0x0000000000000000000000000000000000000013", "0x17192329", "0x31374143", "example.com");
+	await idcs[2].addClaim(2, 11, accounts[2], "0x17192328", "0x31374142", "example.com");
   });
 
   it("does not accept arbitrary claims inside relevant range.", async function() {
 	await truffleAssert.reverts(idcs[0].addClaim(10500, 11, "0x0000000000000000000000000000000000000013", "0x17192329", "0x31374143", "example.com"));
 	await truffleAssert.reverts(idcs[0].addClaim(11000, 11, "0x0000000000000000000000000000000000000013", "0x17192329", "0x31374143", "example.com"));
 	await truffleAssert.reverts(idcs[0].addClaim(10000, 11, "0x0000000000000000000000000000000000000013", "0x17192329", "0x31374143", "example.com"));
+  });
+
+  it("accepts removal of claims only by owner and issuer.", async function() {
+	let claimId1 = await idcs[2].getClaimIdsByTopic(1);
+	let claimId2 = await idcs[2].getClaimIdsByTopic(2);
+
+	await truffleAssert.reverts(idcs[2].removeClaim(claimId1[0]));
+	await truffleAssert.reverts(idcs[2].removeClaim(claimId2[0]));
+
+	// By owner.
+	await idcs[2].removeClaim(claimId1[0], {from: accounts[7]});
+
+	// By issuer.
+	await idcs[2].removeClaim(claimId2[0], {from: accounts[2]});
   });
 })
