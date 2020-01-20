@@ -42,16 +42,24 @@ contract EnergyToken is ERC1155 {
 
     function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public returns(uint256 __id) {
         // Token needs to be mintable.
-        (TokenKind tokenKind, uint64 balancePeriod, address identityContractAddress) = getTokenIdConstituents(_id);
-        require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward);
+        (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
+        require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward || tokenKind == TokenKind.Certificate);
         
         // msg.sender needs to be allowed to mint.
-        require(msg.sender == identityContractAddress);
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim) != 0);
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim) != 0);
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.GenerationTypeClaim) != 0);
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.LocationClaim) != 0);
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim) != 0);
+        if(tokenKind == TokenKind.Certificate) {
+            require(identityContractFactory.isRegisteredIdentityContract(msg.sender));
+            require(ClaimVerifier.getClaimOfType(msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority, true) != 0);
+        } else {
+            require(msg.sender == generationPlant);
+        }
+        
+        require(identityContractFactory.isRegisteredIdentityContract(generationPlant));
+        address payable generationPlantP = address(uint160(generationPlant));
+        require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.BalanceClaim, true) != 0);
+        require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.ExistenceClaim, true) != 0);
+        require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim, true) != 0);
+        require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.LocationClaim, true) != 0);
+        require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.MeteringClaim, true) != 0);
         
         // balancePeriod must not be in the past.
         require(balancePeriod >= Commons.getBalancePeriod());
