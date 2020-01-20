@@ -112,6 +112,22 @@ contract IdentityContract {
         
         delete claims[_claimId];
         return true;
+        
+        // TODO: Alles untendrunter nach Debugging Löschbefehl des Verzeichnisses vor diesen schreiben.
+        // TODO: Seiteneffekt prüfen.
+        uint256[] storage array = topics2ClaimIds[claim.topic];
+        uint32 positionInArray = 0;
+        while(_claimId != array[positionInArray]) {
+            positionInArray++;
+        }
+        
+        for(uint32 i = positionInArray; i < array.length - 1; i++) {
+            array[i] = array[i+1];
+        }
+        
+        array.length = array.length - 1;
+        
+        return true;
     }
     
     function claimAttributes2SigningFormat(address _subject, uint256 _topic, bytes memory _data) public pure returns (bytes32 __claimInSigningFormat) {
