@@ -245,7 +245,7 @@ contract EnergyToken is ERC1155 {
      */
     function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id, uint256 _value) public view {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
-        if(tokenKind == TokenKind.AbsoluteForward) {
+        if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
             require(identityContractFactory.isRegisteredIdentityContract(_from));
             require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.BalanceClaim, true) != 0);
             require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.ExistenceClaim, true) != 0);
@@ -264,7 +264,10 @@ contract EnergyToken is ERC1155 {
             return;
         }
         
-        // TODO: Checks for other types of transfer
+        if(tokenKind == TokenKind.Certificate) {
+            return;
+        }
+        
         require(false);
     }
     
