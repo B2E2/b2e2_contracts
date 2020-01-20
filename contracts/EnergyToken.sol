@@ -246,16 +246,33 @@ contract EnergyToken is ERC1155 {
     function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id, uint256 _value) public view {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward) {
-            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.BalanceClaim, true);
-            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.ExistenceClaim, true);
-            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.GenerationTypeClaim, true);
-            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.LocationClaim, true);
-            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.MeteringClaim, true);
+            require(identityContractFactory.isRegisteredIdentityContract(_from));
+            require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.BalanceClaim, true) != 0);
+            require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.ExistenceClaim, true) != 0);
+            require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.GenerationTypeClaim, true) != 0);
+            require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.LocationClaim, true) != 0);
+            require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.MeteringClaim, true) != 0);
             
-            ClaimVerifier.checkHasClaimOfType(_from, ClaimCommons.ClaimType.AcceptedDistributorContractsClaim, true);
+            require(identityContractFactory.isRegisteredIdentityContract(_to));
+            uint256 balanceClaimId = ClaimVerifier.getClaimOfType(_to, ClaimCommons.ClaimType.BalanceClaim, true);
+            (, , address balanceAuthority, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             
-            // TODO: check whether address of absolute distributor is accepted by balancer of producer
+            require(identityContractFactory.isRegisteredIdentityContract(balanceAuthority));
+            string memory addressHexString = addressToHexString(_to);
+            require(ClaimVerifier.getClaimOfTypeWithMatchingField(address(uint160(balanceAuthority)), ClaimCommons.ClaimType.AcceptedDistributorContractsClaim, "address", addressHexString, true) != 0);
+
+            return;
         }
+        
+        // TODO: Checks for other types of transfer
+        require(false);
+    }
+    
+    function addressToHexString(address x) internal pure returns (string memory) {
+        bytes memory b = new bytes(20);
+        for (uint i = 0; i < 20; i++)
+            b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
+        return string(b);
     }
     
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
