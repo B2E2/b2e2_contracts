@@ -23,9 +23,9 @@ contract Distributor {
 
         // Claim check
         require(identityContractFactory.isRegisteredIdentityContract(_consumptionPlantAddress));
-        require(ClaimVerifier.checkHasClaimOfType(_consumptionPlantAddress, ClaimCommons.ClaimType.BalanceClaim, true));
-        require(ClaimVerifier.checkHasClaimOfType(_consumptionPlantAddress, ClaimCommons.ClaimType.ExistenceClaim, true));
-        require(ClaimVerifier.checkHasClaimOfType(_consumptionPlantAddress, ClaimCommons.ClaimType.MeteringClaim, true));
+        require(ClaimVerifier.getClaimOfType(_consumptionPlantAddress, ClaimCommons.ClaimType.BalanceClaim, true) != 0);
+        require(ClaimVerifier.getClaimOfType(_consumptionPlantAddress, ClaimCommons.ClaimType.ExistenceClaim, true) != 0);
+        require(ClaimVerifier.getClaimOfType(_consumptionPlantAddress, ClaimCommons.ClaimType.MeteringClaim, true) != 0);
         
         // Distribution
         if(tokenKind == EnergyToken.TokenKind.AbsoluteForward) {
