@@ -41,12 +41,8 @@ library IdentityContractLib {
         }
         
         // TODO: Addition or concatenation?
-        bytes memory preimageIssuer;
-        bytes memory preimageTopic;
-        assembly {
-             mstore(add(preimageIssuer, 20), _issuer)
-             mstore(add(preimageTopic, 32), _topic)
-        }
+        bytes memory preimageIssuer = abi.encodePacked(_issuer);
+        bytes memory preimageTopic = abi.encodePacked(_topic);
         claimRequestId = uint256(keccak256(abi.encodePacked(preimageIssuer, preimageTopic)));
         
         // Emit and modify before adding to save gas.

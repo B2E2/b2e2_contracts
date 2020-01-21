@@ -71,5 +71,28 @@ contract('Tests', function(accounts) {
 
 	// By issuer.
 	await idcs[2].removeClaim(claimId2[0], {from: accounts[2]});
+
+	// Check whether claims have actually been removed.
+	// First check the helper entries.
+	let newClaimId1 = await idcs[2].getClaimIdsByTopic(1);
+	let newClaimId2 = await idcs[2].getClaimIdsByTopic(1);
+	assert.equal(newClaimId1.length, 0);
+	assert.equal(newClaimId2.length, 0);
+
+	// Then check the actual claim entries.
+	let claim1 = await idcs[2].getClaim(claimId1[0]);
+	assert.equal(claim1.__topic, 0);
+	assert.equal(claim1.__scheme, 0);
+	assert.equal(claim1.__issuer, 0);
+	assert.equal(claim1.__signature, null);
+	assert.equal(claim1.__data, null);
+	assert.equal(claim1.__uri, '');
+	let claim2 = await idcs[2].getClaim(claimId2[0]);
+	assert.equal(claim2.__topic, 0);
+	assert.equal(claim2.__scheme, 0);
+	assert.equal(claim2.__issuer, 0);
+	assert.equal(claim2.__signature, null);
+	assert.equal(claim2.__data, null);
+	assert.equal(claim2.__uri, '');
   });
 })

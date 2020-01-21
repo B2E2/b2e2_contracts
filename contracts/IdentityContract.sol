@@ -106,23 +106,27 @@ contract IdentityContract {
         require(msg.sender == owner || msg.sender == claims[_claimId].issuer);
         
         // Emit event and store burned signature before deleting to save gas for copy.
-        IdentityContractLib.Claim memory claim = claims[_claimId];
+        IdentityContractLib.Claim storage claim = claims[_claimId];
         emit ClaimRemoved(_claimId, claim.topic, claim.scheme, claim.issuer, claim.signature, claim.data, claim.uri);
         burnedSignatures[claim.signature] = true; // Make sure that this same claim cannot be added again.
 
         // Delete entries of helper directories.
-        uint256[] storage array = topics2ClaimIds[claim.topic];
+        uint256[] memory arrayMem = topics2ClaimIds[claim.topic];
+        topics2ClaimIds[claim.topic].length = 0;
+        topics2ClaimIds[claim.topic].length = arrayMem.length - 1;
+        uint256[] memory arrayStor = topics2ClaimIds[claim.topic];
         uint32 positionInArray = 0;
-        while(_claimId != array[positionInArray]) {
+        while(_claimId != arrayMem[positionInArray]) {
             positionInArray++;
         }
         
-        for(uint32 i = positionInArray; i < array.length - 1; i++) {
-            array[i] = array[i+1];
+        for(uint32 i = 0; i < positionInArray; i++) {
+            arrayStor[i] = arrayMem[i];
         }
-        require(array.length > 0);
-        return true;
-        array.length = array.length - 1;
+        
+        for(uint32 i = positionInArray; i < arrayMem.length - 1; i++) {
+            arrayStor[i] = arrayMem[i+1];
+        }
         
         // Delete the actual directory entry.
         claim.topic = 0;
