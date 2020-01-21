@@ -109,12 +109,8 @@ contract IdentityContract {
         IdentityContractLib.Claim memory claim = claims[_claimId];
         emit ClaimRemoved(_claimId, claim.topic, claim.scheme, claim.issuer, claim.signature, claim.data, claim.uri);
         burnedSignatures[claim.signature] = true; // Make sure that this same claim cannot be added again.
-        
-        delete claims[_claimId];
-        return true;
-        
-        // TODO: Alles untendrunter nach Debugging Löschbefehl des Verzeichnisses vor diesen schreiben.
-        // TODO: Seiteneffekt prüfen.
+
+        // Delete entries of helper directories.
         uint256[] storage array = topics2ClaimIds[claim.topic];
         uint32 positionInArray = 0;
         while(_claimId != array[positionInArray]) {
@@ -124,8 +120,17 @@ contract IdentityContract {
         for(uint32 i = positionInArray; i < array.length - 1; i++) {
             array[i] = array[i+1];
         }
-        
+        require(array.length > 0);
+        return true;
         array.length = array.length - 1;
+        
+        // Delete the actual directory entry.
+        claim.topic = 0;
+        claim.scheme = 0;
+        claim.issuer = address(0);
+        claim.signature = "";
+        claim.data = "";
+        claim.uri = "";
         
         return true;
     }
