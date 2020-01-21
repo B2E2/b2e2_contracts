@@ -102,6 +102,7 @@ contract IdentityContract {
         return IdentityContractLib.addClaim(claims, topics2ClaimIds, burnedSignatures, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
+    // TODO: Move to library.
     function removeClaim(uint256 _claimId) public returns (bool success) {
         require(msg.sender == owner || msg.sender == claims[_claimId].issuer);
         
@@ -116,9 +117,12 @@ contract IdentityContract {
         topics2ClaimIds[claim.topic].length = arrayMem.length - 1;
         uint256[] memory arrayStor = topics2ClaimIds[claim.topic];
         uint32 positionInArray = 0;
-        while(_claimId != arrayMem[positionInArray]) {
+        while(positionInArray < arrayMem.length && _claimId != arrayMem[positionInArray]) {
             positionInArray++;
         }
+        
+        // Make sure that the element has actually been found.
+        require(positionInArray < arrayMem.length);
         
         for(uint32 i = 0; i < positionInArray; i++) {
             arrayStor[i] = arrayMem[i];
