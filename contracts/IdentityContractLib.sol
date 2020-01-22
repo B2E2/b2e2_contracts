@@ -64,4 +64,39 @@ library IdentityContractLib {
         
         claims[claimRequestId] = Claim(_topic, _scheme, _issuer, _signature, _data, _uri);
     }
+    
+    function removeClaim(address owner, mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (bytes => bool) storage burnedSignatures, uint256 _claimId) public returns (bool success) {
+        require(msg.sender == owner || msg.sender == claims[_claimId].issuer);
+        
+        // Emit event and store burned signature before deleting to save gas for copy.
+        IdentityContractLib.Claim storage claim = claims[_claimId];
+        emit ClaimRemoved(_claimId, claim.topic, claim.scheme, claim.issuer, claim.signature, claim.data, claim.uri);
+        burnedSignatures[claim.signature] = true; // Make sure that this same claim cannot be added again.
+
+        // Delete entries of helper directories.
+        // Locate entry in topics2ClaimIds.
+        uint32 positionInArray = 0;
+        while(positionInArray < topics2ClaimIds[claim.topic].length && _claimId != topics2ClaimIds[claim.topic][positionInArray]) {
+            positionInArray++;
+        }
+        
+        // Make sure that the element has actually been found.
+        require(positionInArray < topics2ClaimIds[claim.topic].length);
+        
+        // Swap the last element in for it.
+        topics2ClaimIds[claim.topic][positionInArray] = topics2ClaimIds[claim.topic][topics2ClaimIds[claim.topic].length - 1];
+        
+        // Delete the (now duplicated) last entry by shrinking the array.
+        topics2ClaimIds[claim.topic].length--;
+        
+        // Delete the actual directory entry.
+        claim.topic = 0;
+        claim.scheme = 0;
+        claim.issuer = address(0);
+        claim.signature = "";
+        claim.data = "";
+        claim.uri = "";
+        
+        return true;
+    }
 }
