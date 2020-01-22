@@ -111,25 +111,20 @@ contract IdentityContract {
         burnedSignatures[claim.signature] = true; // Make sure that this same claim cannot be added again.
 
         // Delete entries of helper directories.
-        uint256[] memory arrayMem = topics2ClaimIds[claim.topic];
-        topics2ClaimIds[claim.topic].length = 0;
-        topics2ClaimIds[claim.topic].length = arrayMem.length - 1;
-        uint256[] memory arrayStor = topics2ClaimIds[claim.topic];
+        // Locate entry in topics2ClaimIds.
         uint32 positionInArray = 0;
-        while(positionInArray < arrayMem.length && _claimId != arrayMem[positionInArray]) {
+        while(positionInArray < topics2ClaimIds[claim.topic].length && _claimId != topics2ClaimIds[claim.topic][positionInArray]) {
             positionInArray++;
         }
         
         // Make sure that the element has actually been found.
-        require(positionInArray < arrayMem.length);
+        require(positionInArray < topics2ClaimIds[claim.topic].length);
         
-        for(uint32 i = 0; i < positionInArray; i++) {
-            arrayStor[i] = arrayMem[i];
-        }
+        // Swap the last element in for it.
+        topics2ClaimIds[claim.topic][positionInArray] = topics2ClaimIds[claim.topic][topics2ClaimIds[claim.topic].length - 1];
         
-        for(uint32 i = positionInArray; i < arrayMem.length - 1; i++) {
-            arrayStor[i] = arrayMem[i+1];
-        }
+        // Delete the (now duplicated) last entry by shrinking the array.
+        topics2ClaimIds[claim.topic].length--;
         
         // Delete the actual directory entry.
         claim.topic = 0;
