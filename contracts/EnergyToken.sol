@@ -19,7 +19,7 @@ contract EnergyToken is ERC1155 {
     
     struct PerishableValue {
         uint256 value;
-        uint64 expiryBlock;
+        uint64 expiryDate;
     }
     
     struct EnergyDocumentation {
@@ -224,11 +224,11 @@ contract EnergyToken is ERC1155 {
         return true;
     }
     
-    function approveBatchSender(address _sender, uint64 _expiryBlock, uint256[] memory _values, uint256[] memory _ids) public {
+    function approveBatchSender(address _sender, uint64 _expiryDate, uint256[] memory _values, uint256[] memory _ids) public {
         require(_values.length < 4294967295);
         
         for(uint32 i; i < _values.length; i++) {
-            receptionApproval[_ids[i]][msg.sender][_sender] = PerishableValue(_values[i], _expiryBlock);
+            receptionApproval[_ids[i]][msg.sender][_sender] = PerishableValue(_values[i], _expiryDate);
         }
     }
     
@@ -240,7 +240,7 @@ contract EnergyToken is ERC1155 {
         if(tokenKind == TokenKind.Certificate)
             return;
         
-        require(receptionApproval[_id][_to][_from].expiryBlock <= block.number);
+        require(receptionApproval[_id][_to][_from].expiryDate <= now);
         require(receptionApproval[_id][_to][_from].value >= _value);
         
         receptionApproval[_id][_to][_from].value = receptionApproval[_id][_to][_from].value.sub(_value);
