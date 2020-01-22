@@ -1,6 +1,10 @@
 'use strict';
 
 const truffleAssert = require('truffle-assertions');
+const eutil = require('ethereumjs-util');
+const tx = require('ethereumjs-tx').Transaction;
+
+const account9Sk = "0x3ab4a89924e6c55fa7628f0bee3a985478faf409f80f963c944efdf1c35f467a";
 
 let accounts;
 
@@ -94,5 +98,57 @@ contract('Tests', function(accounts) {
 	assert.equal(claim2.__signature, null);
 	assert.equal(claim2.__data, null);
 	assert.equal(claim2.__uri, '');
+  });
+
+  it("verifies signatures correctly.", async function() {
+	let subject = idcs[2].address;
+	
+	let topic = 42;
+	let scheme = 1;
+	let issuer = accounts[9];
+	let data = web3.utils.toHex("{ q: 'ab', answer: '42' }");
+
+	let hash = web3.utils.soliditySha3(subject, topic, data);
+	console.log('Hash');
+	console.log(hash);
+
+//	let signature = await web3.eth.sign(hash, issuer); // Somehow v is 1
+	let signature3 = await eutil.ecsign(new Buffer(hash.slice(2), "hex"), new Buffer(account9Sk.slice(2), "hex"));
+	let signature4 = '0x' + signature3.r.toString('hex') + signature3.s.toString('hex') + signature3.v.toString(16);
+
+	let resultCorrectSignatureGiven = await idcs[2].verifySignature(topic, scheme, issuer, signature4, data);
+	let resultWrongIssuerGiven = await idcs[2].verifySignature(topic, scheme, accounts[8], signature4, data);
+	let resultWrongSignatureGiven = await idcs[2].verifySignature(topic, scheme, issuer, "0xab" + signature4.slice(4), data);
+	let resultWrongTopicGiven = await idcs[2].verifySignature(43, scheme, issuer, signature4, data);
+	let resultWrongSchemeGiven = await idcs[2].verifySignature(topic, 500, issuer, signature4, data);
+
+	assert.isTrue(resultCorrectSignatureGiven);
+	assert.isFalse(resultWrongIssuerGiven);
+	assert.isFalse(resultWrongSignatureGiven);
+	assert.isFalse(resultWrongTopicGiven);
+	assert.isFalse(resultWrongSchemeGiven);
+  });
+
+  it("can execute functions.", async function() {
+	// IDC 0 is currently owned by IDC 1.
+	// IDC 1 is owned by account 6.
+	// Account 6 wants to change the owner of IDC 0 to account 2.
+	// For this, account 6 needs to tell IDC 1 to tell IDC 0 to change its owner.
+	
+	// Prepare function call.
+	let data = IdentityContract.methods.changeOwner(accounts[2]).encodeABI();
+	let gasPrice = 100E9;
+	let gasLimit = 300E3;
+	console.log('(((((((((((((((((((((((((((((((');
+	console.log(data);
+	
+	let transactionInformation = { gasPrice: '0x'+gasPrice.toString(16),
+								   gasLimit: '0x'+gasLimit.toString(16),
+								   data: data,
+								   from: idcs[1].address,
+								 };
+	console.log(transactionInformation);
+	let transaction = new tx(transactionInformation);
+	await idcs[0].changeOwner(accounts[2], {from: idcs[1].address});	
   });
 })

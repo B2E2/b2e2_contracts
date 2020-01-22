@@ -15,7 +15,6 @@ contract IdentityContract {
     event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     
     // Constants ERC-735
-    bytes constant public ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
     uint256 constant public ECDSA_SCHEME = 1;
     
     // Attributes ERC-725
@@ -148,7 +147,7 @@ contract IdentityContract {
     }
     
     function getSignerAddress(bytes32 _claimInSigningFormat, bytes memory _signature) public pure returns (address __signer) {
-        return ECDSA.recover(keccak256(abi.encodePacked(ETH_PREFIX, _claimInSigningFormat)), _signature);
+        return ECDSA.recover(_claimInSigningFormat, _signature);
     }
     
     function verifySignature(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data) public view returns (bool __valid) {
@@ -157,8 +156,6 @@ contract IdentityContract {
             return false;
         
         address signer = getSignerAddress(claimAttributes2SigningFormat(address(this), _topic, _data), _signature);
-        return signer == address(this) && _issuer == address(this);
+        return signer == _issuer;
     }
-    
-
 }

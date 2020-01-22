@@ -4,6 +4,8 @@
   "description": "",
   "main": "truffle-config.js",
   "dependencies": {
+    "ethereumjs-tx": "^2.1.2",
+    "ethereumjs-util": "^6.2.0",
     "openzeppelin-solidity": "^2.4.0",
     "remixd": "^0.1.8-alpha.14",
     "truffle-assertions": "^0.9.2",
