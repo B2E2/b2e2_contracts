@@ -32,7 +32,7 @@ contract EnergyToken is ERC1155 {
     IdentityContract marketAuthority;
     IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
-    mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations; // TODO: powerConsumption or energyConsumption? Document talks about energy and uses units of energy but uses the word "power".
+    mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations;
     mapping(uint64 => uint256) energyConsumpedInBalancePeriod;
 
     constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {

@@ -158,7 +158,7 @@ library ClaimVerifier {
     
     function getStringField(string memory fieldName, bytes memory data) public pure returns(string memory) {
         string memory json = string(data);
-        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 5); // TODO: Check whether this works as there is a comment on SE saying it doesn't: https://ethereum.stackexchange.com/questions/2519/how-to-convert-a-bytes32-to-string#comment78462_59335
+        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 5);
         assert(exitCode == 0);
         
         for(uint i = 1; i <= numberOfTokensFound; i += 2) { // TODO: check value of numberOfTokensFound. Maybe subtract something here.
