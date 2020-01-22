@@ -2,9 +2,10 @@
 
 const truffleAssert = require('truffle-assertions');
 const eutil = require('ethereumjs-util');
-const tx = require('ethereumjs-tx').Transaction;
+const fs = require('fs');
+const IdentityContractFromJson = JSON.parse(fs.readFileSync('./build/contracts/IdentityContract.json', 'utf8'));
 
-const account9Sk = "0x3ab4a89924e6c55fa7628f0bee3a985478faf409f80f963c944efdf1c35f467a";
+const account9Sk = "0x6d4abd38bb755a443631f7e216a02a2dcc39907d6df5766a05b76179544266b6";
 
 let accounts;
 
@@ -136,19 +137,13 @@ contract('Tests', function(accounts) {
 	// For this, account 6 needs to tell IDC 1 to tell IDC 0 to change its owner.
 	
 	// Prepare function call.
-	let data = IdentityContract.methods.changeOwner(accounts[2]).encodeABI();
+	let web3Idc = new web3.eth.Contract(IdentityContractFromJson.abi);
+	let data = web3Idc.methods.changeOwner(accounts[2]).encodeABI();
 	let gasPrice = 100E9;
 	let gasLimit = 300E3;
-	console.log('(((((((((((((((((((((((((((((((');
-	console.log(data);
 	
-	let transactionInformation = { gasPrice: '0x'+gasPrice.toString(16),
-								   gasLimit: '0x'+gasLimit.toString(16),
-								   data: data,
-								   from: idcs[1].address,
-								 };
-	console.log(transactionInformation);
-	let transaction = new tx(transactionInformation);
-	await idcs[0].changeOwner(accounts[2], {from: idcs[1].address});	
+	assert.equal(await idcs[0].owner(), idcs[1].address);
+	await idcs[1].execute(0, idcs[0].address, 0, data, {from: accounts[6]});
+	assert.equal(await idcs[0].owner(), accounts[2]);
   });
 })
