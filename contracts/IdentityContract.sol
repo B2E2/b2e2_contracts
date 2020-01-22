@@ -105,20 +105,7 @@ contract IdentityContract {
         return IdentityContractLib.removeClaim(owner, claims, topics2ClaimIds, burnedSignatures, _claimId);
     }
     
-    function claimAttributes2SigningFormat(address _subject, uint256 _topic, bytes memory _data) public pure returns (bytes32 __claimInSigningFormat) {
-        return keccak256(abi.encodePacked(_subject, _topic, _data));
-    }
-    
-    function getSignerAddress(bytes32 _claimInSigningFormat, bytes memory _signature) public pure returns (address __signer) {
-        return ECDSA.recover(_claimInSigningFormat, _signature);
-    }
-    
     function verifySignature(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data) public view returns (bool __valid) {
-         // Check for currently unsupported signature.
-        if(_scheme != ECDSA_SCHEME)
-            return false;
-        
-        address signer = getSignerAddress(claimAttributes2SigningFormat(address(this), _topic, _data), _signature);
-        return signer == _issuer;
+         return IdentityContractLib.verifySignature(_topic, _scheme, _issuer, _signature, _data);
     }
 }
