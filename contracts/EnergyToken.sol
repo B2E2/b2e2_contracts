@@ -102,17 +102,12 @@ contract EnergyToken is ERC1155 {
         _;
     }
     
-    function createForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants returns(uint256 __id) {
+    function createGenerationBasedForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants returns(uint256 __id) {
         __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, _distributor);
         uint256 value = 100E18;
         balances[__id][_distributor] = value;
         supply[__id] = supply[__id].add(value);
         emit TransferSingle(msg.sender, address(0x0), _distributor, __id, value);
-    }
-    
-    function createCertificates(address _generationPlant, uint64 _balancePeriod) public view onlyMeteringAuthorities returns(uint256 __id) {
-        __id = getTokenId(TokenKind.Certificate, _balancePeriod, _generationPlant);
-        // Nothing to do. All balances of this token remain zero.
     }
 
     function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, string memory _signature, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
