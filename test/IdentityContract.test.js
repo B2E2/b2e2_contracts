@@ -101,13 +101,13 @@ contract('Tests', function(accounts) {
 	assert.equal(claim2.__uri, '');
   });
 
-  it("verifies signatures correctly.", async function() {
+  async function signatureVerificationTest(message) {
 	let subject = idcs[2].address;
 	
 	let topic = 42;
 	let scheme = 1;
 	let issuer = accounts[9];
-	let data = web3.utils.toHex("{ q: 'ab', answer: '42' }");
+	let data = web3.utils.toHex(message);
 
 	let hash = web3.utils.soliditySha3(subject, topic, data);
 	console.log('Hash');
@@ -128,6 +128,14 @@ contract('Tests', function(accounts) {
 	assert.isFalse(resultWrongSignatureGiven);
 	assert.isFalse(resultWrongTopicGiven);
 	assert.isFalse(resultWrongSchemeGiven);
+  }
+
+  it("verifies signatures of short messages correctly.", async function() {
+	signatureVerificationTest("{ q: 'ab', answer: '42' }");
+  });
+
+  it("verifies signatures of long messages (> 32 B) correctly.", async function() {
+	signatureVerificationTest("{ question: 'What\'s the answer to the Ultimate Question of Life, the Universe, and Everything', answer: '42' }");
   });
 
   it("can execute functions.", async function() {
