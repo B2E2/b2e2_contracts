@@ -4,12 +4,14 @@ const truffleAssert = require('truffle-assertions');
 const eutil = require('ethereumjs-util');
 const fs = require('fs');
 const IdentityContractFromJson = JSON.parse(fs.readFileSync('./build/contracts/IdentityContract.json', 'utf8'));
+let web3Idc = new web3.eth.Contract(IdentityContractFromJson.abi);
 
 const account9Sk = "0x6d4abd38bb755a443631f7e216a02a2dcc39907d6df5766a05b76179544266b6";
 
 let accounts;
 
 var IdentityContract = artifacts.require("./IdentityContract.sol");
+var IdentityContractLib = artifacts.require("./IdentityContractLib.sol");
 var marketAuthority;
 var idcs = [];
 
@@ -145,7 +147,6 @@ contract('Tests', function(accounts) {
 	// For this, account 6 needs to tell IDC 1 to tell IDC 0 to change its owner.
 	
 	// Prepare function call.
-	let web3Idc = new web3.eth.Contract(IdentityContractFromJson.abi);
 	let data = web3Idc.methods.changeOwner(accounts[2]).encodeABI();
 	let gasPrice = 100E9;
 	let gasLimit = 300E3;
@@ -153,5 +154,21 @@ contract('Tests', function(accounts) {
 	assert.equal(await idcs[0].owner(), idcs[1].address);
 	await idcs[1].execute(0, idcs[0].address, 0, data, {from: accounts[6]});
 	assert.equal(await idcs[0].owner(), accounts[2]);
+  });
+
+  it("can create contracts via the execute function.", async function() {
+	let abi = JSON.parse(fs.readFileSync('./test/SimpleContractAbi.json', 'utf8'));
+	let bytecode = "0x608060405234801561001057600080fd5b50600560008190555060c3806100276000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80634f28bf0e146037578063827d09bb146053575b600080fd5b603d607e565b6040518082815260200191505060405180910390f35b607c60048036036020811015606757600080fd5b81019080803590602001909291905050506084565b005b60005481565b806000819055505056fea265627a7a72315820b4c08f9732318db3a55882fdf6d4dc75565d9e29e5df176d5c89c9f205b08ba064736f6c634300050c0032";
+	let deploymentResult = await idcs[1].execute(1, idcs[0].address, 0, bytecode, {from: accounts[6]});
+
+	// Make sure that the contract creation event has been emitted.
+	assert.equal(deploymentResult.logs[0].event, 'ContractCreated');
+
+	// Make sure that the contract instance actually exists on the blockchain and can be used.
+	let addressOfDeployedContract = deploymentResult.logs[0].args.contractAddress;
+	let deployedContract = new web3.eth.Contract(abi, addressOfDeployedContract);
+	assert.equal(await deployedContract.methods.field().call(), 5);
+	await deployedContract.methods.setField(27).send({from: accounts[0]});
+	assert.equal(await deployedContract.methods.field().call(), 27);
   });
 })
