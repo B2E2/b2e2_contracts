@@ -6,24 +6,15 @@ import "./ClaimCommons.sol";
 contract IdentityContractFactory {
     mapping (address => bool) identityContracts;
 
-    enum AuthorityType { BalanceAuthority, MeteringAuthority, PhysicalAssetAuthority }
-    enum PlantType { GenerationPlant, ConsumptionPlant }
     event IdentityContractCreation(address idcAddress, address owner);
 
-    address owner;
     IdentityContract marketAuthority;
     
     constructor(IdentityContract _marketAuthority) public {
-        owner = msg.sender;
         marketAuthority = _marketAuthority;
         
         // The market authority needs to be registered too.
         identityContracts[address(marketAuthority)] = true;
-    }
-    
-    modifier ownerOwnly {
-        require(owner == msg.sender);
-        _;
     }
     
     function createIdentityContract() public {
