@@ -16,6 +16,9 @@ contract IdentityContractFactory {
     constructor(IdentityContract _marketAuthority) public {
         owner = msg.sender;
         marketAuthority = _marketAuthority;
+        
+        // The market authority needs to be registered too.
+        identityContracts[address(marketAuthority)] = true;
     }
     
     modifier ownerOwnly {
@@ -25,6 +28,7 @@ contract IdentityContractFactory {
     
     function createIdentityContract() public {
         IdentityContract idc = new IdentityContract(marketAuthority);
+        idc.changeOwner(msg.sender);
 
         identityContracts[address(idc)] = true;
         emit IdentityContractCreation(address(idc), msg.sender);
