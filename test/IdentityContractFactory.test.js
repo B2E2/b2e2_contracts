@@ -10,7 +10,7 @@ var IdentityContractFactory = artifacts.require("./IdentityContractFactory.sol")
 var identityContractFactory;
 var marketAuthority;
 
-contract('Tests', function(accounts) {
+contract('IdentityContractFactory', function(accounts) {
 
   before(async function() {
 	accounts = await web3.eth.getAccounts();

@@ -3,7 +3,7 @@
 const truffleAssert = require('truffle-assertions');
 var Commons = artifacts.require("./Commons.sol");
 
-contract('Tests', function(accounts) {
+contract('Commons', function(accounts) {
   it("determines balance periods correctly.", async function() {
 	return Commons.deployed().then(async function(instance) {
 	  let timestamp_11_00_00 = 1579860000; // Friday, January 24, 2020 11:00:00 AM GMT+01:00

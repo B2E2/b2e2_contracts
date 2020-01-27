@@ -15,7 +15,7 @@ var IdentityContractLib = artifacts.require("./IdentityContractLib.sol");
 var marketAuthority;
 var idcs = [];
 
-contract('Tests', function(accounts) {
+contract('IdentityContract', function(accounts) {
 
   before(async function() {
 	accounts = await web3.eth.getAccounts();
