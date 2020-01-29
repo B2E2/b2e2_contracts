@@ -26,4 +26,5 @@ Copy private key 9 and change the definition of `account9Sk` at the top of `test
 
 Run the tests (in a different terminal instance):
 
+    truffle deploy # required for tests to run successfully
     truffle test
