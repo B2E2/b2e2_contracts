@@ -7,6 +7,9 @@ import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
 import "./../dependencies/dapp-bin/library/stringUtils.sol";
 
 library ClaimVerifier {
+    // Constants ERC-735
+    uint256 constant public ECDSA_SCHEME = 1;
+    
     function verifyFirstLevelClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _firstLevelClaim) public view returns(uint256 __claimId) {
         // Make sure the given claim actually is a first-level claim.
         require(_firstLevelClaim == ClaimCommons.ClaimType.IsBalanceAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IsMeteringAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IdentityContractFactoryClaim || _firstLevelClaim == ClaimCommons.ClaimType.EnergyTokenContractClaim || _firstLevelClaim == ClaimCommons.ClaimType.MarketRulesClaim);
@@ -23,7 +26,7 @@ library ClaimVerifier {
             if(cIssuer != address(marketAuthority))
                 continue;
             
-            bool correct = marketAuthority.verifySignature(cTopic, cScheme, cIssuer, cSignature, cData);
+            bool correct = verifySignature(marketAuthority.owner(), cTopic, cScheme, cIssuer, cSignature, cData);
             if(correct)
                 return claimIds[i];
         }
@@ -43,7 +46,7 @@ library ClaimVerifier {
             if(cTopic != topic)
                 continue;
                 
-            bool correctAccordingToSecondLevelAuthority = IdentityContract(address(uint160(cIssuer))).verifySignature(cTopic, cScheme, cIssuer, cSignature, cData);
+            bool correctAccordingToSecondLevelAuthority = verifySignature(IdentityContract(address(uint160(cIssuer))).owner(), cTopic, cScheme, cIssuer, cSignature, cData);
             __claimId = verifyFirstLevelClaim(marketAuthority, address(uint160(cIssuer)), ClaimCommons.getHigherLevelClaim(_secondLevelClaim));
             if(correctAccordingToSecondLevelAuthority && __claimId != 0) {
                 return __claimId;
@@ -75,12 +78,12 @@ library ClaimVerifier {
             return false;
         
         if(_claimType == ClaimCommons.ClaimType.IsBalanceAuthority || _claimType == ClaimCommons.ClaimType.IsMeteringAuthority || _claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || _claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || _claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || _claimType == ClaimCommons.ClaimType.MarketRulesClaim) {
-            bool correct = marketAuthority.verifySignature(_topic, _scheme, _issuer, _signature, _data);
+            bool correct = verifySignature(marketAuthority.owner(), _topic, _scheme, _issuer, _signature, _data);
             return correct;
         }
         
         if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorContractsClaim) {
-            bool correctAccordingToSecondLevelAuthority = IdentityContract(address(uint160(_issuer))).verifySignature(_topic, _scheme, _issuer, _signature, _data);
+            bool correctAccordingToSecondLevelAuthority = verifySignature(IdentityContract(address(uint160(_issuer))).owner(), _topic, _scheme, _issuer, _signature, _data);
             return correctAccordingToSecondLevelAuthority && (verifyFirstLevelClaim(marketAuthority, address(uint160(_issuer)), ClaimCommons.getHigherLevelClaim(_claimType)) != 0);
         }
         
@@ -175,5 +178,22 @@ library ClaimVerifier {
     
     function getExpiryDate(bytes memory data) public pure returns(uint64) {
         return getUint64Field("expiryDate", data);
+    }
+    
+    function claimAttributes2SigningFormat(address _subject, uint256 _topic, bytes memory _data) internal pure returns (bytes32 __claimInSigningFormat) {
+        return keccak256(abi.encodePacked(_subject, _topic, _data));
+    }
+    
+    function getSignerAddress(bytes32 _claimInSigningFormat, bytes memory _signature) internal pure returns (address __signer) {
+        return ECDSA.recover(_claimInSigningFormat, _signature);
+    }
+    
+    function verifySignature(address _subject, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data) public pure returns (bool __valid) {
+         // Check for currently unsupported signature.
+        if(_scheme != ECDSA_SCHEME)
+            return false;
+        
+        address signer = getSignerAddress(claimAttributes2SigningFormat(_subject, _topic, _data), _signature);
+        return signer == _issuer;
     }
 }

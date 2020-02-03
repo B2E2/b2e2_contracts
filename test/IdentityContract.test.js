@@ -14,10 +14,16 @@ var IdentityContract = artifacts.require("./IdentityContract.sol");
 var IdentityContractLib = artifacts.require("./IdentityContractLib.sol");
 var marketAuthority;
 var idcs = [];
+var ClaimVerifier = artifacts.require("./ClaimVerifier.sol");
+var claimVerifier;
 
 contract('IdentityContract', function(accounts) {
 
   before(async function() {
+	await ClaimVerifier.deployed().then(async function(instance) {
+	  claimVerifier = instance;
+	});
+	
 	accounts = await web3.eth.getAccounts();
 
     marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000", {from: accounts[9]});
@@ -119,11 +125,11 @@ contract('IdentityContract', function(accounts) {
 	let signature3 = await eutil.ecsign(new Buffer(hash.slice(2), "hex"), new Buffer(account9Sk.slice(2), "hex"));
 	let signature4 = '0x' + signature3.r.toString('hex') + signature3.s.toString('hex') + signature3.v.toString(16);
 
-	let resultCorrectSignatureGiven = await idcs[2].verifySignature(topic, scheme, issuer, signature4, data);
-	let resultWrongIssuerGiven = await idcs[2].verifySignature(topic, scheme, accounts[8], signature4, data);
-	let resultWrongSignatureGiven = await idcs[2].verifySignature(topic, scheme, issuer, "0xab" + signature4.slice(4), data);
-	let resultWrongTopicGiven = await idcs[2].verifySignature(43, scheme, issuer, signature4, data);
-	let resultWrongSchemeGiven = await idcs[2].verifySignature(topic, 500, issuer, signature4, data);
+	let resultCorrectSignatureGiven = await claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, signature4, data);
+	let resultWrongIssuerGiven = await claimVerifier.verifySignature(idcs[2].address, topic, scheme, accounts[8], signature4, data);
+	let resultWrongSignatureGiven = await claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, "0xab" + signature4.slice(4), data);
+	let resultWrongTopicGiven = await claimVerifier.verifySignature(idcs[2].address, 43, scheme, issuer, signature4, data);
+	let resultWrongSchemeGiven = await claimVerifier.verifySignature(idcs[2].address, topic, 500, issuer, signature4, data);
 
 	assert.isTrue(resultCorrectSignatureGiven);
 	assert.isFalse(resultWrongIssuerGiven);

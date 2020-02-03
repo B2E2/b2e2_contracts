@@ -104,8 +104,4 @@ contract IdentityContract {
     function removeClaim(uint256 _claimId) public returns (bool success) {
         return IdentityContractLib.removeClaim(owner, claims, topics2ClaimIds, burnedSignatures, _claimId);
     }
-    
-    function verifySignature(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data) public view returns (bool __valid) {
-         return IdentityContractLib.verifySignature(_topic, _scheme, _issuer, _signature, _data);
-    }
 }
