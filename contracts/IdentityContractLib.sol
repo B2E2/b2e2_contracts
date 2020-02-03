@@ -49,9 +49,8 @@ library IdentityContractLib {
         if(keccak256(claims[claimRequestId].signature) != keccak256(new bytes(32))) { // Claim existence check since signature cannot be 0.
             emit ClaimAdded(claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
             
-            uint256 prevTopicCardinality = topics2ClaimIds[_topic].length;
-            topics2ClaimIds[_topic].length = prevTopicCardinality + 1;
-            topics2ClaimIds[_topic][prevTopicCardinality] = claimRequestId;
+            topics2ClaimIds[_topic].length++;
+            topics2ClaimIds[_topic][topics2ClaimIds[_topic].length - 1] = claimRequestId;
         } else {
             // Make sure that only issuer or holder can change claims
             require(msg.sender == address(this) || msg.sender == _issuer);
