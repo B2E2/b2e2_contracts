@@ -26,7 +26,7 @@ library ClaimVerifier {
             if(cIssuer != address(marketAuthority))
                 continue;
             
-            bool correct = verifySignature(marketAuthority.owner(), cTopic, cScheme, cIssuer, cSignature, cData);
+            bool correct = verifySignature(_subject, cTopic, cScheme, cIssuer, cSignature, cData);
             if(correct)
                 return claimIds[i];
         }
