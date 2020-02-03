@@ -156,10 +156,10 @@ library ClaimVerifier {
     }
     
     function getUint64Field(string memory fieldName, bytes memory data) public pure returns(uint64) {
-        int expiryDateAsInt = JsmnSolLib.parseInt(getStringField(fieldName, data));
-        require(expiryDateAsInt >= 0);
-        require(expiryDateAsInt < 0x10000000000000000);
-        return uint64(expiryDateAsInt);
+        int fieldAsInt = JsmnSolLib.parseInt(getStringField(fieldName, data));
+        require(fieldAsInt >= 0);
+        require(fieldAsInt < 0x10000000000000000);
+        return uint64(fieldAsInt);
     }
     
     function getStringField(string memory fieldName, bytes memory data) public pure returns(string memory) {
