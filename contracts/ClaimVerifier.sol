@@ -73,17 +73,20 @@ library ClaimVerifier {
      * 
      * Use this method before adding claims to make sure that only valid claims are added.
      */
-    function validateClaim(IdentityContract marketAuthority, ClaimCommons.ClaimType _claimType, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data) public view returns(bool) {
+    function validateClaim(IdentityContract marketAuthority, ClaimCommons.ClaimType _claimType, address _subject, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data) public view returns(bool) {
         if(ClaimCommons.claimType2Topic(_claimType) != _topic)
             return false;
         
         if(_claimType == ClaimCommons.ClaimType.IsBalanceAuthority || _claimType == ClaimCommons.ClaimType.IsMeteringAuthority || _claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || _claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || _claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || _claimType == ClaimCommons.ClaimType.MarketRulesClaim) {
-            bool correct = verifySignature(marketAuthority.owner(), _topic, _scheme, _issuer, _signature, _data);
+            if(_issuer != address(marketAuthority))
+                return false;
+            
+            bool correct = verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
             return correct;
         }
         
         if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorContractsClaim) {
-            bool correctAccordingToSecondLevelAuthority = verifySignature(IdentityContract(address(uint160(_issuer))).owner(), _topic, _scheme, _issuer, _signature, _data);
+            bool correctAccordingToSecondLevelAuthority = verifySignature(_subject, _topic, _scheme, IdentityContract(address(uint160(_issuer))).owner(), _signature, _data);
             return correctAccordingToSecondLevelAuthority && (verifyFirstLevelClaim(marketAuthority, address(uint160(_issuer)), ClaimCommons.getHigherLevelClaim(_claimType)) != 0);
         }
         

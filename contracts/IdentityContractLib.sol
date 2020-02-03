@@ -37,7 +37,7 @@ library IdentityContractLib {
         // Make sure that claim is correct if the topic is in the relevant range.
         if(_topic >= 10000 && _topic <= 11000) {
             ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(_topic);
-            require(ClaimVerifier.validateClaim(marketAuthority, claimType, _topic, _scheme, _issuer, _signature, _data));
+            require(ClaimVerifier.validateClaim(marketAuthority, claimType, address(this), _topic, _scheme, _issuer, _signature, _data));
         }
         
         // TODO: Addition or concatenation?
