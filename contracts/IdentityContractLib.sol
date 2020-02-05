@@ -31,19 +31,18 @@ library IdentityContractLib {
     bytes constant public ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
     uint256 constant public ECDSA_SCHEME = 1;
     
-    function addClaim(mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (bytes => bool) storage burnedSignatures, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
-        require(keccak256(_signature) != keccak256(new bytes(32))); // Just to be safe. (See existence check below.)
-        
+    function addClaim(mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (uint256 => bool) storage burnedClaimIds, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
         // Make sure that claim is correct if the topic is in the relevant range.
         if(_topic >= 10000 && _topic <= 11000) {
             ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(_topic);
             require(ClaimVerifier.validateClaim(marketAuthority, claimType, address(this), _topic, _scheme, _issuer, _signature, _data));
         }
         
-        // TODO: Addition or concatenation?
-        bytes memory preimageIssuer = abi.encodePacked(_issuer);
-        bytes memory preimageTopic = abi.encodePacked(_topic);
-        claimRequestId = uint256(keccak256(abi.encodePacked(preimageIssuer, preimageTopic)));
+        claimRequestId = getClaimId(_issuer, _topic);
+        
+        // Check for burned claim IDs.
+        if(burnedClaimIds[claimRequestId])
+            require(false);
         
         // Emit and modify before adding to save gas.
         if(keccak256(claims[claimRequestId].signature) != keccak256(new bytes(32))) { // Claim existence check since signature cannot be 0.
@@ -55,22 +54,18 @@ library IdentityContractLib {
             // Make sure that only issuer or holder can change claims
             require(msg.sender == address(this) || msg.sender == _issuer);
             emit ClaimChanged(claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
-            
-            // Make sure that the old signature cannot be used again later. But do not burn the signature when adding the same claim as is currently in effect or when only changing the URI.
-            if(keccak256(claims[claimRequestId].signature) != keccak256(_signature))
-                burnedSignatures[_signature] = true;
         }
         
         claims[claimRequestId] = Claim(_topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
-    function removeClaim(address owner, mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (bytes => bool) storage burnedSignatures, uint256 _claimId) public returns (bool success) {
+    function removeClaim(address owner, mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (uint256 => bool) storage burnedClaimIds, uint256 _claimId) public returns (bool success) {
         require(msg.sender == owner || msg.sender == claims[_claimId].issuer);
         
         // Emit event and store burned signature before deleting to save gas for copy.
         IdentityContractLib.Claim storage claim = claims[_claimId];
         emit ClaimRemoved(_claimId, claim.topic, claim.scheme, claim.issuer, claim.signature, claim.data, claim.uri);
-        burnedSignatures[claim.signature] = true; // Make sure that this same claim cannot be added again.
+        burnedClaimIds[_claimId] = true; // Make sure that this same claim cannot be added again.
 
         // Delete entries of helper directories.
         // Locate entry in topics2ClaimIds.
@@ -97,5 +92,20 @@ library IdentityContractLib {
         claim.uri = "";
         
         return true;
+    }
+    
+    function burnClaimId(mapping (uint256 => bool) storage burnedClaimIds, uint256 _topic) public {
+        burnedClaimIds[getClaimId(msg.sender, _topic)] = true;
+    }
+    
+    function reinstateClaimId(mapping (uint256 => bool) storage burnedClaimIds, uint256 _topic) public {
+        burnedClaimIds[getClaimId(msg.sender, _topic)] = false;
+    }
+    
+    function getClaimId(address _issuer, uint256 _topic) internal pure returns (uint256 __claimRequestId) {
+        // TODO: Addition or concatenation?
+        bytes memory preimageIssuer = abi.encodePacked(_issuer);
+        bytes memory preimageTopic = abi.encodePacked(_topic);
+        return uint256(keccak256(abi.encodePacked(preimageIssuer, preimageTopic)));
     }
 }

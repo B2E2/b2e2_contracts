@@ -24,7 +24,7 @@ contract IdentityContract {
     // Attributes ERC-735
     mapping (uint256 => IdentityContractLib.Claim) claims;
     mapping (uint256 => uint256[]) topics2ClaimIds;
-    mapping (bytes => bool) burnedSignatures;
+    mapping (uint256 => bool) burnedClaimIds;
 
     // Other attributes
     IdentityContract public marketAuthority;
@@ -98,11 +98,19 @@ contract IdentityContract {
     }
     
     function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
-        return IdentityContractLib.addClaim(claims, topics2ClaimIds, burnedSignatures, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
+        return IdentityContractLib.addClaim(claims, topics2ClaimIds, burnedClaimIds, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
     function removeClaim(uint256 _claimId) public returns (bool success) {
-        return IdentityContractLib.removeClaim(owner, claims, topics2ClaimIds, burnedSignatures, _claimId);
+        return IdentityContractLib.removeClaim(owner, claims, topics2ClaimIds, burnedClaimIds, _claimId);
+    }
+
+    function burnClaimId(uint256 _topic) public {
+        IdentityContractLib.burnClaimId(burnedClaimIds, _topic);
+    }
+    
+    function reinstateClaimId(uint256 _topic) public {
+        IdentityContractLib.reinstateClaimId(burnedClaimIds, _topic);
     }
     
     // Funtions ERC-1155
