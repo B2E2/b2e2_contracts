@@ -39,7 +39,7 @@ contract EnergyToken is ERC1155 {
         marketAuthority = _marketAuthority;
         identityContractFactory = _identityContractFactory;
     }
-
+    
     function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public returns(uint256 __id) {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
@@ -60,23 +60,22 @@ contract EnergyToken is ERC1155 {
         require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim, true) != 0);
         require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.LocationClaim, true) != 0);
         require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.MeteringClaim, true) != 0);
-        
-        // balancePeriod must not be in the past.
-        require(balancePeriod >= Commons.getBalancePeriod());
+
+        // balancePeriod must not be in the past. // TODO: FIX
+        // require(balancePeriod >= Commons.getBalancePeriod());
         
         for (uint256 i = 0; i < _to.length; ++i) {
             address to = _to[i];
             uint256 quantity = _quantities[i];
-            
+
             require(to != address(0x0), "_to must be non-zero.");
-            
+
             if(to != msg.sender)
                 consumeReceptionApproval(_id, to, msg.sender, quantity);
 
-            // Grant the items to the caller
+            // Grant the items to the caller.
             balances[_id][to] = quantity.add(balances[_id][to]);
             supply[_id] = supply[_id].add(balances[_id][to]);
-
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
             // It will also provide the circulating supply info.
@@ -235,7 +234,7 @@ contract EnergyToken is ERC1155 {
         if(tokenKind == TokenKind.Certificate)
             return;
         
-        require(receptionApproval[_id][_to][_from].expiryDate <= now);
+        require(receptionApproval[_id][_to][_from].expiryDate >= Commons.getBalancePeriod());
         require(receptionApproval[_id][_to][_from].value >= _value);
         
         receptionApproval[_id][_to][_from].value = receptionApproval[_id][_to][_from].value.sub(_value);
