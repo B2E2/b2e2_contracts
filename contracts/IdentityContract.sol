@@ -104,4 +104,15 @@ contract IdentityContract {
     function removeClaim(uint256 _claimId) public returns (bool success) {
         return IdentityContractLib.removeClaim(owner, claims, topics2ClaimIds, burnedSignatures, _claimId);
     }
+    
+    // Funtions ERC-1155
+    function onERC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data) external returns(bytes4) {
+        // Accept all ERC-1155 transfers.
+        return 0xf23a6e61;
+    }
+    
+    function onERC1155BatchReceived(address _operator, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external returns(bytes4) {
+        // Accept all ERC-1155 transfers.
+        return 0xbc197c81;
+    }
 }
