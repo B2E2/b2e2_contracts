@@ -68,6 +68,21 @@ library ClaimVerifier {
         require(false);
     }
     
+    function verifyClaim(IdentityContract marketAuthority, address payable _subject, uint256 _claimId) public view returns(bool __valid) {
+        (uint256 topic, uint256 scheme, address issuer, bytes memory signature, bytes memory data, ) = IdentityContract(_subject).getClaim(_claimId);
+        ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(topic);
+        
+        if(claimType == ClaimCommons.ClaimType.IsBalanceAuthority || claimType == ClaimCommons.ClaimType.IsMeteringAuthority || claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || claimType == ClaimCommons.ClaimType.MarketRulesClaim) {
+            return verifySignature(_subject, topic, scheme, issuer, signature, data);
+        }
+        
+        if(claimType == ClaimCommons.ClaimType.MeteringClaim || claimType == ClaimCommons.ClaimType.BalanceClaim || claimType == ClaimCommons.ClaimType.ExistenceClaim || claimType == ClaimCommons.ClaimType.GenerationTypeClaim || claimType == ClaimCommons.ClaimType.LocationClaim || claimType == ClaimCommons.ClaimType.AcceptedDistributorContractsClaim) {
+            return verifySignature(_subject, topic, scheme, issuer, signature, data) && (verifyFirstLevelClaim(marketAuthority, address(uint160(issuer)), ClaimCommons.getHigherLevelClaim(claimType)) != 0);
+        }
+        
+        require(false);
+    }
+    
     /**
      * This method does not verify that the given claim exists in the contract. It merely checks whether it is a valid claim.
      * 
@@ -94,11 +109,11 @@ library ClaimVerifier {
     }
     
     /**
-     * Returns the claim ID of a claim of the stated type. This method  only makes sure that the claim exists. It does not verify the claim.
+     * Returns the claim ID of a claim of the stated type. Depening on the arguments, this method  only makes sure that the claim exists. It does not verify the claim unless verify is set.
      * 
      * Iff requireNonExpired is set, only claims that have not yet expired are considered.
      */
-    function getClaimOfType(address payable _subject, ClaimCommons.ClaimType _claimType, bool requireNonExpired) public view returns (uint256 __claimId) {
+    function getClaimOfType(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _claimType, bool requireNonExpired, bool verify) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
 
@@ -109,6 +124,9 @@ library ClaimVerifier {
                 continue;
             
             if(requireNonExpired && getExpiryDate(cData) < Commons.getBalancePeriod())
+                continue;
+            
+            if(verify && !verifyClaim(marketAuthority, _subject, claimIds[i]))
                 continue;
             
             return claimIds[i];

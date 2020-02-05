@@ -48,18 +48,18 @@ contract EnergyToken is ERC1155 {
         // msg.sender needs to be allowed to mint.
         if(tokenKind == TokenKind.Certificate) {
             require(identityContractFactory.isRegisteredIdentityContract(msg.sender));
-            require(ClaimVerifier.getClaimOfType(msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority, true) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority, true, true) != 0);
         } else {
             require(msg.sender == generationPlant);
         }
         
         require(identityContractFactory.isRegisteredIdentityContract(generationPlant));
         address payable generationPlantP = address(uint160(generationPlant));
-        require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.BalanceClaim, true) != 0);
-        require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.ExistenceClaim, true) != 0);
-        require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim, true) != 0);
-        require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.LocationClaim, true) != 0);
-        require(ClaimVerifier.getClaimOfType(generationPlantP, ClaimCommons.ClaimType.MeteringClaim, true) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.BalanceClaim, true, true) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.ExistenceClaim, true, true) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim, true, true) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.LocationClaim, true, true) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.MeteringClaim, true, true) != 0);
 
         // balancePeriod must not be in the past. // TODO: FIX
         // require(balancePeriod >= Commons.getBalancePeriod());
@@ -249,14 +249,14 @@ contract EnergyToken is ERC1155 {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
             require(identityContractFactory.isRegisteredIdentityContract(_from));
-            require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.BalanceClaim, true) != 0);
-            require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.ExistenceClaim, true) != 0);
-            require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.GenerationTypeClaim, true) != 0);
-            require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.LocationClaim, true) != 0);
-            require(ClaimVerifier.getClaimOfType(_from, ClaimCommons.ClaimType.MeteringClaim, true) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.BalanceClaim, true, true) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.ExistenceClaim, true, true) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.GenerationTypeClaim, true, true) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.LocationClaim, true, true) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.MeteringClaim, true, true) != 0);
             
             require(identityContractFactory.isRegisteredIdentityContract(_to));
-            uint256 balanceClaimId = ClaimVerifier.getClaimOfType(_to, ClaimCommons.ClaimType.BalanceClaim, true);
+            uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim, true, true);
             (, , address balanceAuthority, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             
             require(identityContractFactory.isRegisteredIdentityContract(balanceAuthority));
