@@ -101,14 +101,14 @@ library ClaimVerifier {
     function getClaimOfType(address payable _subject, ClaimCommons.ClaimType _claimType, bool requireNonExpired) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
-        
+
         for(uint64 i = 0; i < claimIds.length; i++) {
             (uint256 cTopic, , , , bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;
-                
-            if(requireNonExpired && getExpiryDate(cData) > Commons.getBalancePeriod())
+            
+            if(requireNonExpired && getExpiryDate(cData) < Commons.getBalancePeriod())
                 continue;
             
             return claimIds[i];
@@ -144,7 +144,7 @@ library ClaimVerifier {
         (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 5);
         assert(exitCode == 0);
         
-        for(uint i = 1; i <= numberOfTokensFound; i += 2) { // TODO: check value of numberOfTokensFound. Maybe subtract something here.
+        for(uint i = 1; i < numberOfTokensFound; i += 2) {
             JsmnSolLib.Token memory keyToken = tokens[i];
             JsmnSolLib.Token memory valueToken = tokens[i+1];
 
@@ -164,10 +164,10 @@ library ClaimVerifier {
     
     function getStringField(string memory fieldName, bytes memory data) public pure returns(string memory) {
         string memory json = string(data);
-        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 5);
+        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 20);
+
         assert(exitCode == 0);
-        
-        for(uint i = 1; i <= numberOfTokensFound; i += 2) { // TODO: check value of numberOfTokensFound. Maybe subtract something here.
+        for(uint i = 1; i < numberOfTokensFound; i += 2) {
             JsmnSolLib.Token memory keyToken = tokens[i];
             JsmnSolLib.Token memory valueToken = tokens[i+1];
             
