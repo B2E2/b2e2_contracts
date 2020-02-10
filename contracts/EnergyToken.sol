@@ -254,7 +254,7 @@ contract EnergyToken is ERC1155 {
      * 
      * Checking a claim only makes sure that it exists. It does not verify the claim. However, this method makes sure that only non-expired claims are considered.
      */
-    function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id, uint256 _value) public view {
+    function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id, uint256 _value) internal view {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
             require(identityContractFactory.isRegisteredIdentityContract(_from));
