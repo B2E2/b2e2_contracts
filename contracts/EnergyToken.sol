@@ -105,7 +105,7 @@ contract EnergyToken is ERC1155 {
     }
     
     function createGenerationBasedForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants returns(uint256 __id) {
-        __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, _distributor);
+        __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, msg.sender);
         
         require(!createdGenerationBasedForwards[__id]);
         createdGenerationBasedForwards[__id] = true;
