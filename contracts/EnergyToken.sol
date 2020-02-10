@@ -121,6 +121,9 @@ contract EnergyToken is ERC1155 {
             return false;
         }
         
+        // In case this is merely a correction, remove the previously stated value from the total.
+        energyConsumpedInBalancePeriod[_balancePeriod] = energyConsumpedInBalancePeriod[_balancePeriod].sub(energyDocumentations[_plant][_balancePeriod].value);
+        
         EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, false);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
