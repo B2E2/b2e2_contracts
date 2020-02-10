@@ -10,7 +10,7 @@ library ClaimVerifier {
     // Constants ERC-735
     uint256 constant public ECDSA_SCHEME = 1;
     
-    function verifyFirstLevelClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _firstLevelClaim) public view returns(uint256 __claimId) {
+    function verifyFirstLevelClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _firstLevelClaim) internal view returns(uint256 __claimId) {
         // Make sure the given claim actually is a first-level claim.
         require(_firstLevelClaim == ClaimCommons.ClaimType.IsBalanceAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IsMeteringAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || _firstLevelClaim == ClaimCommons.ClaimType.IdentityContractFactoryClaim || _firstLevelClaim == ClaimCommons.ClaimType.EnergyTokenContractClaim || _firstLevelClaim == ClaimCommons.ClaimType.MarketRulesClaim);
         
@@ -34,7 +34,7 @@ library ClaimVerifier {
         return 0;
     }
     
-    function verifySecondLevelClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _secondLevelClaim) public view returns(uint256 __claimId) {
+    function verifySecondLevelClaim(IdentityContract marketAuthority, address payable _subject, ClaimCommons.ClaimType _secondLevelClaim) internal view returns(uint256 __claimId) {
         // Make sure the given claim actually is a second-level claim.
         require(_secondLevelClaim == ClaimCommons.ClaimType.MeteringClaim || _secondLevelClaim == ClaimCommons.ClaimType.BalanceClaim || _secondLevelClaim == ClaimCommons.ClaimType.ExistenceClaim || _secondLevelClaim == ClaimCommons.ClaimType.GenerationTypeClaim || _secondLevelClaim == ClaimCommons.ClaimType.LocationClaim || _secondLevelClaim == ClaimCommons.ClaimType.AcceptedDistributorContractsClaim);
         uint256 topic = ClaimCommons.claimType2Topic(_secondLevelClaim);

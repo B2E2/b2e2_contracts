@@ -93,14 +93,14 @@ contract EnergyToken is ERC1155 {
     }
     
     modifier onlyMeteringAuthorities {
-        require(ClaimVerifier.verifyFirstLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority, true, true) != 0);
         _;
     }
     
     modifier onlyGenerationPlants {
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim) != 0);
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim) != 0);
-        require(ClaimVerifier.verifySecondLevelClaim(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim, true, true) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim, true, true) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim, true, true) != 0);
         _;
     }
     
