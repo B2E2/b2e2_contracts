@@ -17,6 +17,9 @@ contract EnergyToken is ERC1155 {
     // id => (receiver => (sender => PerishableValue))
     mapping (uint256 => mapping(address => mapping(address => PerishableValue))) receptionApproval;
     
+    // id => whetherCreated
+    mapping (uint256 => bool) createdGenerationBasedForwards;
+    
     struct PerishableValue {
         uint256 value;
         uint64 expiryDate;
@@ -103,6 +106,10 @@ contract EnergyToken is ERC1155 {
     
     function createGenerationBasedForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants returns(uint256 __id) {
         __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, _distributor);
+        
+        require(!createdGenerationBasedForwards[__id]);
+        createdGenerationBasedForwards[__id] = true;
+        
         uint256 value = 100E18;
         balances[__id][_distributor] = value;
         supply[__id] = supply[__id].add(value);
