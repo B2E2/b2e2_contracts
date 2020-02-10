@@ -27,7 +27,6 @@ contract EnergyToken is ERC1155 {
     
     struct EnergyDocumentation {
         uint256 value;
-        string signature;
         bool corrected;
         bool generated;
     }
@@ -116,13 +115,13 @@ contract EnergyToken is ERC1155 {
         emit TransferSingle(msg.sender, address(0x0), _distributor, __id, value);
     }
 
-    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, string memory _signature, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
             return false;
         }
         
-        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _signature, _corrected, false);
+        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, false);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
         energyConsumpedInBalancePeriod[_balancePeriod] = energyConsumpedInBalancePeriod[_balancePeriod].add(_value);
@@ -130,13 +129,13 @@ contract EnergyToken is ERC1155 {
         return true;
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, string memory _signature, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
             return false;
         }
         
-        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _signature, _corrected, true);
+        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, true);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
         return true;
