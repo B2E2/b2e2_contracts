@@ -135,7 +135,7 @@ library ClaimVerifier {
         return 0;
     }
     
-    function getClaimOfTypeWithMatchingField(address payable _subject, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, bool requireNonExpired) public view returns (uint256 __claimId) {
+    function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, bool requireNonExpired, bool verify) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
@@ -146,6 +146,9 @@ library ClaimVerifier {
                 continue;
             
             if(requireNonExpired && getExpiryDate(cData) > Commons.getBalancePeriod())
+                continue;
+            
+            if(verify && !verifyClaim(marketAuthority, _subject, claimIds[i]))
                 continue;
             
             // Separate function call to avoid stack too deep error.
