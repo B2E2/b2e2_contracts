@@ -118,7 +118,7 @@ contract EnergyToken is ERC1155 {
     function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
-            return false;
+            assert(false);
         }
         
         // In case this is merely a correction, remove the previously stated value from the total.
@@ -135,7 +135,7 @@ contract EnergyToken is ERC1155 {
     function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
-            return false;
+            assert(false);
         }
         
         EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, true);
