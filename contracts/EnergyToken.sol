@@ -254,7 +254,7 @@ contract EnergyToken is ERC1155 {
      * 
      * Checking a claim only makes sure that it exists. It does not verify the claim. However, this method makes sure that only non-expired claims are considered.
      */
-    function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id, uint256 _value) internal view {
+    function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id) internal view {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
             require(identityContractFactory.isRegisteredIdentityContract(_from));
@@ -290,7 +290,7 @@ contract EnergyToken is ERC1155 {
     }
     
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
-        checkClaimsForTransfer(address(uint160(_from)), address(uint160(_to)), _id, _value);
+        checkClaimsForTransfer(address(uint160(_from)), address(uint160(_to)), _id);
         consumeReceptionApproval(_id, _to, _from, _value);
         ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
     }
@@ -299,7 +299,7 @@ contract EnergyToken is ERC1155 {
         address payable fromPayable = address(uint160(_from));
         address payable toPayable = address(uint160(_to));
         for (uint256 i = 0; i < _ids.length; ++i) {
-            checkClaimsForTransfer(fromPayable, toPayable, _ids[i], _values[i]);
+            checkClaimsForTransfer(fromPayable, toPayable, _ids[i]);
             consumeReceptionApproval(_ids[i], _to, _from, _values[i]);
         }
         ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
