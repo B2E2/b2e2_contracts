@@ -87,7 +87,7 @@ library ClaimVerifier {
             if(cTopic != topic)
                 continue;
             
-            if(requireNonExpired && getExpiryDate(cData) > Commons.getBalancePeriod())
+            if(requireNonExpired && getExpiryDate(cData) < Commons.getBalancePeriod())
                 continue;
             
             if(verify && !verifyClaim(marketAuthority, _subject, claimIds[i]))
