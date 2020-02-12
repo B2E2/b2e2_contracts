@@ -104,7 +104,7 @@ library ClaimVerifier {
     
     function doesMatchingFieldExist(string memory _fieldName, string memory _fieldContent, bytes memory data) internal pure returns(bool) {
         string memory json = string(data);
-        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 5);
+        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 20);
         assert(exitCode == 0);
         
         for(uint i = 1; i < numberOfTokensFound; i += 2) {
