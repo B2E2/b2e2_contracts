@@ -282,11 +282,26 @@ contract EnergyToken is ERC1155 {
         require(false);
     }
     
-    function addressToHexString(address x) internal pure returns (string memory) {
-        bytes memory b = new bytes(20);
-        for (uint i = 0; i < 20; i++)
-            b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
-        return string(b);
+    function addressToHexString(address a) internal pure returns (string memory) {
+        bytes memory h = new bytes(40);
+        uint160 asInt = uint160(a);
+        uint160 mask = 0x00ff00000000000000000000000000000000000000;
+        for (uint i = 0; i < 20; i++) {
+            uint8 currentByte = uint8(asInt >> (160-(i+1)*8));
+            
+            h[2*i] = numberToHexDigit(currentByte / 16);
+            h[2*i + 1] = numberToHexDigit(currentByte % 16);
+        }
+        
+        return string(h);
+    }
+    
+    function numberToHexDigit(uint8 number) internal pure returns (bytes1) {
+        if(number < 10) {
+            return bytes1(number + 48);
+        } else {
+            return bytes1(number - 10 + 97);
+        }
     }
     
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
