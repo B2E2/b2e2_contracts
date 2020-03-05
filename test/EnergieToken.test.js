@@ -122,6 +122,11 @@ contract('EnergyToken', function(accounts) {
 	// IDC 0 is the generation plant.
 	// IDC 2 is the token recipient.
 
+	// Claims necessary for receiving but held by balance authority.
+	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
+	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
+	await addClaim(balanceAuthority, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
+
 	// Give claims to IDC 0.
 	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
 	let data = web3.utils.toHex(json);
@@ -131,6 +136,9 @@ contract('EnergyToken', function(accounts) {
 	await addClaim(idcs[0], 10080, physicalAssetAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[0], 10040, meteringAuthority.options.address, data, "", account8Sk);
 
+	// Give claims to IDC 2.
+	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
+	
 	// Get token ID.
 	let receivedTokenId = await energyToken.getTokenId(2, 1579860001, idcs[0].options.address);
 
@@ -235,4 +243,79 @@ contract('EnergyToken', function(accounts) {
 	assert.equal(await energyToken.getConsumedEnergyOfBalancePeriod(balancePeriod), 12335);
   });
 
+  it("can transfer tokens.", async function() {
+	// IDC 2 has 17 tokens (17E18 elementary units) from the mint operation.
+
+	// Get token ID.
+	let receivedTokenId = await energyToken.getTokenId(2, 1579860001, idcs[0].options.address);
+
+	// Pad token ID to full length.
+	let receivedTokenIdPadded = receivedTokenId.toString('hex');
+	while(receivedTokenIdPadded.length < 64) {
+	  receivedTokenIdPadded = "0" + receivedTokenIdPadded;
+	}
+	let id = "0x" + receivedTokenIdPadded;
+
+	// Grant reception approval for sending 12 tokens from IDC 2 to IDC 1.
+	let abiApproveSenderCall = energyTokenWeb3.methods.approveSender(idcs[2].options.address, "1895220001", "12000000000000000000", id).encodeABI();
+	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiApproveSenderCall).send({from: accounts[6], gas: 7000000});
+
+	// Before the transfer can happen, some claims need to be issued and published.
+	// Claims necessary for sending.
+	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let data = web3.utils.toHex(json);
+	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[2], 10070, physicalAssetAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[2], 10080, physicalAssetAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[2], 10040, meteringAuthority.options.address, data, "", account8Sk);
+
+	// Claims necessary for receiving.
+	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
+
+	// Claims necessary for receiving but held by balance authority.
+	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
+	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
+	await addClaim(balanceAuthority, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
+
+	// Send 5 tokens.
+	let abiTransfer = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "5000000000000000000", "0x00").encodeABI();
+	await idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[7], gas: 7000000});
+
+	// Partial transfers are permitted. So the the same transfer again has to work too.
+	await idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[7], gas: 7000000});
+
+	// 3*5 > 12. So the third transfer needs to fail.
+	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[7], gas: 7000000}));
+
+	// Make sure that the balances are correct.
+	let balance1 = await energyToken.balanceOf(idcs[1].options.address, id);
+	let balance2 = await energyToken.balanceOf(idcs[2].options.address, id);
+	assert.equal(balance1, 10E18);
+	assert.equal(balance2, 7E18);
+
+	// Upper edge case.
+	let abiTransferUpper = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "2000000000000000001", "0x00").encodeABI();
+	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferUpper).send({from: accounts[7], gas: 7000000}));
+
+	// Lower edge case.
+	let abiTransferLower = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "2000000000000000000", "0x00").encodeABI();
+	await idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferLower).send({from: accounts[7], gas: 7000000});
+
+	// Check updated balances.
+	balance1 = await energyToken.balanceOf(idcs[1].options.address, id);
+	balance2 = await energyToken.balanceOf(idcs[2].options.address, id);
+	assert.equal(balance1, 12E18);
+	assert.equal(balance2, 5E18);
+
+	// Self-transfers are not allowed without reception approval.
+	let abiTransferSelf1 = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[2].options.address, id, "5000000000000000000", "0x00").encodeABI();
+	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferSelf1).send({from: accounts[7], gas: 7000000}));
+
+	// Transferring tokens to a receiver without the necessary claims needs to fail.
+	let abiApproveSenderCallIdc0 = energyTokenWeb3.methods.approveSender(idcs[2].options.address, "1895220001", "1000000000000000000", id).encodeABI();
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiApproveSenderCallIdc0).send({from: accounts[5], gas: 7000000});
+	let abiTransferToIdc0 = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[0].options.address, id, "1000000000000000000", "0x00").encodeABI();
+	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferToIdc0).send({from: accounts[7], gas: 7000000}));
+  });
 })
