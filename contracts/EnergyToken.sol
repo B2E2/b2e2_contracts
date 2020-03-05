@@ -72,8 +72,10 @@ contract EnergyToken is ERC1155 {
 
             require(to != address(0x0), "_to must be non-zero.");
 
-            if(to != msg.sender)
+            if(to != msg.sender) {
+                checkClaimsForTransfer(address(uint160(msg.sender)), address(uint160(to)), _id);
                 consumeReceptionApproval(_id, to, msg.sender, quantity);
+            }
 
             // Grant the items to the caller.
             balances[_id][to] = quantity.add(balances[_id][to]);
@@ -254,7 +256,7 @@ contract EnergyToken is ERC1155 {
      * 
      * Checking a claim only makes sure that it exists. It does not verify the claim. However, this method makes sure that only non-expired claims are considered.
      */
-    function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id) internal view {
+    function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id) internal  {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
             require(identityContractFactory.isRegisteredIdentityContract(_from));
@@ -268,8 +270,11 @@ contract EnergyToken is ERC1155 {
             uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim, true, true);
             (, , address balanceAuthority, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             
+            balanceAuthorityFound = balanceAuthority;
             require(identityContractFactory.isRegisteredIdentityContract(balanceAuthority));
             string memory addressHexString = addressToHexString(_to);
+            claimAddress = addressToHexString(_to);
+            // return; // todo: remove
             require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, balanceAuthority, ClaimCommons.ClaimType.AcceptedDistributorContractsClaim, "address", addressHexString, true, true) != 0);
 
             return;
@@ -281,6 +286,9 @@ contract EnergyToken is ERC1155 {
         
         require(false);
     }
+    
+    address public balanceAuthorityFound;
+    string public claimAddress;
     
     function addressToHexString(address a) internal pure returns (string memory) {
         bytes memory h = new bytes(40);
