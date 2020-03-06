@@ -20,7 +20,6 @@ contract Distributor is IdentityContract {
         bytes memory additionalData;
 
         // Claim check
-        require(identityContractFactory.isRegisteredIdentityContract(_consumptionPlantAddress));
         require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.BalanceClaim, true, true) != 0);
         require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.ExistenceClaim, true, true) != 0);
         require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.MeteringClaim, true, true) != 0);
