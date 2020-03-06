@@ -56,11 +56,11 @@ contract EnergyToken is ERC1155 {
         }
         
         address payable generationPlantP = address(uint160(generationPlant));
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.BalanceClaim) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.ExistenceClaim) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.LocationClaim) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.MeteringClaim) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.BalanceClaim, balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.ExistenceClaim, balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim, balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.LocationClaim, balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.MeteringClaim, balancePeriod) != 0);
         
         for (uint256 i = 0; i < _to.length; ++i) {
             address to = _to[i];
@@ -94,14 +94,14 @@ contract EnergyToken is ERC1155 {
         _;
     }
     
-    modifier onlyGenerationPlants {
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim) != 0);
+    modifier onlyGenerationPlants(uint64 _balancePeriod) {
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0);
         _;
     }
     
-    function createGenerationBasedForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants returns(uint256 __id) {
+    function createGenerationBasedForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants(_balancePeriod) returns(uint256 __id) {
         require(_balancePeriod > Commons.getBalancePeriod());
         
         __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, msg.sender);
@@ -254,7 +254,7 @@ contract EnergyToken is ERC1155 {
      * 
      * Checking a claim only makes sure that it exists. It does not verify the claim. However, this method makes sure that only non-expired claims are considered.
      */
-    function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id) internal  {
+    function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id) internal view {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
             require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.BalanceClaim) != 0);
