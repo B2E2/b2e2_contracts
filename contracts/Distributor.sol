@@ -16,6 +16,10 @@ contract Distributor is IdentityContract {
     
     function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) public {
         (EnergyToken.TokenKind tokenKind, uint64 balancePeriod, address identityContractAddress) = energyToken.getTokenIdConstituents(_tokenId);
+        
+        require(balancePeriod < Commons.getBalancePeriod());
+        require(msg.sender == owner);
+        
         uint256 certificateTokenId = energyToken.getTokenId(EnergyToken.TokenKind.Certificate, balancePeriod, identityContractAddress);
         bytes memory additionalData;
 
