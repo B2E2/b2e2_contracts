@@ -270,11 +270,8 @@ contract EnergyToken is ERC1155 {
             uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim, true, true);
             (, , address balanceAuthority, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             
-            balanceAuthorityFound = balanceAuthority;
             require(identityContractFactory.isRegisteredIdentityContract(balanceAuthority));
             string memory addressHexString = addressToHexString(_to);
-            claimAddress = addressToHexString(_to);
-            // return; // todo: remove
             require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, balanceAuthority, ClaimCommons.ClaimType.AcceptedDistributorContractsClaim, "address", addressHexString, true, true) != 0);
 
             return;
@@ -286,9 +283,6 @@ contract EnergyToken is ERC1155 {
         
         require(false);
     }
-    
-    address public balanceAuthorityFound;
-    string public claimAddress;
     
     function addressToHexString(address a) internal pure returns (string memory) {
         bytes memory h = new bytes(40);
