@@ -318,4 +318,69 @@ contract('EnergyToken', function(accounts) {
 	let abiTransferToIdc0 = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[0].options.address, id, "1000000000000000000", "0x00").encodeABI();
 	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferToIdc0).send({from: accounts[7], gas: 7000000}));
   });
+
+  it("can perform batch transfers.", async function() {
+	// Get token ID of forward. Using a different balance period to get balances back to zero.
+	let receivedTokenId1 = await energyToken.getTokenId(2, 1579860901, idcs[0].options.address);
+
+	// Pad token ID to full length.
+	let receivedTokenId1Padded = receivedTokenId1.toString('hex');
+	while(receivedTokenId1Padded.length < 64) {
+	  receivedTokenId1Padded = "0" + receivedTokenId1Padded;
+	}
+	let id1 = "0x" + receivedTokenId1Padded;
+
+	// Get token ID of certificate.
+	let receivedTokenId2 = await energyToken.getTokenId(3, 1579860901, idcs[0].options.address);
+
+	// Pad token ID to full length.
+	let receivedTokenId2Padded = receivedTokenId2.toString('hex');
+	while(receivedTokenId2Padded.length < 64) {
+	  receivedTokenId2Padded = "0" + receivedTokenId2Padded;
+	}
+	let id2 = "0x" + receivedTokenId2Padded;
+
+	// Reception approval for receiving minted forwards.
+	let abiApproveSenderCallMinting = energyTokenWeb3.methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", id1).encodeABI();
+	await idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiApproveSenderCallMinting).send({from: accounts[7], gas: 7000000});
+
+	// Claims necessary for receiving but held by balance authority.
+	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
+	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
+	await addClaim(balanceAuthority, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
+
+	// Minting.
+	let abiMintCall1 = energyTokenWeb3.methods.mint(id1, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall1).send({from: accounts[5], gas: 7000000});
+	
+	let abiMintCall2 = energyTokenWeb3.methods.mint(id2, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
+	// This mint call needs to revert because only metering authorities are allowed to mint certificates.
+	await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[5], gas: 7000000}));
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[8], gas: 7000000});
+
+	// Claims necessary for receiving but held by balance authority.
+	jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
+	dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
+	await addClaim(balanceAuthority, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
+
+	// Reception approval is required for forwards.
+	let abiApproveSenderCall = energyTokenWeb3.methods.approveSender(idcs[2].options.address, "1895220001", "1000000000000000000", id1).encodeABI();
+	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiApproveSenderCall).send({from: accounts[6], gas: 7000000});
+
+	// Reception approval is not required for certificates.
+
+	// Transfer.
+	let abiBatchTransfer = energyTokenWeb3.methods.safeBatchTransferFrom(idcs[2].options.address, idcs[1].options.address, [id1, id2], ["1000000000000000000", "3000000000000000000"], "0x00").encodeABI();
+	idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiBatchTransfer).send({from: accounts[7], gas: 7000000});
+
+	// Check updated balances.
+	let balance11 = await energyToken.balanceOf(idcs[1].options.address, id1);
+	let balance12 = await energyToken.balanceOf(idcs[1].options.address, id2);
+	let balance21 = await energyToken.balanceOf(idcs[2].options.address, id1);
+	let balance22 = await energyToken.balanceOf(idcs[2].options.address, id2);
+	assert.equal(balance11, 1E18);
+	assert.equal(balance12, 3E18);
+	assert.equal(balance21, 16E18);
+	assert.equal(balance22, 14E18);
+  });
 })
