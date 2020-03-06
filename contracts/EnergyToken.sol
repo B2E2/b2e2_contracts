@@ -49,18 +49,18 @@ contract EnergyToken is ERC1155 {
         
         // msg.sender needs to be allowed to mint.
         if(tokenKind == TokenKind.Certificate) {
-            require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority, true, true) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0);
         } else {
             require(msg.sender == generationPlant);
             require(balancePeriod > Commons.getBalancePeriod());
         }
         
         address payable generationPlantP = address(uint160(generationPlant));
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.BalanceClaim, true, true) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.ExistenceClaim, true, true) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim, true, true) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.LocationClaim, true, true) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.MeteringClaim, true, true) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.BalanceClaim) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.ExistenceClaim) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.LocationClaim) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.MeteringClaim) != 0);
         
         for (uint256 i = 0; i < _to.length; ++i) {
             address to = _to[i];
@@ -90,14 +90,14 @@ contract EnergyToken is ERC1155 {
     }
     
     modifier onlyMeteringAuthorities {
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority, true, true) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0);
         _;
     }
     
     modifier onlyGenerationPlants {
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim, true, true) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim, true, true) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim, true, true) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim) != 0);
         _;
     }
     
@@ -257,13 +257,13 @@ contract EnergyToken is ERC1155 {
     function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id) internal  {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.BalanceClaim, true, true) != 0);
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.ExistenceClaim, true, true) != 0);
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.GenerationTypeClaim, true, true) != 0);
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.LocationClaim, true, true) != 0);
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.MeteringClaim, true, true) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.BalanceClaim) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.ExistenceClaim) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.GenerationTypeClaim) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.LocationClaim) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.MeteringClaim) != 0);
             
-            uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim, true, true);
+            uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim);
             (, , address balanceAuthority, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             
             string memory addressHexString = addressToHexString(_to);

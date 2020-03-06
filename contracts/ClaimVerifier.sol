@@ -19,7 +19,7 @@ library ClaimVerifier {
         }
         
         if(claimType == ClaimCommons.ClaimType.MeteringClaim || claimType == ClaimCommons.ClaimType.BalanceClaim || claimType == ClaimCommons.ClaimType.ExistenceClaim || claimType == ClaimCommons.ClaimType.GenerationTypeClaim || claimType == ClaimCommons.ClaimType.LocationClaim || claimType == ClaimCommons.ClaimType.AcceptedDistributorContractsClaim) {
-            return verifySignature(_subject, topic, scheme, issuer, signature, data) && (getClaimOfType(marketAuthority, address(uint160(issuer)), ClaimCommons.getHigherLevelClaim(claimType), true, true) != 0);
+            return verifySignature(_subject, topic, scheme, issuer, signature, data) && (getClaimOfType(marketAuthority, address(uint160(issuer)), ClaimCommons.getHigherLevelClaim(claimType)) != 0);
         }
         
         require(false);
@@ -44,18 +44,18 @@ library ClaimVerifier {
         
         if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorContractsClaim) {
             bool correctAccordingToSecondLevelAuthority = verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
-            return correctAccordingToSecondLevelAuthority && (getClaimOfType(marketAuthority, address(uint160(_issuer)), ClaimCommons.getHigherLevelClaim(_claimType), true, true) != 0);
+            return correctAccordingToSecondLevelAuthority && (getClaimOfType(marketAuthority, address(uint160(_issuer)), ClaimCommons.getHigherLevelClaim(_claimType)) != 0);
         }
         
         require(false);
     }
     
     /**
-     * Returns the claim ID of a claim of the stated type. Depening on the arguments, this method  only makes sure that the claim exists. It does not verify the claim unless verify is set.
+     * Returns the claim ID of a claim of the stated type. Only valid claims are considered.
      * 
-     * Iff requireNonExpired is set, only claims that have not yet expired are considered.
+     * Iff requiredStillValidAt is not zero, only claims that are not expired at that time are considered. If it is set to zero, no expiration check is performed.
      */
-    function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, bool requireNonExpired, bool verify) public view returns (uint256 __claimId) {
+    function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, uint64 requiredStillValidAt) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
@@ -65,16 +65,22 @@ library ClaimVerifier {
             if(cTopic != topic)
                 continue;
             
-            if(requireNonExpired && getExpiryDate(cData) < Commons.getBalancePeriod())
-                continue;
+            if(requiredStillValidAt != 0) {
+                if(getExpiryDate(cData) < Commons.getBalancePeriod(requiredStillValidAt))
+                    continue;
+            }
             
-            if(verify && !verifyClaim(marketAuthority, _subject, claimIds[i]))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i]))
                 continue;
             
             return claimIds[i];
         }
         
         return 0;
+    }
+    
+    function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType) public view returns (uint256 __claimId) {
+        return getClaimOfType(marketAuthority, _subject, _claimType, Commons.getBalancePeriod());
     }
     
     function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, bool requireNonExpired, bool verify) public view returns (uint256 __claimId) {
