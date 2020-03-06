@@ -3,16 +3,14 @@ import "./IdentityContract.sol";
 import "./IdentityContractFactory.sol";
 import "./EnergyToken.sol";
 
-contract Distributor {
+contract Distributor is IdentityContract {
     using SafeMath for uint256;
     
     IdentityContractFactory public identityContractFactory;
-    IdentityContract public marketAuthority;
     EnergyToken public energyToken;
 
-    constructor(IdentityContractFactory _identityContractFactory, IdentityContract _marketAuthority, EnergyToken _energyToken) public {
+    constructor(IdentityContractFactory _identityContractFactory, IdentityContract _marketAuthority, EnergyToken _energyToken) IdentityContract(_marketAuthority) public {
         identityContractFactory = _identityContractFactory;
-        marketAuthority = _marketAuthority;
         energyToken = _energyToken;
     }
     
