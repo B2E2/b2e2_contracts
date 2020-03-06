@@ -140,7 +140,7 @@ contract('EnergyToken', function(accounts) {
 	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	
 	// Get token ID.
-	let receivedTokenId = await energyToken.getTokenId(2, 1579860001, idcs[0].options.address);
+	let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address);
 
 	// Pad token ID to full length.
 	let receivedTokenIdPadded = receivedTokenId.toString('hex');
@@ -247,7 +247,7 @@ contract('EnergyToken', function(accounts) {
 	// IDC 2 has 17 tokens (17E18 elementary units) from the mint operation.
 
 	// Get token ID.
-	let receivedTokenId = await energyToken.getTokenId(2, 1579860001, idcs[0].options.address);
+	let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address);
 
 	// Pad token ID to full length.
 	let receivedTokenIdPadded = receivedTokenId.toString('hex');
@@ -321,7 +321,7 @@ contract('EnergyToken', function(accounts) {
 
   it("can perform batch transfers.", async function() {
 	// Get token ID of forward. Using a different balance period to get balances back to zero.
-	let receivedTokenId1 = await energyToken.getTokenId(2, 1579860901, idcs[0].options.address);
+	let receivedTokenId1 = await energyToken.getTokenId(2, 1737540901, idcs[0].options.address);
 
 	// Pad token ID to full length.
 	let receivedTokenId1Padded = receivedTokenId1.toString('hex');
@@ -331,7 +331,7 @@ contract('EnergyToken', function(accounts) {
 	let id1 = "0x" + receivedTokenId1Padded;
 
 	// Get token ID of certificate.
-	let receivedTokenId2 = await energyToken.getTokenId(3, 1579860901, idcs[0].options.address);
+	let receivedTokenId2 = await energyToken.getTokenId(3, 1737540901, idcs[0].options.address);
 
 	// Pad token ID to full length.
 	let receivedTokenId2Padded = receivedTokenId2.toString('hex');

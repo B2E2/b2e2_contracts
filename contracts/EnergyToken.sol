@@ -52,6 +52,7 @@ contract EnergyToken is ERC1155 {
             require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority, true, true) != 0);
         } else {
             require(msg.sender == generationPlant);
+            require(balancePeriod > Commons.getBalancePeriod());
         }
         
         address payable generationPlantP = address(uint160(generationPlant));
@@ -60,9 +61,6 @@ contract EnergyToken is ERC1155 {
         require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim, true, true) != 0);
         require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.LocationClaim, true, true) != 0);
         require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.MeteringClaim, true, true) != 0);
-
-        // balancePeriod must not be in the past. // TODO: FIX
-        // require(balancePeriod >= Commons.getBalancePeriod());
         
         for (uint256 i = 0; i < _to.length; ++i) {
             address to = _to[i];
@@ -104,6 +102,8 @@ contract EnergyToken is ERC1155 {
     }
     
     function createGenerationBasedForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants returns(uint256 __id) {
+        require(_balancePeriod > Commons.getBalancePeriod());
+        
         __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, msg.sender);
         
         require(!createdGenerationBasedForwards[__id]);
@@ -302,6 +302,11 @@ contract EnergyToken is ERC1155 {
     }
     
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
+        (TokenKind tokenKind, uint64 balancePeriod, ) = getTokenIdConstituents(_id);
+         if(tokenKind != TokenKind.Certificate) {
+            require(balancePeriod > Commons.getBalancePeriod());
+        }
+        
         checkClaimsForTransfer(address(uint160(_from)), address(uint160(_to)), _id);
         consumeReceptionApproval(_id, _to, _from, _value);
         ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
@@ -310,7 +315,15 @@ contract EnergyToken is ERC1155 {
     function safeBatchTransferFrom(address _from, address _to, uint256[] memory _ids, uint256[] memory _values, bytes memory _data) public {
         address payable fromPayable = address(uint160(_from));
         address payable toPayable = address(uint160(_to));
+        
+        uint64 currentBalancePeriod = Commons.getBalancePeriod();
+        
         for (uint256 i = 0; i < _ids.length; ++i) {
+            (TokenKind tokenKind, uint64 balancePeriod, ) = getTokenIdConstituents(_ids[i]);
+            if(tokenKind != TokenKind.Certificate) {
+                require(balancePeriod > currentBalancePeriod);
+            }
+
             checkClaimsForTransfer(fromPayable, toPayable, _ids[i]);
             consumeReceptionApproval(_ids[i], _to, _from, _values[i]);
         }
