@@ -137,8 +137,10 @@ contract('EnergyToken', function(accounts) {
 	await addClaim(idcs[0], 10040, meteringAuthority.options.address, data, "", account8Sk);
 
 	// Give claims to IDC 2.
+	await addClaim(idcs[2], 10040, meteringAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
-	
+	await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
+
 	// Get token ID.
 	let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address);
 
@@ -264,11 +266,11 @@ contract('EnergyToken', function(accounts) {
 	// Claims necessary for sending.
 	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
 	let data = web3.utils.toHex(json);
-	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
-	await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
-	await addClaim(idcs[2], 10070, physicalAssetAuthority.options.address, data, "", account8Sk);
-	await addClaim(idcs[2], 10080, physicalAssetAuthority.options.address, data, "", account8Sk);
-	await addClaim(idcs[2], 10040, meteringAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[1], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[1], 10070, physicalAssetAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[1], 10080, physicalAssetAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[1], 10040, meteringAuthority.options.address, data, "", account8Sk);
 
 	// Claims necessary for receiving.
 	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
