@@ -41,7 +41,7 @@ contract IdentityContract {
     
     // Modifiers ERC-725
     modifier onlyOwner {
-        require(msg.sender == owner);
+        require(msg.sender == owner || msg.sender == address(this));
         _;
     }
     
