@@ -152,8 +152,7 @@ contract('EnergyToken', function(accounts) {
 	let id = "0x" + receivedTokenIdPadded;
 
 	// Grant reception approval.
-	let abiApproveSenderCall = idcs[2].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", id).encodeABI();
-	await idcs[2].methods.execute(0, idcs[2].options.address, 0, abiApproveSenderCall).send({from: accounts[7], gas: 7000000});
+	idcs[2].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", id).send({from: accounts[7], gas: 7000000});
 
 	// Perform actual mint operation via execute() of IDC 0.
 	let abiMintCall = energyTokenWeb3.methods.mint(id, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
