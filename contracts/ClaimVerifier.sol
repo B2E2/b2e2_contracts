@@ -83,6 +83,30 @@ library ClaimVerifier {
         return getClaimOfType(marketAuthority, _subject, _claimType, Commons.getBalancePeriod());
     }
     
+    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 requiredStillValidAt) public view returns (uint256 __claimId) {
+        uint256 topic = ClaimCommons.claimType2Topic(_claimType);
+        uint256 claimId = IdentityContractLib.getClaimId(_issuer, topic);
+
+        (uint256 cTopic, , , , bytes memory cData,) = IdentityContract(_subject).getClaim(claimId);
+        
+        if(cTopic != topic)
+            return 0;
+        
+        if(requiredStillValidAt != 0) {
+            if(getExpiryDate(cData) < Commons.getBalancePeriod(requiredStillValidAt))
+                return 0;
+        }
+        
+        if(!verifyClaim(marketAuthority, _subject, claimId))
+            return 0;
+        
+        return claimId;
+    }
+    
+    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer) public view returns (uint256 __claimId) {
+        return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, Commons.getBalancePeriod());
+    }
+    
     function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, bool requireNonExpired, bool verify) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);

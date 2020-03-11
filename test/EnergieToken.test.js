@@ -122,10 +122,10 @@ contract('EnergyToken', function(accounts) {
 	// IDC 0 is the generation plant.
 	// IDC 2 is the token recipient.
 
-	// Claims necessary for receiving but held by balance authority.
+	// Claim necessary for receiving.
 	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
-	await addClaim(balanceAuthority, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
+	await addClaim(idcs[2], 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
 	// Give claims to IDC 0.
 	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
@@ -274,10 +274,10 @@ contract('EnergyToken', function(accounts) {
 	// Claims necessary for receiving.
 	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
 
-	// Claims necessary for receiving but held by balance authority.
+	// Claim necessary for receiving.
 	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
-	await addClaim(balanceAuthority, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
+	await addClaim(idcs[1], 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
 	// Send 5 tokens.
 	let abiTransfer = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "5000000000000000000", "0x00").encodeABI();
@@ -345,11 +345,6 @@ contract('EnergyToken', function(accounts) {
 	let abiApproveSenderCallMinting = idcs[2].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", id1).encodeABI();
 	await idcs[2].methods.execute(0, idcs[2].options.address, 0, abiApproveSenderCallMinting).send({from: accounts[7], gas: 7000000});
 
-	// Claims necessary for receiving but held by balance authority.
-	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
-	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
-	await addClaim(balanceAuthority, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
-
 	// Minting.
 	let abiMintCall1 = energyTokenWeb3.methods.mint(id1, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
 	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall1).send({from: accounts[5], gas: 7000000});
@@ -358,11 +353,6 @@ contract('EnergyToken', function(accounts) {
 	// This mint call needs to revert because only metering authorities are allowed to mint certificates.
 	await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[5], gas: 7000000}));
 	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[8], gas: 7000000});
-
-	// Claims necessary for receiving but held by balance authority.
-	jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
-	dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
-	await addClaim(balanceAuthority, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
 	// Reception approval is required for forwards.
 	let abiApproveSenderCall = idcs[1].methods.approveSender(idcs[2].options.address, "1895220001", "1000000000000000000", id1).encodeABI();
