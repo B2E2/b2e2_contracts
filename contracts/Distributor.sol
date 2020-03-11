@@ -53,7 +53,12 @@ contract Distributor is IdentityContract {
             uint256 totalConsumedEnergy = energyToken.getConsumedEnergyOfBalancePeriod(balancePeriod);
             
             uint256 option1 = (consumptionBasedForwards.mul(consumedEnergy)).div(100E18);
-            uint256 option2 = (((consumptionBasedForwards.mul(consumedEnergy)).div(100E18)).mul(generatedEnergy)).div(totalConsumedEnergy);
+            uint256 option2;
+            if(totalConsumedEnergy > 0) {
+                option2 = (((consumptionBasedForwards.mul(consumedEnergy)).div(100E18)).mul(generatedEnergy)).div(totalConsumedEnergy);
+            } else {
+                 option2 = option1;
+            }
             
             energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min(option1, option2), additionalData);
             return;
