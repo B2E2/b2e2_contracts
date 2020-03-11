@@ -236,12 +236,12 @@ contract('EnergyToken', function(accounts) {
 	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall5).send({from: accounts[8], gas: 7000000}));
 
 	// Total consumed energy needs to check out despite of correctitions.
-	assert.equal(await energyToken.getConsumedEnergyOfBalancePeriod(balancePeriod), 2335);
+	assert.equal(await energyToken.energyConsumpedInBalancePeriod(balancePeriod), 2335);
 
 	// Non-corrected values count too.
 	let abiAddConsumptionCall6 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[0].options.address, 10000, balancePeriod, false).encodeABI();
 	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall6).send({from: accounts[8], gas: 7000000});
-	assert.equal(await energyToken.getConsumedEnergyOfBalancePeriod(balancePeriod), 12335);
+	assert.equal(await energyToken.energyConsumpedInBalancePeriod(balancePeriod), 12335);
   });
 
   it("can transfer tokens.", async function() {
