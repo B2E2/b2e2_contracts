@@ -50,7 +50,7 @@ contract Distributor is IdentityContract {
             uint256 consumptionBasedForwards = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             uint256 generatedEnergy = energyToken.balanceOf(identityContractAddress, _tokenId);
             uint256 consumedEnergy = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
-            uint256 totalConsumedEnergy = energyToken.getConsumedEnergyOfBalancePeriod(balancePeriod);
+            uint256 totalConsumedEnergy = energyToken.energyConsumpedInBalancePeriod(balancePeriod);
             
             uint256 option1 = (consumptionBasedForwards.mul(consumedEnergy)).div(100E18);
             uint256 option2;

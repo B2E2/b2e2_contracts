@@ -25,7 +25,7 @@ contract EnergyToken is ERC1155 {
     IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations;
-    mapping(uint64 => uint256) energyConsumpedInBalancePeriod;
+    mapping(uint64 => uint256) public energyConsumpedInBalancePeriod;
 
     constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {
         marketAuthority = _marketAuthority;
@@ -131,10 +131,6 @@ contract EnergyToken is ERC1155 {
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
         return true;
-    }
-    
-    function getConsumedEnergyOfBalancePeriod(uint64 _balancePeriod) public view returns (uint256) {
-        return energyConsumpedInBalancePeriod[_balancePeriod];
     }
     
     /**
