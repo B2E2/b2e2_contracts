@@ -14,6 +14,9 @@ contract IdentityContract {
     event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     
+    // Events related to ERC-1155
+    event RequestTransfer(address recipient, address sender, uint256 value, uint64 expiryDate, uint256 tokenId);
+    
     // Constants ERC-735
     uint256 constant public ECDSA_SCHEME = 1;
     
@@ -25,6 +28,10 @@ contract IdentityContract {
     mapping (uint256 => IdentityContractLib.Claim) claims;
     mapping (uint256 => uint256[]) topics2ClaimIds;
     mapping (uint256 => bool) burnedClaimIds;
+    
+    // Attributes related to ERC-1155
+    // id => (sender => PerishableValue)
+    mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue)) receptionApproval;
 
     // Other attributes
     IdentityContract public marketAuthority;
@@ -113,14 +120,32 @@ contract IdentityContract {
         IdentityContractLib.reinstateClaimId(burnedClaimIds, _topic);
     }
     
-    // Funtions ERC-1155
+    // Funtions ERC-1155 and related
     function onERC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data) external returns(bytes4) {
-        // Accept all ERC-1155 transfers.
+        IdentityContractLib.consumeReceptionApproval(receptionApproval, _id, _from, _value);
         return 0xf23a6e61;
     }
     
     function onERC1155BatchReceived(address _operator, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external returns(bytes4) {
-        // Accept all ERC-1155 transfers.
+        for(uint32 i = 0; i < _ids.length; i++) {
+            IdentityContractLib.consumeReceptionApproval(receptionApproval, _ids[i], _from, _values[i]);
+        }
+        
         return 0xbc197c81;
+    }
+    
+    function approveSender(address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) public onlyOwner returns (bool __success) {
+        receptionApproval[_id][_sender] = IdentityContractLib.PerishableValue(_value, _expiryDate);
+        emit RequestTransfer(address(this), _sender, _value, _expiryDate, _id);
+        return true;
+    }
+    
+    function approveBatchSender(address _sender, uint64 _expiryDate, uint256[] memory _values, uint256[] memory _ids) public onlyOwner {
+        require(_values.length < 4294967295);
+        
+        for(uint32 i; i < _values.length; i++) {
+            receptionApproval[_ids[i]][_sender] = IdentityContractLib.PerishableValue(_values[i], _expiryDate);
+            emit RequestTransfer(address(this), _sender, _values[i], _expiryDate, _ids[i]);
+        }
     }
 }

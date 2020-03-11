@@ -1,11 +1,15 @@
 pragma solidity ^0.5.0;
 
 import "../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
+import "./../dependencies/erc-1155/contracts/SafeMath.sol";
+import "./Commons.sol";
 import "./ClaimCommons.sol";
 import "./ClaimVerifier.sol";
 import "./IdentityContract.sol";
 
 library IdentityContractLib {
+    using SafeMath for uint256;
+    
     // Events ERC-725
     event DataChanged(bytes32 indexed key, bytes value);
     event ContractCreated(address indexed contractAddress);
@@ -16,6 +20,12 @@ library IdentityContractLib {
     event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    
+    // Structs related to ERC-1155
+    struct PerishableValue {
+        uint256 value;
+        uint64 expiryDate;
+    }
     
     // Structs ERC-735
     struct Claim {
@@ -107,5 +117,23 @@ library IdentityContractLib {
         bytes memory preimageIssuer = abi.encodePacked(_issuer);
         bytes memory preimageTopic = abi.encodePacked(_topic);
         return uint256(keccak256(abi.encodePacked(preimageIssuer, preimageTopic)));
+    }
+    
+    /**
+     * Only consumes reception approval when handling forwards. Fails iff granted reception approval is insufficient.
+     */
+    function consumeReceptionApproval(mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue)) storage receptionApproval, uint256 _id, address _from, uint256 _value) public {
+        // Accept all certificate ERC-1155 transfers.
+        if(isCertificate(_id))
+            return;
+        
+        require(receptionApproval[_id][_from].expiryDate >= Commons.getBalancePeriod());
+        require(receptionApproval[_id][_from].value >= _value);
+        
+        receptionApproval[_id][_from].value = receptionApproval[_id][_from].value.sub(_value);
+    }
+    
+    function isCertificate(uint256 _id) internal pure returns (bool) {
+        return (_id & 0x000000ff00000000000000000000000000000000000000000000000000000000) == 0x0000000400000000000000000000000000000000000000000000000000000000;
     }
 }

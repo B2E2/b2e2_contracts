@@ -10,20 +10,10 @@ contract EnergyToken is ERC1155 {
     using SafeMath for uint256;
     using Address for address;
     
-    event RequestTransfer(address recipient, address sender, uint256 value, uint64 expiryDate, uint256 tokenId);
-    
     enum TokenKind {AbsoluteForward, GenerationBasedForward, ConsumptionBasedForward, Certificate}
-    
-    // id => (receiver => (sender => PerishableValue))
-    mapping (uint256 => mapping(address => mapping(address => PerishableValue))) receptionApproval;
     
     // id => whetherCreated
     mapping (uint256 => bool) createdGenerationBasedForwards;
-    
-    struct PerishableValue {
-        uint256 value;
-        uint64 expiryDate;
-    }
     
     struct EnergyDocumentation {
         uint256 value;
@@ -70,7 +60,6 @@ contract EnergyToken is ERC1155 {
 
             if(to != msg.sender) {
                 checkClaimsForTransfer(address(uint160(msg.sender)), address(uint160(to)), _id);
-                consumeReceptionApproval(_id, to, msg.sender, quantity);
             }
 
             // Grant the items to the caller.
@@ -81,7 +70,7 @@ contract EnergyToken is ERC1155 {
             // It will also provide the circulating supply info.
             emit TransferSingle(msg.sender, address(0x0), to, _id, quantity);
 
-            if (to.isContract()) {
+            if (to.isContract() && to != msg.sender) {
                 _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, to, _id, quantity, '');
             }
         }
@@ -221,34 +210,6 @@ contract EnergyToken is ERC1155 {
         require(false);
     }
     
-    function approveSender(address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) public returns (bool __success) {
-        receptionApproval[_id][msg.sender][_sender] = PerishableValue(_value, _expiryDate);
-        emit RequestTransfer(msg.sender, _sender, _value, _expiryDate, _id);
-        return true;
-    }
-    
-    function approveBatchSender(address _sender, uint64 _expiryDate, uint256[] memory _values, uint256[] memory _ids) public {
-        require(_values.length < 4294967295);
-        
-        for(uint32 i; i < _values.length; i++) {
-            receptionApproval[_ids[i]][msg.sender][_sender] = PerishableValue(_values[i], _expiryDate);
-        }
-    }
-    
-    /**
-     * Only consumes reception approval when handling forwards. Fails iff granted reception approval is insufficient.
-     */
-    function consumeReceptionApproval(uint256 _id, address _to, address _from, uint256 _value) internal {
-        (TokenKind tokenKind, ,) = getTokenIdConstituents(_id); // Can be optimized by simply checking the bit that determines whether it's a forward or a certificate via a bit mask. Useful when tokenId format doesn't change anymore.
-        if(tokenKind == TokenKind.Certificate)
-            return;
-        
-        require(receptionApproval[_id][_to][_from].expiryDate >= Commons.getBalancePeriod());
-        require(receptionApproval[_id][_to][_from].value >= _value);
-        
-        receptionApproval[_id][_to][_from].value = receptionApproval[_id][_to][_from].value.sub(_value);
-    }
-    
     /**
      * Checks all claims required for the particular given transfer.
      * 
@@ -306,7 +267,6 @@ contract EnergyToken is ERC1155 {
         }
         
         checkClaimsForTransfer(address(uint160(_from)), address(uint160(_to)), _id);
-        consumeReceptionApproval(_id, _to, _from, _value);
         ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
     }
     
@@ -323,7 +283,6 @@ contract EnergyToken is ERC1155 {
             }
 
             checkClaimsForTransfer(fromPayable, toPayable, _ids[i]);
-            consumeReceptionApproval(_ids[i], _to, _from, _values[i]);
         }
         ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
     }
