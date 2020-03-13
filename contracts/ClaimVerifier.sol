@@ -90,7 +90,7 @@ library ClaimVerifier {
         return getClaimOfType(marketAuthority, _subject, _claimType, Commons.getBalancePeriod());
     }
     
-    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 requiredStillValidAt) public view returns (uint256 __claimId) {
+    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 _requiredStillValidAt) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256 claimId = IdentityContractLib.getClaimId(_issuer, topic);
 
@@ -99,7 +99,7 @@ library ClaimVerifier {
         if(cTopic != topic)
             return 0;
         
-        if(!verifyClaim(marketAuthority, _subject, claimId, requiredStillValidAt))
+        if(!verifyClaim(marketAuthority, _subject, claimId, _requiredStillValidAt))
             return 0;
         
         return claimId;
@@ -109,7 +109,7 @@ library ClaimVerifier {
         return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, Commons.getBalancePeriod());
     }
     
-    function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, bool requireNonExpired, bool verify) public view returns (uint256 __claimId) {
+    function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, bool _requireNonExpired) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
@@ -119,10 +119,10 @@ library ClaimVerifier {
             if(cTopic != topic)
                 continue;
             
-            if(requireNonExpired && getExpiryDate(cData) < Commons.getBalancePeriod())
+            if(_requireNonExpired && getExpiryDate(cData) < Commons.getBalancePeriod())
                 continue;
             
-            if(verify && !verifyClaim(marketAuthority, _subject, claimIds[i]))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i]))
                 continue;
             
             // Separate function call to avoid stack too deep error.
@@ -134,8 +134,8 @@ library ClaimVerifier {
         return 0;
     }
     
-    function doesMatchingFieldExist(string memory _fieldName, string memory _fieldContent, bytes memory data) internal pure returns(bool) {
-        string memory json = string(data);
+    function doesMatchingFieldExist(string memory _fieldName, string memory _fieldContent, bytes memory _data) internal pure returns(bool) {
+        string memory json = string(_data);
         (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 20);
         assert(exitCode == 0);
         
@@ -150,15 +150,15 @@ library ClaimVerifier {
         return false;
     }
     
-    function getUint64Field(string memory fieldName, bytes memory data) public pure returns(uint64) {
-        int fieldAsInt = JsmnSolLib.parseInt(getStringField(fieldName, data));
+    function getUint64Field(string memory _fieldName, bytes memory _data) public pure returns(uint64) {
+        int fieldAsInt = JsmnSolLib.parseInt(getStringField(_fieldName, _data));
         require(fieldAsInt >= 0);
         require(fieldAsInt < 0x10000000000000000);
         return uint64(fieldAsInt);
     }
     
-    function getStringField(string memory fieldName, bytes memory data) public pure returns(string memory) {
-        string memory json = string(data);
+    function getStringField(string memory _fieldName, bytes memory _data) public pure returns(string memory) {
+        string memory json = string(_data);
         (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 20);
 
         assert(exitCode == 0);
@@ -166,7 +166,7 @@ library ClaimVerifier {
             JsmnSolLib.Token memory keyToken = tokens[i];
             JsmnSolLib.Token memory valueToken = tokens[i+1];
             
-            if(StringUtils.equal(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end), fieldName)) {
+            if(StringUtils.equal(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end), _fieldName)) {
                 return JsmnSolLib.getBytes(json, valueToken.start, valueToken.end);
             }
         }
@@ -174,8 +174,8 @@ library ClaimVerifier {
         require(false);
     }
     
-    function getExpiryDate(bytes memory data) public pure returns(uint64) {
-        return getUint64Field("expiryDate", data);
+    function getExpiryDate(bytes memory _data) public pure returns(uint64) {
+        return getUint64Field("expiryDate", _data);
     }
     
     function claimAttributes2SigningFormat(address _subject, uint256 _topic, bytes memory _data) internal pure returns (bytes32 __claimInSigningFormat) {
@@ -201,9 +201,9 @@ library ClaimVerifier {
     }
     
     // https://stackoverflow.com/a/40939341
-    function isContract(address addr) internal view returns (bool) {
+    function isContract(address _addr) internal view returns (bool) {
         uint size;
-        assembly { size := extcodesize(addr) }
+        assembly { size := extcodesize(_addr) }
         return size > 0;
     }
 }
