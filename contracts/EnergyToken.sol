@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./Commons.sol";
 import "./IdentityContractFactory.sol";
-import "./IdentityContract.sol";
+import "./Distributor.sol";
 import "./ClaimVerifier.sol";
 import "./../dependencies/erc-1155/contracts/ERC1155.sol";
 
@@ -26,6 +26,7 @@ contract EnergyToken is ERC1155 {
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations;
     mapping(uint64 => uint256) public energyConsumpedInBalancePeriod;
+    mapping(uint256 => Distributor) id2Distributor;
 
     constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {
         marketAuthority = _marketAuthority;
@@ -90,18 +91,21 @@ contract EnergyToken is ERC1155 {
         _;
     }
     
-    function createGenerationBasedForwards(uint64 _balancePeriod, address _distributor) public onlyGenerationPlants(_balancePeriod) returns(uint256 __id) {
+    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(_balancePeriod) returns(uint256 __id) {
         require(_balancePeriod > Commons.getBalancePeriod());
+        __id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
         
-        __id = getTokenId(TokenKind.GenerationBasedForward, _balancePeriod, msg.sender);
+        setId2Distributor(__id, _distributor);
         
-        require(!createdGenerationBasedForwards[__id]);
-        createdGenerationBasedForwards[__id] = true;
-        
-        uint256 value = 100E18;
-        balances[__id][_distributor] = value;
-        supply[__id] = supply[__id].add(value);
-        emit TransferSingle(msg.sender, address(0x0), _distributor, __id, value);
+        if(_tokenKind == TokenKind.GenerationBasedForward) {
+            require(!createdGenerationBasedForwards[__id]);
+            createdGenerationBasedForwards[__id] = true;
+            
+            uint256 value = 100E18;
+            balances[__id][msg.sender] = value;
+            supply[__id] = supply[__id].add(value);
+            emit TransferSingle(msg.sender, address(0x0), msg.sender, __id, value);
+        }
     }
 
     function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
@@ -279,5 +283,15 @@ contract EnergyToken is ERC1155 {
             checkClaimsForTransfer(fromPayable, toPayable, _ids[i]);
         }
         ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
+    }
+    
+    function setId2Distributor(uint256 _id, Distributor _distributor) internal {
+        if(id2Distributor[_id] == _distributor)
+            return;
+        
+        if(id2Distributor[_id] != Distributor(0))
+            require(false);
+        
+        id2Distributor[_id] = _distributor;
     }
 }

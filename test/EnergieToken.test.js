@@ -172,7 +172,7 @@ contract('EnergyToken', function(accounts) {
 
   it("can create generation-based forwards.", async function() {
 	let balancePeriod = "1895220001";
-	let abiCreateTokensCall = energyTokenWeb3.methods.createGenerationBasedForwards(balancePeriod, idcs[1].options.address).encodeABI();
+	let abiCreateTokensCall = energyTokenWeb3.methods.createForwards(balancePeriod, 1, idcs[1].options.address).encodeABI();
 	let callResult = await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateTokensCall).send({from: accounts[5], gas: 7000000});
 
 	// Make sure that repeated calls revert as each generation-based forward cannot be created more than once.
@@ -181,8 +181,8 @@ contract('EnergyToken', function(accounts) {
 	// I can't get the return value because this is run via execute. It also wouldn't work anyway because web3 is stupid. Furthermore, I wasn't able to figure out how to get the event from web3. It doesn't work the way events can be retrieved using truffle contract objects and everything I've tried yielded null, undefined, an empty array, or other thing that just didn't make any sense. So I need to either compute the token ID here or get it via another function call.
 	let id = await energyToken.getTokenId(1, balancePeriod, idcs[0].options.address);
 
-	assert.equal(await energyToken.balanceOf(idcs[0].options.address, id), 0);
-	assert.equal(await energyToken.balanceOf(idcs[1].options.address, id), 100E18);
+	assert.equal(await energyToken.balanceOf(idcs[0].options.address, id), 100E18);
+	assert.equal(await energyToken.balanceOf(idcs[1].options.address, id), 0);
   });
 
   it("keeps track of energy data.", async function() {
