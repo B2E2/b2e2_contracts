@@ -1,0 +1,39 @@
+#title 1.2 Setup
+
+actor PhysicalAssetAuthority
+actor MeteringAuthority
+actor BalanceAuthority_P
+actor BalanceAuthority_C
+
+participant IdentityContractFactory.sol
+participant PhysicalAssetAuthority.sol
+participant MeteringAuthority.sol
+participant BalanceAuthority_P.sol
+participant BalanceAuthority_C.sol
+
+actor BalanceAuthority_P
+
+entryspacing 0.8
+
+
+PhysicalAssetAuthority->IdentityContractFactory.sol:createIdentityContract()
+activate IdentityContractFactory.sol
+IdentityContractFactory.sol ->* PhysicalAssetAuthority.sol:new PhysicalAssetAuthority()
+deactivate IdentityContractFactory.sol
+MeteringAuthority->IdentityContractFactory.sol:createIdentityContract()
+activate IdentityContractFactory.sol
+IdentityContractFactory.sol ->* MeteringAuthority.sol:new MeteringAuthority()
+deactivate IdentityContractFactory.sol
+BalanceAuthority_P->IdentityContractFactory.sol:createIdentityContract()
+activate IdentityContractFactory.sol
+IdentityContractFactory.sol ->* BalanceAuthority_P.sol:new BalanceAuthority_P()
+deactivate IdentityContractFactory.sol
+BalanceAuthority_C ->IdentityContractFactory.sol:createIdentityContract()
+activate IdentityContractFactory.sol
+
+IdentityContractFactory.sol ->* BalanceAuthority_C.sol:new BalanceAuthority_C()
+deactivate IdentityContractFactory.sol
+
+
+
+

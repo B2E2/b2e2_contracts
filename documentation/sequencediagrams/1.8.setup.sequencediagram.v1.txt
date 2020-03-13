@@ -1,0 +1,62 @@
+#title 1.8 Setup
+
+actor BalanceAuthority_P
+actor BalanceAuthority_C
+actor Producer
+actor Consumer
+
+participant GenerationPlant.sol
+participant ConsumptionPlant.sol
+
+actor BalanceAuthority_P
+
+
+entryspacing 0.8
+
+
+group Authentication and Authorization with Claims
+
+
+deactivate ConsumptionPlant.sol
+BalanceAuthority_P -> Producer:<<Balance Claim>>
+activate Producer
+Producer->GenerationPlant.sol:add Claim (<<Balance Claim>>)
+activate GenerationPlant.sol
+
+deactivate Producer
+GenerationPlant.sol -> BalanceAuthority_P.sol:get Claim with _claimType="Is Balance Authority"
+deactivate Producer
+activate BalanceAuthority_P.sol
+GenerationPlant.sol<-BalanceAuthority_P.sol:<<Is Balance Authority Claim>>
+deactivate BalanceAuthority_P.sol
+GenerationPlant.sol->GenerationPlant.sol:verify signatures of claims \nbased on public key of \n<<address of MarketAuthority.sol>>
+deactivate GenerationPlant.sol
+
+
+activate GenerationPlant.sol
+deactivate GenerationPlant.sol
+
+BalanceAuthority_C -> Consumer:<<Balance Claim>>
+activate Consumer
+Consumer->ConsumptionPlant.sol:add Claim (<<Balance Claim>>)
+activate ConsumptionPlant.sol
+deactivate Consumer
+ConsumptionPlant.sol -> BalanceAuthority_C.sol:get Claim with _claimType = \n"Is Balance Authority"
+
+deactivate Consumer
+activate BalanceAuthority_C.sol
+ConsumptionPlant.sol<-BalanceAuthority_C.sol:<<Is Balance Authority Claim>>
+deactivate BalanceAuthority_C.sol
+ConsumptionPlant.sol->ConsumptionPlant.sol:verify signatures of claims \nbased on public key of \n<<address of MarketAuthority.sol>>
+deactivate ConsumptionPlant.sol
+
+
+
+
+
+
+
+
+activate ConsumptionPlant.sol
+deactivate ConsumptionPlant.sol
+end 

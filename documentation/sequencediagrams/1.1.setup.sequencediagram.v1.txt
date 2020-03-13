@@ -1,0 +1,39 @@
+#title 1.1 Setup 
+
+actor MarketAuthority
+
+  participant MarketAuthority.sol
+  participant IdentityContractFactory.sol
+  participant EnergyToken.sol
+
+actor Public
+  entryspacing 0.8
+
+  group Deploys Conctracts
+  MarketAuthority ->* MarketAuthority.sol:new MarketAuthority()
+  space
+  MarketAuthority->MarketAuthority.sol:execute()
+  activate MarketAuthority.sol
+
+  MarketAuthority.sol ->* IdentityContractFactory.sol:new IdentityContractFactory()
+  deactivate MarketAuthority.sol
+  MarketAuthority<-IdentityContractFactory.sol:<<address of IdentityContractFactory.sol>>
+  space
+  MarketAuthority->MarketAuthority.sol:execute()
+  activate MarketAuthority.sol
+
+  MarketAuthority.sol ->* EnergyToken.sol:new EnergyToken()
+
+  deactivate MarketAuthority.sol
+
+  EnergyToken.sol ->MarketAuthority:<<address of EnergyToken.sol>>
+  end 
+  group Publishes Addresses
+  MarketAuthority ->MarketAuthority.sol:add Claim (<<Identity Contract Factory Claim>>) 
+  MarketAuthority ->MarketAuthority.sol:add Claim (<<Energy Token Contract Claim>>) 
+
+  MarketAuthority->MarketAuthority.sol:add Claim (<<Market Rules Claim>>)
+  MarketAuthority -> Public:<<address of MarketAuthority.sol>>
+  end
+
+

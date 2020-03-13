@@ -1,0 +1,28 @@
+#title 1.4 Setup
+
+actor BalanceAuthority_P
+actor BalanceAuthority_C
+
+participant BalanceAuthority_P.sol
+participant BalanceAuthority_C.sol
+actor BalanceAuthority_P
+
+
+BalanceAuthority_P->BalanceAuthority_P.sol:execute()
+activate BalanceAuthority_P.sol
+
+BalanceAuthority_P.sol ->* Distributor.sol:new Distributor(\n<<address of IdentityContractFactory.sol>>,\n<<address of MarketAuthority.sol>>,\n<<address of EnergyToken.sol)
+deactivate BalanceAuthority_P.sol
+activate Distributor.sol
+BalanceAuthority_P<-Distributor.sol:<<address>> (event)
+
+BalanceAuthority_C<-Distributor.sol:<<address>> (event)
+deactivate Distributor.sol
+
+BalanceAuthority_P->BalanceAuthority_P.sol:add Claim (<<Accepted Distributor Contracts Claim>>)
+BalanceAuthority_C->BalanceAuthority_C.sol:add Claim (<<Accepted Distributor Contracts Claim>>)
+
+
+
+
+

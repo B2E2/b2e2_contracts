@@ -1,0 +1,39 @@
+#title 3.2 Certificates 
+
+actor MeteringAuthority
+materialdesignicons f199 Smart Meter
+participant MeteringAuthority
+participant MeteringAuthority.sol
+participant GenerationPlant.sol
+participant EnergyToken.sol
+
+
+
+
+
+
+MeteringAuthority<-Smart Meter:Producer has \nproduced 80 kWh. 
+activate MeteringAuthority
+MeteringAuthority->MeteringAuthority.sol:execute(...)
+deactivate MeteringAuthority
+activate MeteringAuthority.sol
+MeteringAuthority.sol->EnergyToken.sol:**addMeasuredEnergyGeneration**(\n<<address of GenerationPlant.sol>>, \n<<80 kWh>>, \n<<balance period>>, \ncorrected=false)
+deactivate MeteringAuthority.sol
+activate EnergyToken.sol
+
+GenerationPlant.sol<-EnergyToken.sol:get Claims
+
+activate GenerationPlant.sol
+GenerationPlant.sol->EnergyToken.sol:[ <<Balance Claim>>, \n<<Existence Claim>>, \n<<Generation Type Claim>>, \n<<Location Claim>>, \n<<Metering Claim>>]
+deactivate GenerationPlant.sol
+MeteringAuthority.sol<-EnergyToken.sol:get Claim
+activate MeteringAuthority.sol
+MeteringAuthority.sol->EnergyToken.sol:<<Is Metering Authority Claim>>
+deactivate MeteringAuthority.sol
+EnergyToken.sol->EnergyToken.sol:verify claims
+EnergyToken.sol->EnergyToken.sol:write measured values \nin kWh
+
+EnergyToken.sol ->MeteringAuthority:**event MeasuredEnergyGeneration**(\n<<address of GenerationPlant.sol>>, \n<<80 kWh>>, \n<<balance period>>, \ncorrected=false)
+
+deactivate EnergyToken.sol
+end 

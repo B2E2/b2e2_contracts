@@ -1,0 +1,28 @@
+#title 1.3 Setup
+
+actor Producer
+actor Consumer
+
+
+participant IdentityContractFactory.sol
+
+
+
+entryspacing 0.8
+
+
+
+
+
+
+Producer->IdentityContractFactory.sol:createIdentityContract()  
+activate IdentityContractFactory.sol
+
+IdentityContractFactory.sol ->* GenerationPlant.sol:new GenerationPlant()
+deactivate IdentityContractFactory.sol
+Consumer->IdentityContractFactory.sol:createIdentityContract()  
+
+activate IdentityContractFactory.sol
+
+IdentityContractFactory.sol ->* ConsumptionPlant.sol:new ConsumptionPlant()
+deactivate IdentityContractFactory.sol

@@ -1,0 +1,57 @@
+#title 1.5 Setup
+
+actor MarketAuthority
+actor PhysicalAssetAuthority
+actor MeteringAuthority
+actor BalanceAuthority_P
+actor BalanceAuthority_C
+
+participant PhysicalAssetAuthority.sol
+participant MeteringAuthority.sol
+participant BalanceAuthority_P.sol
+participant BalanceAuthority_C.sol
+
+actor BalanceAuthority_P
+
+
+entryspacing 0.8
+
+
+MarketAuthority -> PhysicalAssetAuthority:<<Is Physical Asset \nAuthority Claim>>
+activate PhysicalAssetAuthority
+PhysicalAssetAuthority ->PhysicalAssetAuthority.sol:add Claim (<<Is Physical Asset Authority Claim>>)
+deactivate PhysicalAssetAuthority
+
+activate PhysicalAssetAuthority.sol
+PhysicalAssetAuthority.sol->PhysicalAssetAuthority.sol:verify claim
+deactivate PhysicalAssetAuthority.sol
+MarketAuthority -> MeteringAuthority:<<Is Metering Authority Claim>>
+activate MeteringAuthority
+MeteringAuthority ->MeteringAuthority.sol:add Claim (<<Is Metering Authority Claim>>)
+deactivate MeteringAuthority
+
+activate MeteringAuthority.sol
+MeteringAuthority.sol->MeteringAuthority.sol:verify claim
+deactivate MeteringAuthority.sol
+MarketAuthority -> BalanceAuthority_P:<<Is Balance Authority Claim>>
+activate BalanceAuthority_P
+BalanceAuthority_P ->BalanceAuthority_P.sol:add Claim (<<Is Balance Authority Claim>>)
+
+deactivate BalanceAuthority_P
+
+activate BalanceAuthority_P.sol
+BalanceAuthority_P.sol->BalanceAuthority_P.sol:verify claim
+deactivate BalanceAuthority_P.sol
+
+MarketAuthority -> BalanceAuthority_C:<<Is Balance Authority Claim>>
+
+activate BalanceAuthority_C
+BalanceAuthority_C ->BalanceAuthority_C.sol:add Claim (<<Is Balance Authority Claim>>)
+
+activate BalanceAuthority_C.sol
+deactivate BalanceAuthority_C
+BalanceAuthority_C.sol->BalanceAuthority_C.sol:verify claim
+deactivate BalanceAuthority_C.sol
+
+
+

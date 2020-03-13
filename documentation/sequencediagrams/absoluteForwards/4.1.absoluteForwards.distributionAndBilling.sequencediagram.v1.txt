@@ -1,0 +1,73 @@
+#title 4.1 Absolute Forwards (Distribution & Billing)
+
+actor Consumer
+actor BalanceAuthority_C
+participant ConsumptionPlant.sol
+participant EnergyToken.sol
+
+
+
+
+
+
+
+
+
+
+
+BalanceAuthority_C->Distributor:**distribute**(\n<<address of ConsumptionPlant.sol>>,\n<<tokenID>>)
+
+activate Distributor
+
+Distributor ->ConsumptionPlant.sol:get Claims
+
+
+
+
+
+
+
+
+
+
+
+
+
+activate ConsumptionPlant.sol
+ConsumptionPlant.sol->Distributor:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Metering Claim>>]
+deactivate ConsumptionPlant.sol
+Distributor->Distributor:verify claims
+EnergyToken.sol<-Distributor:**totalSupply**(\n<<tokenID>>)
+activate EnergyToken.sol
+
+EnergyToken.sol->Distributor:TotalForwards=TF=100E18
+deactivate EnergyToken.sol
+
+EnergyToken.sol<-Distributor:**balanceOf**(\n<<address of ConsumptionPlant.sol>>,\n<<tokenID>>)
+activate EnergyToken.sol
+
+EnergyToken.sol->Distributor:AbsoluteForwardsOfConsumer=AFC=100E18
+deactivate EnergyToken.sol
+
+EnergyToken.sol<-Distributor:**balanceOf**(\n<<address of Distributor>>,\n<<certificateID>>)
+
+activate EnergyToken.sol
+EnergyToken.sol->Distributor:generated Energy=G=80E18
+
+deactivate EnergyToken.sol
+EnergyToken.sol<-Distributor:**safeBatchTransferFrom**(\nfrom= <<address of Distributor>>,  \nto= <<address of ConsumptionPlant.sol>>, \nid= <<certificateID>>, \nvalue= min { AFC, (AFC/TF) * G } = 80E18\n)
+deactivate Distributor
+
+
+activate EnergyToken.sol
+
+Consumer<-EnergyToken.sol:event TransferBatch(...) 
+deactivate EnergyToken.sol
+end 
+
+
+
+
+
+
+

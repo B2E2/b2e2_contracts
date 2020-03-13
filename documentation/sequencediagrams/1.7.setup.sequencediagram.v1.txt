@@ -1,0 +1,54 @@
+#title 1.7 Setup
+
+actor MeteringAuthority
+actor Producer
+actor Consumer
+
+participant GenerationPlant.sol
+participant ConsumptionPlant.sol
+
+
+
+entryspacing 0.8
+
+
+group Authentication and Authorization with Claims
+
+
+
+
+
+
+MeteringAuthority -> Producer:<<Metering Claim>>
+activate Producer
+Producer ->GenerationPlant.sol:add Claim (<<Metering Claim>>)
+
+activate GenerationPlant.sol
+deactivate Producer
+GenerationPlant.sol -> MeteringAuthority.sol:get Claim with _claimType="Is Metering Authority"
+
+
+
+
+activate MeteringAuthority.sol
+GenerationPlant.sol<-MeteringAuthority.sol:<<Is Metering Authority Claim>>
+deactivate MeteringAuthority.sol
+GenerationPlant.sol->GenerationPlant.sol:verify signatures of claims \nbased on public key of \n<<address of MarketAuthority.sol>>
+deactivate GenerationPlant.sol
+MeteringAuthority -> Consumer:<<Metering Claim>>
+activate Consumer
+Consumer ->ConsumptionPlant.sol:add Claim (<<Metering Claim>>)
+deactivate Consumer
+
+
+
+activate ConsumptionPlant.sol
+ConsumptionPlant.sol->MeteringAuthority.sol:get Claim with _claimType =\n"Is Metering Authority"
+activate MeteringAuthority.sol
+ConsumptionPlant.sol<-MeteringAuthority.sol:<<Is Metering Authority Claim>>
+deactivate MeteringAuthority.sol
+ConsumptionPlant.sol->ConsumptionPlant.sol:verify signatures of claims \nbased on public key of \n<<address of MarketAuthority.sol>>
+deactivate ConsumptionPlant.sol
+
+
+end 

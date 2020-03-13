@@ -1,0 +1,67 @@
+#title 4.1 Consumption-based Forwards (Distribution and Billing) 
+
+actor Consumer
+actor BalanceAuthority_C
+participant BalanceAuthority_C.sol
+participant ConsumptionPlant.sol
+participant EnergyToken.sol
+
+
+
+
+
+
+
+BalanceAuthority_C->Distributor:**distribute**(\n<<address of ConsumptionPlant.sol>>,\n<<tokenID>>)
+
+activate Distributor
+
+Distributor ->ConsumptionPlant.sol:get claims
+
+
+
+
+
+activate ConsumptionPlant.sol
+ConsumptionPlant.sol->Distributor:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Metering Claim>>]
+deactivate ConsumptionPlant.sol
+
+
+
+
+
+
+Distributor->Distributor:verify claims
+EnergyToken.sol<-Distributor:**balanceOf**(\n<<address of ConsumptionPlant.sol>>, \n<<tokenID>>)
+activate EnergyToken.sol
+EnergyToken.sol->Distributor:Consumption-Based Forwards=CBF=100E18
+deactivate EnergyToken.sol
+EnergyToken.sol<-Distributor:energyDocumentations[<<GenerationPlant.sol>>][<<balancePeriod>>]
+activate EnergyToken.sol
+EnergyToken.sol->Distributor:generated Energy=G=80E18
+deactivate EnergyToken.sol
+EnergyToken.sol<-Distributor:energyDocumentations[<<ConsumptionPlant.sol>>][<<balancePeriod>>]
+activate EnergyToken.sol
+EnergyToken.sol->Distributor:Consumed Energy=C=90E18
+
+
+deactivate EnergyToken.sol
+group  If all energy metering values are available, else abort
+EnergyToken.sol<-Distributor:**totalConsumedEnergy**(<<balance period>>)
+activate EnergyToken.sol
+EnergyToken.sol->Distributor:TCE = sum((CBF/100E18) * C))
+
+deactivate EnergyToken.sol
+end
+EnergyToken.sol<-Distributor:**safeBatchTransferFrom**(\nfrom= <<address of Distributor>>,  \nto= <<address of ConsumptionPlant.sol>>, \nid= <<certificateID>>, \nvalue= min{(CBF/100E18) * C, (((CBF/100E18) * C) / TCE * G} = 80E18\n)
+deactivate Distributor
+
+
+
+activate EnergyToken.sol
+
+Consumer<-EnergyToken.sol:event TransferBatch(...) 
+deactivate EnergyToken.sol
+
+activate EnergyToken.sol
+deactivate EnergyToken.sol
