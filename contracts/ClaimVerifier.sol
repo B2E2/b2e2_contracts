@@ -10,19 +10,31 @@ library ClaimVerifier {
     // Constants ERC-735
     uint256 constant public ECDSA_SCHEME = 1;
     
-    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
+    /**
+     * Iff requiredStillValidAt is not zero, only claims that are not expired at that time are considered. If it is set to zero, no expiration check is performed.
+     */
+    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId, uint64 _requiredStillValidAt) public view returns(bool __valid) {
         (uint256 topic, uint256 scheme, address issuer, bytes memory signature, bytes memory data, ) = IdentityContract(_subject).getClaim(_claimId);
         ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(topic);
+        
+        if(_requiredStillValidAt != 0) {
+            if(getExpiryDate(data) < Commons.getBalancePeriod(_requiredStillValidAt))
+                return false;
+        }
         
         if(claimType == ClaimCommons.ClaimType.IsBalanceAuthority || claimType == ClaimCommons.ClaimType.IsMeteringAuthority || claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || claimType == ClaimCommons.ClaimType.MarketRulesClaim) {
             return verifySignature(_subject, topic, scheme, issuer, signature, data);
         }
         
         if(claimType == ClaimCommons.ClaimType.MeteringClaim || claimType == ClaimCommons.ClaimType.BalanceClaim || claimType == ClaimCommons.ClaimType.ExistenceClaim || claimType == ClaimCommons.ClaimType.GenerationTypeClaim || claimType == ClaimCommons.ClaimType.LocationClaim || claimType == ClaimCommons.ClaimType.AcceptedDistributorContractsClaim) {
-            return verifySignature(_subject, topic, scheme, issuer, signature, data) && (getClaimOfType(marketAuthority, address(uint160(issuer)), ClaimCommons.getHigherLevelClaim(claimType)) != 0);
+            return verifySignature(_subject, topic, scheme, issuer, signature, data) && (getClaimOfType(marketAuthority, address(uint160(issuer)), ClaimCommons.getHigherLevelClaim(claimType), _requiredStillValidAt) != 0);
         }
         
         require(false);
+    }
+    
+    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
+        return verifyClaim(marketAuthority, _subject, _claimId, Commons.getBalancePeriod());
     }
     
     /**
@@ -55,22 +67,17 @@ library ClaimVerifier {
      * 
      * Iff requiredStillValidAt is not zero, only claims that are not expired at that time are considered. If it is set to zero, no expiration check is performed.
      */
-    function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, uint64 requiredStillValidAt) public view returns (uint256 __claimId) {
+    function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, uint64 _requiredStillValidAt) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
-            (uint256 cTopic, , , , bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
+            (uint256 cTopic, , , , ,) = IdentityContract(_subject).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;
             
-            if(requiredStillValidAt != 0) {
-                if(getExpiryDate(cData) < Commons.getBalancePeriod(requiredStillValidAt))
-                    continue;
-            }
-            
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i]))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredStillValidAt))
                 continue;
             
             return claimIds[i];
