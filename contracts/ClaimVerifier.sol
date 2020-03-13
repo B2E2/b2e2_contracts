@@ -99,12 +99,7 @@ library ClaimVerifier {
         if(cTopic != topic)
             return 0;
         
-        if(requiredStillValidAt != 0) {
-            if(getExpiryDate(cData) < Commons.getBalancePeriod(requiredStillValidAt))
-                return 0;
-        }
-        
-        if(!verifyClaim(marketAuthority, _subject, claimId))
+        if(!verifyClaim(marketAuthority, _subject, claimId, requiredStillValidAt))
             return 0;
         
         return claimId;
