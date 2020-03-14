@@ -29,7 +29,7 @@ deactivate Producer
 activate BalanceAuthority_P.sol
 GenerationPlant.sol<-BalanceAuthority_P.sol:<<Is Balance Authority Claim>>
 deactivate BalanceAuthority_P.sol
-GenerationPlant.sol->GenerationPlant.sol:verify signatures of claims \nbased on public key of \n<<address of MarketAuthority.sol>>
+GenerationPlant.sol->GenerationPlant.sol:verify claims
 deactivate GenerationPlant.sol
 
 
@@ -47,7 +47,7 @@ deactivate Consumer
 activate BalanceAuthority_C.sol
 ConsumptionPlant.sol<-BalanceAuthority_C.sol:<<Is Balance Authority Claim>>
 deactivate BalanceAuthority_C.sol
-ConsumptionPlant.sol->ConsumptionPlant.sol:verify signatures of claims \nbased on public key of \n<<address of MarketAuthority.sol>>
+ConsumptionPlant.sol->ConsumptionPlant.sol:verify claims
 deactivate ConsumptionPlant.sol
 
 

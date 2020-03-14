@@ -19,8 +19,8 @@ BalanceAuthority_P<-Distributor.sol:<<address>> (event)
 BalanceAuthority_C<-Distributor.sol:<<address>> (event)
 deactivate Distributor.sol
 
-BalanceAuthority_P->BalanceAuthority_P.sol:add Claim (<<Accepted Distributor Contracts Claim>>)
-BalanceAuthority_C->BalanceAuthority_C.sol:add Claim (<<Accepted Distributor Contracts Claim>>)
+BalanceAuthority_P->Distributor.sol:add Claim (<<Accepted Distributor Contracts Claim>>)
+BalanceAuthority_C->Distributor.sol:add Claim (<<Accepted Distributor Contracts Claim>>)
 
 
 

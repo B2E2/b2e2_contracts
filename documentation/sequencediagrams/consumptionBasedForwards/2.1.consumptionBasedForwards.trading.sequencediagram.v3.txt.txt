@@ -20,7 +20,7 @@ entryspacing 0.8
 
 Producer->GenerationPlant.sol:execute(...)
 activate GenerationPlant.sol
-GenerationPlant.sol ->EnergyToken.sol:**createConsumptionBasedForwards**(\n<<balancePeriod>>, \n<<address of Distributor.sol>>\n)
+GenerationPlant.sol ->EnergyToken.sol:**createForwards**(\n<<balancePeriod>>, \nConsumptionBasedForward,\n<<address of Distributor.sol>>\n)
 deactivate GenerationPlant.sol
 activate EnergyToken.sol
 GenerationPlant.sol<-EnergyToken.sol:get Claims

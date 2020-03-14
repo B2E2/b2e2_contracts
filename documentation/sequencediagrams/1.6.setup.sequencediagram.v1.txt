@@ -27,7 +27,7 @@ GenerationPlant.sol -> PhysicalAssetAuthority.sol:get Claim with _claimType="Is 
 activate PhysicalAssetAuthority.sol
 GenerationPlant.sol<-PhysicalAssetAuthority.sol:<<Is Physical Asset Authority Claim>>
 deactivate PhysicalAssetAuthority.sol
-GenerationPlant.sol->GenerationPlant.sol:verify signatures of claims \nbased on public key of \n<<address of MarketAuthority.sol>>
+GenerationPlant.sol->GenerationPlant.sol:verify claims
 
 
 
@@ -44,7 +44,7 @@ ConsumptionPlant.sol->PhysicalAssetAuthority.sol:get Claim with _claimType =\n"I
 activate PhysicalAssetAuthority.sol
 ConsumptionPlant.sol<-PhysicalAssetAuthority.sol:<<Is Physical Asset Authority Claim>>
 deactivate PhysicalAssetAuthority.sol
-ConsumptionPlant.sol->ConsumptionPlant.sol:verify signatures of claims \nbased on public key of \n<<address of MarketAuthority.sol>>
+ConsumptionPlant.sol->ConsumptionPlant.sol:verify claims
 
 
 deactivate ConsumptionPlant.sol

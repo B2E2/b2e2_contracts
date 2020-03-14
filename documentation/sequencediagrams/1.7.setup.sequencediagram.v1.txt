@@ -33,7 +33,7 @@ GenerationPlant.sol -> MeteringAuthority.sol:get Claim with _claimType="Is Meter
 activate MeteringAuthority.sol
 GenerationPlant.sol<-MeteringAuthority.sol:<<Is Metering Authority Claim>>
 deactivate MeteringAuthority.sol
-GenerationPlant.sol->GenerationPlant.sol:verify signatures of claims \nbased on public key of \n<<address of MarketAuthority.sol>>
+GenerationPlant.sol->GenerationPlant.sol:verify claims
 deactivate GenerationPlant.sol
 MeteringAuthority -> Consumer:<<Metering Claim>>
 activate Consumer
@@ -47,8 +47,7 @@ ConsumptionPlant.sol->MeteringAuthority.sol:get Claim with _claimType =\n"Is Met
 activate MeteringAuthority.sol
 ConsumptionPlant.sol<-MeteringAuthority.sol:<<Is Metering Authority Claim>>
 deactivate MeteringAuthority.sol
-ConsumptionPlant.sol->ConsumptionPlant.sol:verify signatures of claims \nbased on public key of \n<<address of MarketAuthority.sol>>
-deactivate ConsumptionPlant.sol
+ConsumptionPlant.sol->ConsumptionPlant.sol:verify claims
 
 
 end 
