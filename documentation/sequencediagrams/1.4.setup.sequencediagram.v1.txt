@@ -13,11 +13,11 @@ activate BalanceAuthority_P.sol
 
 BalanceAuthority_P.sol ->* Distributor.sol:new Distributor(\n<<address of IdentityContractFactory.sol>>,\n<<address of MarketAuthority.sol>>,\n<<address of EnergyToken.sol)
 deactivate BalanceAuthority_P.sol
-activate Distributor.sol
-BalanceAuthority_P<-Distributor.sol:<<address>> (event)
 
-BalanceAuthority_C<-Distributor.sol:<<address>> (event)
-deactivate Distributor.sol
+BalanceAuthority_P<<--Distributor.sol:<<address of Distributor.sol>> 
+
+space
+
 
 BalanceAuthority_P->Distributor.sol:add Claim (<<Accepted Distributor Contracts Claim>>)
 BalanceAuthority_C->Distributor.sol:add Claim (<<Accepted Distributor Contracts Claim>>)

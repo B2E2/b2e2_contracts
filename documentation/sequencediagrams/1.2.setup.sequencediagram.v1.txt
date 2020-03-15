@@ -18,20 +18,20 @@ entryspacing 0.8
 
 PhysicalAssetAuthority->IdentityContractFactory.sol:createIdentityContract()
 activate IdentityContractFactory.sol
-IdentityContractFactory.sol ->* PhysicalAssetAuthority.sol:new PhysicalAssetAuthority()
+IdentityContractFactory.sol ->* PhysicalAssetAuthority.sol:new IdentityContract()
 deactivate IdentityContractFactory.sol
 MeteringAuthority->IdentityContractFactory.sol:createIdentityContract()
 activate IdentityContractFactory.sol
-IdentityContractFactory.sol ->* MeteringAuthority.sol:new MeteringAuthority()
+IdentityContractFactory.sol ->* MeteringAuthority.sol:new IdentityContract()
 deactivate IdentityContractFactory.sol
 BalanceAuthority_P->IdentityContractFactory.sol:createIdentityContract()
 activate IdentityContractFactory.sol
-IdentityContractFactory.sol ->* BalanceAuthority_P.sol:new BalanceAuthority_P()
+IdentityContractFactory.sol ->* BalanceAuthority_P.sol:new IdentityContract()
 deactivate IdentityContractFactory.sol
 BalanceAuthority_C ->IdentityContractFactory.sol:createIdentityContract()
 activate IdentityContractFactory.sol
 
-IdentityContractFactory.sol ->* BalanceAuthority_C.sol:new BalanceAuthority_C()
+IdentityContractFactory.sol ->* BalanceAuthority_C.sol:new IdentityContract()
 deactivate IdentityContractFactory.sol
 
 

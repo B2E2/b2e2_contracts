@@ -27,7 +27,7 @@ GenerationPlant.sol<-EnergyToken.sol:get Claims
 
 
 activate GenerationPlant.sol
-GenerationPlant.sol->EnergyToken.sol:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Generation Type Claim>>, \n<<Location Claim>>, \n<<Metering Claim>>]
+GenerationPlant.sol-->>EnergyToken.sol:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Generation Type Claim>>, \n<<Location Claim>>, \n<<Metering Claim>>]
 
 
 
@@ -37,7 +37,7 @@ EnergyToken.sol -> Distributor.sol:get Claim
 
 
 activate Distributor.sol
-EnergyToken.sol<-Distributor.sol:<<Accepted Distributor Contract Claim\nfrom Balance_Authority_P.sol>>
+EnergyToken.sol<<--Distributor.sol:<<Accepted Distributor Contract Claim\nfrom Balance_Authority_P.sol>>
 
 
 deactivate Distributor.sol
@@ -48,13 +48,13 @@ EnergyToken.sol->EnergyToken.sol:verify claims
 
 
 
-Consumer<-EnergyToken.sol:**event ForwardsCreated**(\n<<tokenKind>>, \n<<balancePeriod>>, \n<<address of Distributor.sol>>,\n<<tokenID>>)
+Consumer<<--EnergyToken.sol:**event ForwardsCreated**(\n<<tokenKind>>, \n<<balancePeriod>>, \n<<address of Distributor.sol>>,\n<<tokenID>>)
 deactivate EnergyToken.sol
 Consumer->ConsumptionPlant.sol:**approveSender**(\n<<address of GenerationPlant.sol>>, \n<<_expiryDate>>, \n100E18, \n<<tokenID>>)
 activate ConsumptionPlant.sol
 
 
-Producer<-ConsumptionPlant.sol:**event RequestedTransfer**(\n<<address of ConsumptionPlant.sol>>,\n<<address of GenerationPlant.sol>>,\n_value=100E18,\n<<expirydate>>,\n<<tokenID>>\n)
+Producer<<--ConsumptionPlant.sol:**event RequestedTransfer**(\n<<address of ConsumptionPlant.sol>>,\n<<address of GenerationPlant.sol>>,\n_value=100E18,\n<<expirydate>>,\n<<tokenID>>\n)
 
 deactivate ConsumptionPlant.sol
 
@@ -83,7 +83,7 @@ ConsumptionPlant.sol<-EnergyToken.sol:get Claims
 
 
 activate ConsumptionPlant.sol
-ConsumptionPlant.sol->EnergyToken.sol:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Metering Claim>>]
+ConsumptionPlant.sol-->>EnergyToken.sol:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Metering Claim>>]
 deactivate ConsumptionPlant.sol
 
 
@@ -92,7 +92,7 @@ EnergyToken.sol -> Distributor.sol:get Claims
 
 
 activate Distributor.sol
-EnergyToken.sol<-Distributor.sol:<<Accepted Distributor Contract Claim\nfrom Balance_Authority_C.sol>>
+EnergyToken.sol<<--Distributor.sol:<<Accepted Distributor Contract Claim\nfrom Balance_Authority_C.sol>>
 
 
 deactivate Distributor.sol
@@ -103,6 +103,6 @@ deactivate Distributor.sol
 
 
 EnergyToken.sol->EnergyToken.sol:verify claims 
-Producer<-EnergyToken.sol:event TransferBatch(...) 
-Consumer<-EnergyToken.sol:event TransferBatch(...) 
+Producer<<--EnergyToken.sol:event TransferBatch(...) 
+Consumer<<--EnergyToken.sol:event TransferBatch(...) 
 deactivate EnergyToken.sol

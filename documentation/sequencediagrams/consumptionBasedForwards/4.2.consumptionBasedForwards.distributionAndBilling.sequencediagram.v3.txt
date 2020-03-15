@@ -15,20 +15,20 @@ group Balance Authority of Producer sends invoice
 
 BalanceAuthority_P->EnergyToken.sol:energyDocumentations[<<GenerationPlant.sol>>][<<balancePeriod>>]
 activate EnergyToken.sol
-BalanceAuthority_P<-EnergyToken.sol:generated Energy=G=80E18
+BalanceAuthority_P<<--EnergyToken.sol:generated Energy=G=80E18
 deactivate EnergyToken.sol
 activate BalanceAuthority_P
 BalanceAuthority_P->EnergyToken.sol:getListOfAllConsumer(<<tokenID>>)
 activate EnergyToken.sol
 deactivate BalanceAuthority_P
-BalanceAuthority_P<-EnergyToken.sol:[<<address of ConsumptionPlant.sol>>]
+BalanceAuthority_P<<--EnergyToken.sol:[<<address of ConsumptionPlant.sol>>]
 deactivate EnergyToken.sol
 activate BalanceAuthority_P
 BalanceAuthority_P->EnergyToken.sol:energyDocumentations[<<ConsumptionPlant.sol>>][<<balancePeriod>>]
 
 activate EnergyToken.sol
 deactivate BalanceAuthority_P
-BalanceAuthority_P<-EnergyToken.sol:Consumed Energy=C=90E18
+BalanceAuthority_P<<--EnergyToken.sol:Consumed Energy=C=90E18
 
 deactivate EnergyToken.sol
 

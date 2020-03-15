@@ -25,7 +25,7 @@ GenerationPlant.sol -> PhysicalAssetAuthority.sol:get Claim with _claimType="Is 
 
 
 activate PhysicalAssetAuthority.sol
-GenerationPlant.sol<-PhysicalAssetAuthority.sol:<<Is Physical Asset Authority Claim>>
+GenerationPlant.sol<<--PhysicalAssetAuthority.sol:<<Is Physical Asset Authority Claim>>
 deactivate PhysicalAssetAuthority.sol
 GenerationPlant.sol->GenerationPlant.sol:verify claims
 
@@ -42,7 +42,7 @@ deactivate Consumer
 activate ConsumptionPlant.sol
 ConsumptionPlant.sol->PhysicalAssetAuthority.sol:get Claim with _claimType =\n"Is Physical Asset Authority"
 activate PhysicalAssetAuthority.sol
-ConsumptionPlant.sol<-PhysicalAssetAuthority.sol:<<Is Physical Asset Authority Claim>>
+ConsumptionPlant.sol<<--PhysicalAssetAuthority.sol:<<Is Physical Asset Authority Claim>>
 deactivate PhysicalAssetAuthority.sol
 ConsumptionPlant.sol->ConsumptionPlant.sol:verify claims
 

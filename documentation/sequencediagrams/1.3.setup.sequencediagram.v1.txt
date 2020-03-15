@@ -18,11 +18,11 @@ entryspacing 0.8
 Producer->IdentityContractFactory.sol:createIdentityContract()  
 activate IdentityContractFactory.sol
 
-IdentityContractFactory.sol ->* GenerationPlant.sol:new GenerationPlant()
+IdentityContractFactory.sol ->* GenerationPlant.sol:new IdentityContract()
 deactivate IdentityContractFactory.sol
 Consumer->IdentityContractFactory.sol:createIdentityContract()  
 
 activate IdentityContractFactory.sol
 
-IdentityContractFactory.sol ->* ConsumptionPlant.sol:new ConsumptionPlant()
+IdentityContractFactory.sol ->* ConsumptionPlant.sol:new IdentityContract()
 deactivate IdentityContractFactory.sol

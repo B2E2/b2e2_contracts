@@ -10,14 +10,14 @@ actor Public
   entryspacing 0.8
 
   group Deploys Conctracts
-  MarketAuthority ->* MarketAuthority.sol:new MarketAuthority()
+  MarketAuthority ->* MarketAuthority.sol:new IdentityContract()
   space
   MarketAuthority->MarketAuthority.sol:execute()
   activate MarketAuthority.sol
 
   MarketAuthority.sol ->* IdentityContractFactory.sol:new IdentityContractFactory()
   deactivate MarketAuthority.sol
-  MarketAuthority<-IdentityContractFactory.sol:<<address of IdentityContractFactory.sol>>
+  MarketAuthority<<--IdentityContractFactory.sol:<<address of IdentityContractFactory.sol>>
   space
   MarketAuthority->MarketAuthority.sol:execute()
   activate MarketAuthority.sol
@@ -26,7 +26,7 @@ actor Public
 
   deactivate MarketAuthority.sol
 
-  EnergyToken.sol ->MarketAuthority:<<address of EnergyToken.sol>>
+  EnergyToken.sol -->>MarketAuthority:<<address of EnergyToken.sol>>
   end 
   group Publishes Addresses
   MarketAuthority ->MarketAuthority.sol:add Claim (<<Identity Contract Factory Claim>>) 

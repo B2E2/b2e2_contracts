@@ -13,7 +13,7 @@ group Balance Authority of Producer sends invoice
 BalanceAuthority_P->EnergyToken.sol:get amount of energy, that was not sold
 
 activate EnergyToken.sol
-BalanceAuthority_P<-EnergyToken.sol:56E18
+BalanceAuthority_P<<--EnergyToken.sol:56E18
 
 deactivate EnergyToken.sol
 
@@ -28,7 +28,7 @@ group Balance Authority of Consumer sends invoice
 
 BalanceAuthority_C->EnergyToken.sol:energyDocumentations[<<ConsumptionPlant.sol>>][<<balancePeriod>>]
 activate EnergyToken.sol
-BalanceAuthority_C<-EnergyToken.sol:Consumed Energy=C=90E18
+BalanceAuthority_C<<--EnergyToken.sol:Consumed Energy=C=90E18
 deactivate EnergyToken.sol
 activate BalanceAuthority_C
 BalanceAuthority_C->EnergyToken.sol:get amount of energy, that was delivered by production plants
@@ -36,7 +36,7 @@ activate EnergyToken.sol
 
 
 deactivate BalanceAuthority_C
-BalanceAuthority_C<-EnergyToken.sol:24E18
+BalanceAuthority_C<<--EnergyToken.sol:24E18
 deactivate EnergyToken.sol
 
 
