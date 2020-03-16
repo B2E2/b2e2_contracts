@@ -34,7 +34,7 @@ contract Distributor is IdentityContract {
             uint256 absoluteForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             uint256 generatedEnergy = energyToken.balanceOf(address(this), certificateTokenId);
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer.div(totalForwards)).mul(generatedEnergy)), additionalData);
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer.div(totalForwards)).mul(generatedEnergy)), additionalData);
             return;
         }
         
@@ -60,17 +60,10 @@ contract Distributor is IdentityContract {
                  option2 = option1;
             }
             
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min(option1, option2), additionalData);
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(option1, option2), additionalData);
             return;
         }
         
         require(false);
-    }
-    
-    function min(uint256 a, uint256 b) internal pure returns (uint256) {
-        if(a <= b)
-            return a;
-        else
-            return b;
     }
 }

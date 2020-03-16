@@ -16,4 +16,18 @@ library Commons {
         _timestamp--;
         return uint64(_timestamp - (_timestamp % 900) + 1);
     }
+    
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        if(a <= b)
+            return a;
+        else
+            return b;
+    }
+    
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+        if(a >= b)
+            return a;
+        else
+            return b;
+    }
 }
