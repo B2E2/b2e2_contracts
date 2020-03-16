@@ -26,7 +26,7 @@ contract EnergyToken is ERC1155 {
     IdentityContract marketAuthority;
     IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
-    mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations;
+    mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations public;
     mapping(uint64 => uint256) public energyConsumpedInBalancePeriod;
     mapping(uint256 => Distributor) id2Distributor;
 
