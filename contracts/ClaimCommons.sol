@@ -5,7 +5,7 @@ pragma solidity ^0.5.0;
 * So all contracts which need to access these enums and methods instead are subcontracts of this contract.
 */
 library ClaimCommons {
-    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorContractsClaim }
+    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorClaim }
 
     function claimType2Topic(ClaimType _claimType) public pure returns (uint256 __topic) {
         if(_claimType == ClaimType.IsBalanceAuthority) {
@@ -41,7 +41,7 @@ library ClaimCommons {
         if(_claimType == ClaimType.MarketRulesClaim) {
             return 10110;
         }
-        if(_claimType == ClaimType.AcceptedDistributorContractsClaim) {
+        if(_claimType == ClaimType.AcceptedDistributorClaim) {
             return 10120;
         }
 
@@ -83,7 +83,7 @@ library ClaimCommons {
             return ClaimType.MarketRulesClaim;
         }
         if(_topic == 10120) {
-            return ClaimType.AcceptedDistributorContractsClaim;
+            return ClaimType.AcceptedDistributorClaim;
         }
 
         require(false);
@@ -105,7 +105,7 @@ library ClaimCommons {
         if(_claimType == ClaimType.LocationClaim) {
             return ClaimType.IsPhysicalAssetAuthority;
         }
-        if(_claimType == ClaimType.AcceptedDistributorContractsClaim) {
+        if(_claimType == ClaimType.AcceptedDistributorClaim) {
             return ClaimType.IsBalanceAuthority;
         }
 

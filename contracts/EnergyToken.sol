@@ -232,7 +232,7 @@ contract EnergyToken is ERC1155 {
             uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim);
             (, , address balanceAuthority, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, _to, ClaimCommons.ClaimType.AcceptedDistributorContractsClaim, balanceAuthority) != 0);
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, _to, ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthority) != 0);
             return;
         }
         
