@@ -85,8 +85,10 @@ contract EnergyToken is ERC1155 {
     }
     
     modifier onlyGenerationPlants(uint64 _balancePeriod) {
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0);
         require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.GenerationTypeClaim, _balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.LocationClaim, _balancePeriod) != 0);
         require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0);
         _;
     }
