@@ -12,6 +12,8 @@ contract EnergyToken is ERC1155 {
     
     enum TokenKind {AbsoluteForward, GenerationBasedForward, ConsumptionBasedForward, Certificate}
     
+    event ForwardsCreated(TokenKind tokenKind, uint64 balancePeriod, Distributor distributor, uint256 id);
+    
     // id => whetherCreated
     mapping (uint256 => bool) createdGenerationBasedForwards;
     
@@ -94,10 +96,13 @@ contract EnergyToken is ERC1155 {
     }
     
     function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(_balancePeriod) returns(uint256 __id) {
+        require(_tokenKind != TokenKind.Certificate);
         require(_balancePeriod > Commons.getBalancePeriod());
         __id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
         
         setId2Distributor(__id, _distributor);
+        
+        emit ForwardsCreated(_tokenKind, _balancePeriod, _distributor, __id);
         
         if(_tokenKind == TokenKind.GenerationBasedForward) {
             require(!createdGenerationBasedForwards[__id]);
