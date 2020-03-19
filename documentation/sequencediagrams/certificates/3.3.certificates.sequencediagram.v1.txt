@@ -21,17 +21,17 @@ MeteringAuthority->MeteringAuthority.sol:execute(...)
 
 
 activate MeteringAuthority.sol
-MeteringAuthority.sol ->EnergyToken.sol:**mint**(\n<<certificateID>>, \n<<address of GenerationPlant.sol>>, \n80E18\n)
+MeteringAuthority.sol ->EnergyToken.sol:**mint**(\n<<certificateID>>, \n<<address of Distributor.sol>>, \n80E18\n)
 deactivate MeteringAuthority.sol
 activate EnergyToken.sol
 GenerationPlant.sol<-EnergyToken.sol:get Claims
 activate GenerationPlant.sol
-GenerationPlant.sol->EnergyToken.sol:[ <<Balance Claim>>, \n<<Existence Claim>>, \n<<Generation Type Claim>>, \n<<Location Claim>>, \n<<Metering Claim>>]
+GenerationPlant.sol-->>EnergyToken.sol:[ <<Balance Claim>>, \n<<Existence Claim>>, \n<<Generation Type Claim>>, \n<<Location Claim>>, \n<<Metering Claim>>]
 deactivate GenerationPlant.sol
 
 MeteringAuthority.sol<-EnergyToken.sol:get Claim
 activate MeteringAuthority.sol
-MeteringAuthority.sol->EnergyToken.sol:<<Is Metering Authority Claim>>
+MeteringAuthority.sol-->>EnergyToken.sol:<<Is Metering Authority Claim>>
 deactivate MeteringAuthority.sol
 
 activate GenerationPlant.sol
@@ -49,7 +49,7 @@ EnergyToken.sol->EnergyToken.sol:verify claims
 
 
 EnergyToken.sol->EnergyToken.sol:write Tokens to \n<<address of \nDistributor.sol>>
-MeteringAuthority<-EnergyToken.sol:event TransferBatch(...) 
+MeteringAuthority<<--EnergyToken.sol:event TransferSingle(...) 
 
 
 

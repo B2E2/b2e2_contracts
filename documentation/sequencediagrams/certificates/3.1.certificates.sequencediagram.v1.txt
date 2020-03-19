@@ -24,16 +24,16 @@ activate EnergyToken.sol
 ConsumptionPlant.sol<-EnergyToken.sol:get Claims
 
 activate ConsumptionPlant.sol
-ConsumptionPlant.sol->EnergyToken.sol:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Metering Claim>>]
+ConsumptionPlant.sol-->>EnergyToken.sol:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Metering Claim>>]
 deactivate ConsumptionPlant.sol
 MeteringAuthority.sol<-EnergyToken.sol:get Claim
 activate MeteringAuthority.sol
-MeteringAuthority.sol->EnergyToken.sol:<<Is Metering Authority Claim>>
+MeteringAuthority.sol-->>EnergyToken.sol:<<Is Metering Authority Claim>>
 deactivate MeteringAuthority.sol
 EnergyToken.sol->EnergyToken.sol:verify claims 
 EnergyToken.sol->EnergyToken.sol:write measured values \nin kWh
 
-EnergyToken.sol ->MeteringAuthority:**event MeasuredEnergyConsumption**(\n<<address of ConsumptionPlant.sol>>, \n<<90 kWh>>, \n<<_balancePeriod>>, \ncorrected=false\n)
+EnergyToken.sol -->>MeteringAuthority:**event MeasuredEnergyConsumption**(\n<<address of ConsumptionPlant.sol>>, \n<<90 kWh>>, \n<<_balancePeriod>>, \ncorrected=false\n)
 deactivate EnergyToken.sol
 
 end 

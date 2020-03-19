@@ -36,11 +36,11 @@ EnergyToken.sol<-Distributor:**balanceOf**(\n<<address of ConsumptionPlant.sol>>
 activate EnergyToken.sol
 EnergyToken.sol-->>Distributor:Consumption-Based Forwards=CBF=100E18
 deactivate EnergyToken.sol
-EnergyToken.sol<-Distributor:energyDocumentations[<<GenerationPlant.sol>>][<<balancePeriod>>]
+EnergyToken.sol<-Distributor:energyDocumentations(<<GenerationPlant.sol>>,<<balancePeriod>>)
 activate EnergyToken.sol
 EnergyToken.sol-->>Distributor:generated Energy=G=80E18
 deactivate EnergyToken.sol
-EnergyToken.sol<-Distributor:energyDocumentations[<<ConsumptionPlant.sol>>][<<balancePeriod>>]
+EnergyToken.sol<-Distributor:energyDocumentations(<<ConsumptionPlant.sol>>,<<balancePeriod>>)
 activate EnergyToken.sol
 EnergyToken.sol-->>Distributor:Consumed Energy=C=90E18
 
@@ -53,14 +53,14 @@ EnergyToken.sol-->>Distributor:TCE = sum((CBF/100E18) * C))
 
 deactivate EnergyToken.sol
 end
-EnergyToken.sol<-Distributor:**safeBatchTransferFrom**(\nfrom= <<address of Distributor>>,  \nto= <<address of ConsumptionPlant.sol>>, \nid= <<certificateID>>, \nvalue= min{(CBF/100E18) * C, (((CBF/100E18) * C) / TCE * G} = 80E18\n)
+EnergyToken.sol<-Distributor:**safeTransferFrom**(\nfrom= <<address of Distributor>>,  \nto= <<address of ConsumptionPlant.sol>>, \nid= <<certificateID>>, \nvalue= min{(CBF/100E18) * C, (((CBF/100E18) * C) / TCE * G} = 80E18\n)
 deactivate Distributor
 
 
 
 activate EnergyToken.sol
 
-Consumer<<--EnergyToken.sol:event TransferBatch(...) 
+Consumer<<--EnergyToken.sol:event TransferSingle(...) 
 deactivate EnergyToken.sol
 
 activate EnergyToken.sol

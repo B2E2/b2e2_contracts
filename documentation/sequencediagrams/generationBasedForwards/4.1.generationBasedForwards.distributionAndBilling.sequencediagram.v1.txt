@@ -28,26 +28,26 @@ ConsumptionPlant.sol-->>Distributor:[<<Balance Claim>>, \n<<Existence Claim>>, \
 deactivate ConsumptionPlant.sol
 Distributor->Distributor:verify claims
 
-EnergyToken.sol<-Distributor:balanceOf(\n<<address of ConsumptionPlant.sol>>,\n<<tokenID>>)
+EnergyToken.sol<-Distributor:**balanceOf**(\n<<address of ConsumptionPlant.sol>>,\n<<tokenID>>)
 activate EnergyToken.sol
 
 EnergyToken.sol-->>Distributor:Generation-based Forwards=GBF=30
 deactivate EnergyToken.sol
 
-EnergyToken.sol<-Distributor:balanceOf(\n<<address of Distributor>>,\n<<certificateID>>)
+EnergyToken.sol<-Distributor:**energyDocumentations**(\n<<address of GenerationPlant>>,\n<<balance periode>>)
 
 activate EnergyToken.sol
 EnergyToken.sol-->>Distributor:Generated Energy=G=80
 
 deactivate EnergyToken.sol
-EnergyToken.sol<-Distributor:safeBatchTransferFrom(\nfrom= <<address of Distributor>>,  \nto= <<address of ConsumptionPlant.sol>>, \nid= <<certificateID>>, \nvalue= GBF/100 * G = 24\n)
+EnergyToken.sol<-Distributor:**safeTransferFrom**(\nfrom= <<address of Distributor>>,  \nto= <<address of ConsumptionPlant.sol>>, \nid= <<certificateID>>, \nvalue= GBF/100 * G = 24\n)
 
 
 
 activate EnergyToken.sol
 
 deactivate Distributor
-Consumer<<--EnergyToken.sol:TransferBatch (event)
+Consumer<<--EnergyToken.sol:TransferSingle (event)
 
 deactivate EnergyToken.sol
 activate EnergyToken.sol

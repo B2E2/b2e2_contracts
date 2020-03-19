@@ -12,14 +12,14 @@ actor Public
   group Deploys Conctracts
   MarketAuthority ->* MarketAuthority.sol:new IdentityContract()
   space
-  MarketAuthority->MarketAuthority.sol:execute()
+  MarketAuthority->MarketAuthority.sol:execute(...)
   activate MarketAuthority.sol
 
   MarketAuthority.sol ->* IdentityContractFactory.sol:new IdentityContractFactory()
   deactivate MarketAuthority.sol
   MarketAuthority<<--IdentityContractFactory.sol:<<address of IdentityContractFactory.sol>>
   space
-  MarketAuthority->MarketAuthority.sol:execute()
+  MarketAuthority->MarketAuthority.sol:execute(...)
   activate MarketAuthority.sol
 
   MarketAuthority.sol ->* EnergyToken.sol:new EnergyToken()
