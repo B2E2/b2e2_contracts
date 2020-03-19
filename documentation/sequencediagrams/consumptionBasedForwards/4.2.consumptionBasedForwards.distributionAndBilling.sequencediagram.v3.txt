@@ -13,18 +13,18 @@ participant EnergyToken.sol
 
 group Balance Authority of Producer sends invoice
 
-BalanceAuthority_P->EnergyToken.sol:energyDocumentations[<<GenerationPlant.sol>>][<<balancePeriod>>]
+BalanceAuthority_P->EnergyToken.sol:energyDocumentations(<<GenerationPlant.sol>>,<<balancePeriod>>)
 activate EnergyToken.sol
 BalanceAuthority_P<<--EnergyToken.sol:generated Energy=G=80E18
 deactivate EnergyToken.sol
 activate BalanceAuthority_P
-BalanceAuthority_P->EnergyToken.sol:getListOfAllConsumer(<<tokenID>>)
+BalanceAuthority_P->EnergyToken.sol:get list of all consumer that have tokens with <<tokenID>>
 activate EnergyToken.sol
 deactivate BalanceAuthority_P
 BalanceAuthority_P<<--EnergyToken.sol:[<<address of ConsumptionPlant.sol>>]
 deactivate EnergyToken.sol
 activate BalanceAuthority_P
-BalanceAuthority_P->EnergyToken.sol:energyDocumentations[<<ConsumptionPlant.sol>>][<<balancePeriod>>]
+BalanceAuthority_P->EnergyToken.sol:energyDocumentations(<<ConsumptionPlant.sol>>,<<balancePeriod>>)
 
 activate EnergyToken.sol
 deactivate BalanceAuthority_P

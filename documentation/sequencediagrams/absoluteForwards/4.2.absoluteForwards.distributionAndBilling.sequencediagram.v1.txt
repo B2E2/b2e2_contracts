@@ -9,16 +9,16 @@ participant EnergyToken.sol
 
 group Balance Authority of Producer sends invoice
 
-BalanceAuthority_P->EnergyToken.sol:energyDocumentations[<<GenerationPlant.sol>>][<<balancePeriod>>]
+BalanceAuthority_P->EnergyToken.sol:energyDocumentations(<<GenerationPlant.sol>>,<<balancePeriod>>)
 activate EnergyToken.sol
-BalanceAuthority_P<-EnergyToken.sol:generated Energy=G=80E18
+BalanceAuthority_P<<--EnergyToken.sol:generated Energy=G=80E18
 deactivate EnergyToken.sol
 activate BalanceAuthority_P
 BalanceAuthority_P->EnergyToken.sol:totalSupply(<<tokenID>>)
 
 activate EnergyToken.sol
 deactivate BalanceAuthority_P
-BalanceAuthority_P<-EnergyToken.sol:TotalForwards=TF=100E18
+BalanceAuthority_P<<--EnergyToken.sol:TotalForwards=TF=100E18
 
 deactivate EnergyToken.sol 
 
@@ -31,9 +31,9 @@ end
 
 group Balance Authority of Consumer sends invoice
 
-BalanceAuthority_C->EnergyToken.sol:energyDocumentations[<<ConsumptionPlant.sol>>][<<balancePeriod>>]
+BalanceAuthority_C->EnergyToken.sol:energyDocumentations(<<ConsumptionPlant.sol>>,<<balancePeriod>>)
 activate EnergyToken.sol
-BalanceAuthority_C<-EnergyToken.sol:Consumed Energy=C=90E18
+BalanceAuthority_C<<--EnergyToken.sol:Consumed Energy=C=90E18
 deactivate EnergyToken.sol
 activate BalanceAuthority_C
 BalanceAuthority_C->EnergyToken.sol:balanceOf(\n<<address of ConsumptionPlant.sol>>, \n<<tokenID>>)
@@ -41,7 +41,7 @@ activate EnergyToken.sol
 
 
 deactivate BalanceAuthority_C
-BalanceAuthority_C<-EnergyToken.sol:AbsoluteForwardsOfConsumer=AFC=100E18
+BalanceAuthority_C<<--EnergyToken.sol:AbsoluteForwardsOfConsumer=AFC=100E18
 deactivate EnergyToken.sol
 
 
