@@ -12,6 +12,8 @@ contract EnergyToken is ERC1155 {
     
     enum TokenKind {AbsoluteForward, GenerationBasedForward, ConsumptionBasedForward, Certificate}
     
+    event ForwardsCreated(TokenKind tokenKind, uint64 balancePeriod, Distributor distributor, uint256 id);
+    
     // id => whetherCreated
     mapping (uint256 => bool) createdGenerationBasedForwards;
     
@@ -24,7 +26,7 @@ contract EnergyToken is ERC1155 {
     IdentityContract marketAuthority;
     IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
-    mapping(address => mapping(uint64 => EnergyDocumentation)) energyDocumentations;
+    mapping(address => mapping(uint64 => EnergyDocumentation)) public energyDocumentations;
     mapping(uint64 => uint256) public energyConsumpedInBalancePeriod;
     mapping(uint256 => Distributor) id2Distributor;
 
@@ -84,18 +86,23 @@ contract EnergyToken is ERC1155 {
         _;
     }
     
-    modifier onlyGenerationPlants(uint64 _balancePeriod) {
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0);
+    modifier onlyGenerationPlants(address _plant, uint64 _balancePeriod) {
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.GenerationTypeClaim, _balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.LocationClaim, _balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0);
         _;
     }
     
-    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(_balancePeriod) returns(uint256 __id) {
+    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(msg.sender, _balancePeriod) returns(uint256 __id) {
+        require(_tokenKind != TokenKind.Certificate);
         require(_balancePeriod > Commons.getBalancePeriod());
         __id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
         
         setId2Distributor(__id, _distributor);
+        
+        emit ForwardsCreated(_tokenKind, _balancePeriod, _distributor, __id);
         
         if(_tokenKind == TokenKind.GenerationBasedForward) {
             require(!createdGenerationBasedForwards[__id]);
@@ -108,7 +115,7 @@ contract EnergyToken is ERC1155 {
         }
     }
 
-    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod()) public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
             assert(false);
@@ -125,7 +132,7 @@ contract EnergyToken is ERC1155 {
         return true;
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod()) public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
             assert(false);
@@ -225,7 +232,7 @@ contract EnergyToken is ERC1155 {
             uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim);
             (, , address balanceAuthority, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, _to, ClaimCommons.ClaimType.AcceptedDistributorContractsClaim, balanceAuthority) != 0);
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, _to, ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthority) != 0);
             return;
         }
         

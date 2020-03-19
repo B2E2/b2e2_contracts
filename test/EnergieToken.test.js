@@ -185,65 +185,6 @@ contract('EnergyToken', function(accounts) {
 	assert.equal(await energyToken.balanceOf(idcs[1].options.address, id), 0);
   });
 
-  it("keeps track of energy data.", async function() {
-	let balancePeriod = "1895220001";
-	
-	// The call must revert if it comes from something that's not a metering authority's IDC (even if it's by the metering authority directly).
-	let abiAddConsumptionCall1 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 500, balancePeriod, false).encodeABI();
-	await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall1).send({from: accounts[5], gas: 7000000}));
-	await truffleAssert.reverts(energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 500, balancePeriod, false).send({from: accounts[8], gas: 7000000}));
-	
-	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall1).send({from: accounts[8], gas: 7000000});
-
-	// It needs to be possible to update the value.
-	let abiAddConsumptionCall2 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 335, balancePeriod, false).encodeABI();
-	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall2).send({from: accounts[8], gas: 7000000});
-
-	// It needs to be possible to change the value to a corrected value.
-	let abiAddConsumptionCall3 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 1335, balancePeriod, true).encodeABI();
-	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall3).send({from: accounts[8], gas: 7000000});
-
-	// It must be possible to update corrected values too.
-	let abiAddConsumptionCall4 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 2335, balancePeriod, true).encodeABI();
-	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall4).send({from: accounts[8], gas: 7000000});
-
-	// It must not be possible to replace a corrected value by a non-corrected one.
-	let abiAddConsumptionCall5 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 3335, balancePeriod, false).encodeABI();
-	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall5).send({from: accounts[8], gas: 7000000}));
-
-	// All the same goes for energy generation.
-	// The call must revert if it comes from something that's not a metering authority's IDC (even if it's by the metering authority directly).
-	let abiAddGenerationCall1 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 500, balancePeriod, false).encodeABI();
-	await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall1).send({from: accounts[5], gas: 7000000}));
-	await truffleAssert.reverts(energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 500, balancePeriod, false).send({from: accounts[8], gas: 7000000}));
-
-	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall1).send({from: accounts[8], gas: 7000000});
-
-	// It needs to be possible to update the value.
-	let abiAddGenerationCall2 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 335, balancePeriod, false).encodeABI();
-	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall2).send({from: accounts[8], gas: 7000000});
-
-	// It needs to be possible to change the value to a corrected value.
-	let abiAddGenerationCall3 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 1335, balancePeriod, true).encodeABI();
-	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall3).send({from: accounts[8], gas: 7000000});
-
-	// It must be possible to update corrected values too.
-	let abiAddGenerationCall4 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 2335, balancePeriod, true).encodeABI();
-	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall4).send({from: accounts[8], gas: 7000000});
-
-	// It must not be possible to replace a corrected value by a non-corrected one.
-	let abiAddGenerationCall5 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 3335, balancePeriod, false).encodeABI();
-	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall5).send({from: accounts[8], gas: 7000000}));
-
-	// Total consumed energy needs to check out despite of correctitions.
-	assert.equal(await energyToken.energyConsumpedInBalancePeriod(balancePeriod), 2335);
-
-	// Non-corrected values count too.
-	let abiAddConsumptionCall6 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[0].options.address, 10000, balancePeriod, false).encodeABI();
-	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall6).send({from: accounts[8], gas: 7000000});
-	assert.equal(await energyToken.energyConsumpedInBalancePeriod(balancePeriod), 12335);
-  });
-
   it("can transfer tokens.", async function() {
 	// IDC 2 has 17 tokens (17E18 elementary units) from the mint operation.
 
@@ -373,5 +314,75 @@ contract('EnergyToken', function(accounts) {
 	assert.equal(balance12, 3E18);
 	assert.equal(balance21, 16E18);
 	assert.equal(balance22, 14E18);
+  });
+
+  it("keeps track of energy data.", async function() {
+	
+	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let data = web3.utils.toHex(json);
+	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[2], 10070, physicalAssetAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[2], 10080, physicalAssetAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[2], 10040, meteringAuthority.options.address, data, "", account8Sk);
+
+	let balancePeriod = "1895220001";
+
+	// The call must revert if it comes from something that's not a metering authority's IDC (even if it's by the metering authority directly).
+	let abiAddConsumptionCall1 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 500, balancePeriod, false).encodeABI();
+
+	await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall1).send({from: accounts[5], gas: 7000000}));
+
+	await truffleAssert.reverts(energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 500, balancePeriod, false).send({from: accounts[8], gas: 7000000}));
+	
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall1).send({from: accounts[8], gas: 7000000});
+
+	// It needs to be possible to update the value.
+	let abiAddConsumptionCall2 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 335, balancePeriod, false).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall2).send({from: accounts[8], gas: 7000000});
+
+	// It needs to be possible to change the value to a corrected value.
+	let abiAddConsumptionCall3 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 1335, balancePeriod, true).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall3).send({from: accounts[8], gas: 7000000});
+
+	// It must be possible to update corrected values too.
+	let abiAddConsumptionCall4 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 2335, balancePeriod, true).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall4).send({from: accounts[8], gas: 7000000});
+
+	// It must not be possible to replace a corrected value by a non-corrected one.
+	let abiAddConsumptionCall5 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 3335, balancePeriod, false).encodeABI();
+	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall5).send({from: accounts[8], gas: 7000000}));
+
+	// All the same goes for energy generation.
+	// The call must revert if it comes from something that's not a metering authority's IDC (even if it's by the metering authority directly).
+	let abiAddGenerationCall1 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 500, balancePeriod, false).encodeABI();
+	await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall1).send({from: accounts[5], gas: 7000000}));
+	await truffleAssert.reverts(energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 500, balancePeriod, false).send({from: accounts[8], gas: 7000000}));
+
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall1).send({from: accounts[8], gas: 7000000});
+
+	// It needs to be possible to update the value.
+	let abiAddGenerationCall2 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 335, balancePeriod, false).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall2).send({from: accounts[8], gas: 7000000});
+
+	// It needs to be possible to change the value to a corrected value.
+	let abiAddGenerationCall3 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 1335, balancePeriod, true).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall3).send({from: accounts[8], gas: 7000000});
+
+	// It must be possible to update corrected values too.
+	let abiAddGenerationCall4 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 2335, balancePeriod, true).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall4).send({from: accounts[8], gas: 7000000});
+
+	// It must not be possible to replace a corrected value by a non-corrected one.
+	let abiAddGenerationCall5 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 3335, balancePeriod, false).encodeABI();
+	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall5).send({from: accounts[8], gas: 7000000}));
+
+	// Total consumed energy needs to check out despite of correctitions.
+	assert.equal(await energyToken.energyConsumpedInBalancePeriod(balancePeriod), 2335);
+
+	// Non-corrected values count too.
+	let abiAddConsumptionCall6 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[0].options.address, 10000, balancePeriod, false).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall6).send({from: accounts[8], gas: 7000000});
+	assert.equal(await energyToken.energyConsumpedInBalancePeriod(balancePeriod), 12335);
   });
 })
