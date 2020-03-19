@@ -27,7 +27,8 @@ contract EnergyToken is ERC1155 {
     IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) public energyDocumentations;
-    mapping(uint64 => uint256) public energyConsumpedInBalancePeriod;
+    mapping(uint64 => mapping(address => uint256)) public energyConsumedRelevantForGenerationPlant;
+    mapping(uint64 => mapping(address => address[])) relevantGenerationPlantsForConsumptionPlant;
     mapping(uint256 => Distributor) id2Distributor;
 
     constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {
@@ -120,14 +121,15 @@ contract EnergyToken is ERC1155 {
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
             assert(false);
         }
-        
-        // In case this is merely a correction, remove the previously stated value from the total.
-        energyConsumpedInBalancePeriod[_balancePeriod] = energyConsumpedInBalancePeriod[_balancePeriod].sub(energyDocumentations[_plant][_balancePeriod].value);
-        
+
+        address[] storage affectedGenerationPlants = relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_plant];
+        for(uint32 i = 0; i < affectedGenerationPlants.length; i++) {
+            // In case this is merely a correction, remove the previously stated value from the total.
+            energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] = energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]].sub(energyDocumentations[_plant][_balancePeriod].value).add(_value);
+        }
+
         EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, false);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
-        
-        energyConsumpedInBalancePeriod[_balancePeriod] = energyConsumpedInBalancePeriod[_balancePeriod].add(_value);
         
         return true;
     }
@@ -266,9 +268,15 @@ contract EnergyToken is ERC1155 {
     }
     
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
-        (TokenKind tokenKind, uint64 balancePeriod, ) = getTokenIdConstituents(_id);
+        (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
          if(tokenKind != TokenKind.Certificate) {
             require(balancePeriod > Commons.getBalancePeriod());
+        }
+        
+        if(tokenKind == TokenKind.GenerationBasedForward) {
+            relevantGenerationPlantsForConsumptionPlant[balancePeriod][_to].push(generationPlant);
+            if(!energyDocumentations[_to][balancePeriod].generated)
+                energyConsumedRelevantForGenerationPlant[balancePeriod][generationPlant] = energyConsumedRelevantForGenerationPlant[balancePeriod][generationPlant].add(energyDocumentations[_to][balancePeriod].value);
         }
         
         checkClaimsForTransfer(address(uint160(_from)), address(uint160(_to)), _id);
@@ -282,9 +290,15 @@ contract EnergyToken is ERC1155 {
         uint64 currentBalancePeriod = Commons.getBalancePeriod();
         
         for (uint256 i = 0; i < _ids.length; ++i) {
-            (TokenKind tokenKind, uint64 balancePeriod, ) = getTokenIdConstituents(_ids[i]);
+            (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);
             if(tokenKind != TokenKind.Certificate) {
                 require(balancePeriod > currentBalancePeriod);
+            }
+            
+            if(tokenKind == TokenKind.GenerationBasedForward) {
+                relevantGenerationPlantsForConsumptionPlant[balancePeriod][_to].push(generationPlant);
+                if(!energyDocumentations[_to][balancePeriod].generated)
+                    energyConsumedRelevantForGenerationPlant[balancePeriod][generationPlant] = energyConsumedRelevantForGenerationPlant[balancePeriod][generationPlant].add(energyDocumentations[_to][balancePeriod].value);
             }
 
             checkClaimsForTransfer(fromPayable, toPayable, _ids[i]);

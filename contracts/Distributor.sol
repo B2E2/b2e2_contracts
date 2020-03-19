@@ -18,7 +18,7 @@ contract Distributor is IdentityContract {
         (EnergyToken.TokenKind tokenKind, uint64 balancePeriod, address identityContractAddress) = energyToken.getTokenIdConstituents(_tokenId);
         
         // Time period check
-        require(balancePeriod < Commons.getBalancePeriod());
+        // require(balancePeriod < Commons.getBalancePeriod()); // TODO: COMMENT BACK IN
         
         uint256 certificateTokenId = energyToken.getTokenId(EnergyToken.TokenKind.Certificate, balancePeriod, identityContractAddress);
         bytes memory additionalData;
@@ -32,30 +32,31 @@ contract Distributor is IdentityContract {
         if(tokenKind == EnergyToken.TokenKind.AbsoluteForward) {
             uint256 totalForwards = energyToken.totalSupply(_tokenId);
             uint256 absoluteForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
-            uint256 generatedEnergy = energyToken.balanceOf(address(this), certificateTokenId);
+            (uint256 generatedEnergy, , bool generated) = energyToken.energyDocumentations(identityContractAddress, balancePeriod);
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer.div(totalForwards)).mul(generatedEnergy)), additionalData);
+            require(generated);
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, absoluteForwardsOfConsumer.mul(generatedEnergy).div(totalForwards)), additionalData);
             return;
         }
         
         if(tokenKind == EnergyToken.TokenKind.GenerationBasedForward) {
             uint256 generationBasedForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
-            uint256 generatedEnergy = energyToken.balanceOf(address(this), certificateTokenId);
+            (uint256 generatedEnergy, , bool generated) = energyToken.energyDocumentations(identityContractAddress, balancePeriod);
+            require(generated);
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, (generationBasedForwardsOfConsumer.mul(generatedEnergy)).div(100E18), additionalData);
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generationBasedForwardsOfConsumer.mul(generatedEnergy).div(100E18), additionalData);
             return;
         }
         
         if(tokenKind == EnergyToken.TokenKind.ConsumptionBasedForward) {
             uint256 consumptionBasedForwards = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
-            uint256 generatedEnergy = energyToken.balanceOf(identityContractAddress, _tokenId);
-            uint256 consumedEnergy = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
-            uint256 totalConsumedEnergy = energyToken.energyConsumpedInBalancePeriod(balancePeriod);
-            
+            (uint256 generatedEnergy, uint256 consumedEnergy) = getGeneratedAndConsumedEnergy(identityContractAddress, _consumptionPlantAddress, balancePeriod);
+            uint256 totalConsumedEnergy = energyToken.energyConsumedRelevantForGenerationPlant(balancePeriod, identityContractAddress);
+
             uint256 option1 = (consumptionBasedForwards.mul(consumedEnergy)).div(100E18);
             uint256 option2;
             if(totalConsumedEnergy > 0) {
-                option2 = (((consumptionBasedForwards.mul(consumedEnergy)).div(100E18)).mul(generatedEnergy)).div(totalConsumedEnergy);
+                option2 = ((consumptionBasedForwards.mul(consumedEnergy)).mul(generatedEnergy)).div(100E18).div(totalConsumedEnergy);
             } else {
                  option2 = option1;
             }
@@ -65,5 +66,12 @@ contract Distributor is IdentityContract {
         }
         
         require(false);
+    }
+    
+    function getGeneratedAndConsumedEnergy(address _generationPlantAddress, address _consumptionPlantAddress, uint64 _balancePeriod) internal view returns (uint256 __generatedEnergy, uint256 __consumedEnergy) {
+        (uint256 generatedEnergy, , bool gGen) = energyToken.energyDocumentations(_generationPlantAddress, _balancePeriod);
+        (uint256 consumedEnergy, , bool gCon) = energyToken.energyDocumentations(_consumptionPlantAddress, _balancePeriod);
+        require(gGen && !gCon);
+        return (generatedEnergy, consumedEnergy);
     }
 }
