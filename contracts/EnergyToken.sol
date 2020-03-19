@@ -21,6 +21,7 @@ contract EnergyToken is ERC1155 {
         uint256 value;
         bool corrected;
         bool generated;
+        bool entered;
     }
     
     IdentityContract marketAuthority;
@@ -29,6 +30,7 @@ contract EnergyToken is ERC1155 {
     mapping(address => mapping(uint64 => EnergyDocumentation)) public energyDocumentations;
     mapping(uint64 => mapping(address => uint256)) public energyConsumedRelevantForGenerationPlant;
     mapping(uint64 => mapping(address => address[])) relevantGenerationPlantsForConsumptionPlant;
+    mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant;
     mapping(uint256 => Distributor) id2Distributor;
 
     constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {
@@ -77,6 +79,9 @@ contract EnergyToken is ERC1155 {
             if (to.isContract() && to != msg.sender) {
                 _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, to, _id, quantity, '');
             }
+            
+            if(tokenKind == TokenKind.ConsumptionBasedForward)
+                addPlantRelationship(generationPlant, _to[i], balancePeriod);
         }
         
         __id = _id;
@@ -121,14 +126,18 @@ contract EnergyToken is ERC1155 {
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
             assert(false);
         }
-
+        
         address[] storage affectedGenerationPlants = relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_plant];
         for(uint32 i = 0; i < affectedGenerationPlants.length; i++) {
             // In case this is merely a correction, remove the previously stated value from the total.
             energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] = energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]].sub(energyDocumentations[_plant][_balancePeriod].value).add(_value);
+        
+            if(!energyDocumentations[_plant][_balancePeriod].entered) {
+                numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] = numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]].sub(1);
+            }
         }
 
-        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, false);
+        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, false, true);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
         return true;
@@ -140,7 +149,7 @@ contract EnergyToken is ERC1155 {
             assert(false);
         }
         
-        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, true);
+        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, true, true);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
         return true;
@@ -269,15 +278,11 @@ contract EnergyToken is ERC1155 {
     
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
-         if(tokenKind != TokenKind.Certificate) {
+         if(tokenKind != TokenKind.Certificate)
             require(balancePeriod > Commons.getBalancePeriod());
-        }
         
-        if(tokenKind == TokenKind.GenerationBasedForward) {
-            relevantGenerationPlantsForConsumptionPlant[balancePeriod][_to].push(generationPlant);
-            if(!energyDocumentations[_to][balancePeriod].generated)
-                energyConsumedRelevantForGenerationPlant[balancePeriod][generationPlant] = energyConsumedRelevantForGenerationPlant[balancePeriod][generationPlant].add(energyDocumentations[_to][balancePeriod].value);
-        }
+        if(tokenKind == TokenKind.ConsumptionBasedForward)
+            addPlantRelationship(generationPlant, _to, balancePeriod);
         
         checkClaimsForTransfer(address(uint160(_from)), address(uint160(_to)), _id);
         ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
@@ -295,15 +300,21 @@ contract EnergyToken is ERC1155 {
                 require(balancePeriod > currentBalancePeriod);
             }
             
-            if(tokenKind == TokenKind.GenerationBasedForward) {
-                relevantGenerationPlantsForConsumptionPlant[balancePeriod][_to].push(generationPlant);
-                if(!energyDocumentations[_to][balancePeriod].generated)
-                    energyConsumedRelevantForGenerationPlant[balancePeriod][generationPlant] = energyConsumedRelevantForGenerationPlant[balancePeriod][generationPlant].add(energyDocumentations[_to][balancePeriod].value);
-            }
+            if(tokenKind == TokenKind.ConsumptionBasedForward)
+                addPlantRelationship(generationPlant, _to, balancePeriod);
 
             checkClaimsForTransfer(fromPayable, toPayable, _ids[i]);
         }
         ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
+    }
+    
+    function addPlantRelationship(address _generationPlant, address _consumptionPlant, uint64 _balancePeriod) internal {
+        relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_consumptionPlant].push(_generationPlant);
+        
+        if(!energyDocumentations[_consumptionPlant][_balancePeriod].generated)
+            require(energyDocumentations[_consumptionPlant][_balancePeriod].value == 0);
+        
+        numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
     }
     
     function setId2Distributor(uint256 _id, Distributor _distributor) internal {

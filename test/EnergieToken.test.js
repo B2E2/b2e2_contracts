@@ -380,6 +380,11 @@ contract('EnergyToken', function(accounts) {
 	  await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall).send({from: accounts[5], gas: 7000000});
 	}
 
+	// Transfer generation-based forwards.
+	idcs[1].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", forwardIds[1]).send({from: accounts[6], gas: 7000000});
+	let abiTransferGenerationBasedForwards = energyTokenWeb3.methods.safeTransferFrom(idcs[0].options.address, idcs[1].options.address, forwardIds[1], "17000000000000000000", "0x00").encodeABI();
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferGenerationBasedForwards).send({from: accounts[5], gas: 7000000});
+
 	let distributeCall = async function(forwardKind) {
 	  await distributorWeb3.methods.distribute(idcs[1].options.address, forwardIds[forwardKind]).send({from: accounts[0], gas: 7000000});
 	};
@@ -390,7 +395,11 @@ contract('EnergyToken', function(accounts) {
 	// The certificate balance of IDC 1 must stay zero if all energy measurements are zero.
 	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
 	  // Call distribute() function.
-	  await distributeCall(forwardKind);
+	  if(forwardKind != 2) {
+		await distributeCall(forwardKind);
+	  } else {
+		truffleAssert.reverts(distributeCall(forwardKind));
+	  }
 	}
 	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateId), 0);
 
@@ -431,11 +440,6 @@ contract('EnergyToken', function(accounts) {
 	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsBack).send({from: accounts[6], gas: 7000000});
 
 	// Test generation-based distributor.
-	// Transfer forwards.
-	idcs[1].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", forwardIds[1]).send({from: accounts[6], gas: 7000000});
-	let abiTransferGenerationBasedForwards = energyTokenWeb3.methods.safeTransferFrom(idcs[0].options.address, idcs[1].options.address, forwardIds[1], "17000000000000000000", "0x00").encodeABI();
-	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferGenerationBasedForwards).send({from: accounts[5], gas: 7000000});
-	
 	// Run generation-based distributor.
 	distributeCall(1);
 	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateId), "5100000000000000000");
