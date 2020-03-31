@@ -1,16 +1,13 @@
 pragma solidity ^0.5.0;
 import "./IdentityContract.sol";
-import "./IdentityContractFactory.sol";
 import "./EnergyToken.sol";
 
 contract Distributor is IdentityContract {
     using SafeMath for uint256;
     
-    IdentityContractFactory public identityContractFactory;
     EnergyToken public energyToken;
 
-    constructor(IdentityContractFactory _identityContractFactory, IdentityContract _marketAuthority, EnergyToken _energyToken) IdentityContract(_marketAuthority) public {
-        identityContractFactory = _identityContractFactory;
+    constructor(IdentityContract _marketAuthority, EnergyToken _energyToken) IdentityContract(_marketAuthority) public {
         energyToken = _energyToken;
     }
     

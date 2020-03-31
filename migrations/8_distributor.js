@@ -4,7 +4,6 @@ const ClaimVerifier = artifacts.require("ClaimVerifier");
 const IdentityContractLib = artifacts.require("IdentityContractLib");
 
 const marketAuthority = artifacts.require("IdentityContract");
-const IdentityContractFactory = artifacts.require("IdentityContractFactory");
 const EnergyToken = artifacts.require("EnergyToken");
 
 const Distributor = artifacts.require("Distributor");
@@ -13,6 +12,6 @@ module.exports = function(deployer) {
   deployer.link(Commons, Distributor);
   deployer.link(ClaimVerifier, Distributor);
   deployer.link(IdentityContractLib, Distributor);
-  deployer.deploy(Distributor, IdentityContractFactory.address, marketAuthority.address, EnergyToken.address);
+  deployer.deploy(Distributor, marketAuthority.address, EnergyToken.address);
 };
 
