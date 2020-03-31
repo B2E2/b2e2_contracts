@@ -94,7 +94,7 @@ library ClaimVerifier {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256 claimId = IdentityContractLib.getClaimId(_issuer, topic);
 
-        (uint256 cTopic, , , , bytes memory cData,) = IdentityContract(_subject).getClaim(claimId);
+        (uint256 cTopic, , , , ,) = IdentityContract(_subject).getClaim(claimId);
         
         if(cTopic != topic)
             return 0;
