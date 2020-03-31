@@ -31,7 +31,7 @@ contract EnergyToken is ERC1155 {
     mapping(uint64 => mapping(address => uint256)) public energyConsumedRelevantForGenerationPlant;
     mapping(uint64 => mapping(address => address[])) relevantGenerationPlantsForConsumptionPlant;
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant;
-    mapping(uint256 => Distributor) id2Distributor;
+    mapping(uint256 => Distributor) public id2Distributor;
 
     constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {
         marketAuthority = _marketAuthority;

@@ -6,16 +6,26 @@ contract Distributor is IdentityContract {
     using SafeMath for uint256;
     
     EnergyToken public energyToken;
+    
+    // token ID => consumption plant address => bool
+    mapping(uint256 => mapping(address => bool)) completedDistributions;
+    
+    bool testing;
 
-    constructor(IdentityContract _marketAuthority, EnergyToken _energyToken) IdentityContract(_marketAuthority) public {
+    constructor(IdentityContract _marketAuthority, EnergyToken _energyToken, bool _testing) IdentityContract(_marketAuthority) public {
         energyToken = _energyToken;
+        testing = _testing;
     }
     
-    function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) public onlyOwner {
+    function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) public {
+        require(energyToken.id2Distributor(_tokenId) == this);
+        require(testing || !completedDistributions[_tokenId][_consumptionPlantAddress]);
+        completedDistributions[_tokenId][_consumptionPlantAddress] = true;
+        
         (EnergyToken.TokenKind tokenKind, uint64 balancePeriod, address identityContractAddress) = energyToken.getTokenIdConstituents(_tokenId);
         
         // Time period check
-        // require(balancePeriod < Commons.getBalancePeriod()); // TODO: COMMENT BACK IN
+        require(testing || balancePeriod < Commons.getBalancePeriod());
         
         uint256 certificateTokenId = energyToken.getTokenId(EnergyToken.TokenKind.Certificate, balancePeriod, identityContractAddress);
         bytes memory additionalData;

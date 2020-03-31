@@ -74,7 +74,7 @@ contract('EnergyToken', function(accounts) {
 	energyTokenWeb3 = new web3.eth.Contract(EnergyToken.abi, energyToken.address);
 	console.log(`Successfully deployed EnergyToken with address: ${energyToken.address}`);
 	
-	distributor = await Distributor.new(marketAuthority.address, energyToken.address);
+	distributor = await Distributor.new(marketAuthority.address, energyToken.address, true);
 	distributorWeb3 = new web3.eth.Contract(Distributor.abi, distributor.address);
 	console.log(`Successfully deployed Distributor with address: ${distributor.address}`);
   });
