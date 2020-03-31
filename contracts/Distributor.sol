@@ -18,7 +18,10 @@ contract Distributor is IdentityContract {
     }
     
     function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) public {
+        // Distributor applicability check
         require(energyToken.id2Distributor(_tokenId) == this);
+        
+        // Single execution check
         require(testing || !completedDistributions[_tokenId][_consumptionPlantAddress]);
         completedDistributions[_tokenId][_consumptionPlantAddress] = true;
         
