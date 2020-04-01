@@ -36,6 +36,10 @@ contract EnergyToken is ERC1155 {
         marketAuthority = _marketAuthority;
     }
     
+    function decimals() public pure returns (uint8) {
+        return 18;
+    }
+    
     function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public returns(uint256 __id) {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
