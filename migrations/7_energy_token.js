@@ -3,7 +3,6 @@ const ClaimCommons = artifacts.require("ClaimCommons");
 const ClaimVerifier = artifacts.require("ClaimVerifier");
 
 const marketAuthority = artifacts.require("IdentityContract");
-const IdentityContractFactory = artifacts.require("IdentityContractFactory");
 
 const EnergyToken = artifacts.require("EnergyToken");
 
@@ -11,6 +10,6 @@ module.exports = function(deployer) {
   deployer.link(Commons, EnergyToken);
   deployer.link(ClaimCommons, EnergyToken);
   deployer.link(ClaimVerifier, EnergyToken);
-  deployer.deploy(EnergyToken, marketAuthority.address, IdentityContractFactory.address);
+  deployer.deploy(EnergyToken, marketAuthority.address);
 };
 

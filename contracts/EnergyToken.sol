@@ -25,7 +25,6 @@ contract EnergyToken is ERC1155 {
     }
     
     IdentityContract marketAuthority;
-    IdentityContractFactory identityContractFactory;
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) public energyDocumentations;
     mapping(uint64 => mapping(address => uint256)) public energyConsumedRelevantForGenerationPlant;
@@ -33,9 +32,8 @@ contract EnergyToken is ERC1155 {
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant;
     mapping(uint256 => Distributor) public id2Distributor;
 
-    constructor(IdentityContract _marketAuthority, IdentityContractFactory _identityContractFactory) public {
+    constructor(IdentityContract _marketAuthority) public {
         marketAuthority = _marketAuthority;
-        identityContractFactory = _identityContractFactory;
     }
     
     function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public returns(uint256 __id) {

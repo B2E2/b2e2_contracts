@@ -70,7 +70,7 @@ contract('EnergyToken', function(accounts) {
 	  console.log(`Successfully deployed IdentityContract ${i} with address: ${idcs[i].options.address}`);
 	}
 	
-	energyToken = await EnergyToken.new(marketAuthority.address, identityContractFactory.address);
+	energyToken = await EnergyToken.new(marketAuthority.address);
 	energyTokenWeb3 = new web3.eth.Contract(EnergyToken.abi, energyToken.address);
 	console.log(`Successfully deployed EnergyToken with address: ${energyToken.address}`);
 	
