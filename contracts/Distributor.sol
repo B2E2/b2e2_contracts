@@ -12,7 +12,7 @@ contract Distributor is IdentityContract {
     
     bool testing;
 
-    constructor(IdentityContract _marketAuthority, EnergyToken _energyToken, bool _testing) IdentityContract(_marketAuthority) public {
+    constructor(IdentityContract _marketAuthority, EnergyToken _energyToken, bool _testing) IdentityContract(_marketAuthority, 0) public {
         energyToken = _energyToken;
         testing = _testing;
     }
@@ -28,7 +28,7 @@ contract Distributor is IdentityContract {
         (EnergyToken.TokenKind tokenKind, uint64 balancePeriod, address identityContractAddress) = energyToken.getTokenIdConstituents(_tokenId);
         
         // Time period check
-        require(testing || balancePeriod < Commons.getBalancePeriod());
+        require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, now));
         
         uint256 certificateTokenId = energyToken.getTokenId(EnergyToken.TokenKind.Certificate, balancePeriod, identityContractAddress);
         bytes memory additionalData;

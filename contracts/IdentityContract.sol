@@ -35,12 +35,19 @@ contract IdentityContract {
 
     // Other attributes
     IdentityContract public marketAuthority;
+    uint32 public balancePeriodLength;
 
-    constructor(IdentityContract _marketAuthority) public {
+    /**
+     * Market Authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
+     * Other IdentityContracts need to specify the Market Authority's address as _marketAuthority. Their specification of _balancePeriodLength will be ignored.
+     */
+    constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength) public {
         if(_marketAuthority == IdentityContract(0)) {
             marketAuthority = this;
+            balancePeriodLength = _balancePeriodLength;
         } else {
             marketAuthority = _marketAuthority;
+            balancePeriodLength = _marketAuthority.balancePeriodLength();
         }
         
         owner = msg.sender;
@@ -122,13 +129,13 @@ contract IdentityContract {
     
     // Funtions ERC-1155 and related
     function onERC1155Received(address _operator, address _from, uint256 _id, uint256 _value, bytes calldata _data) external returns(bytes4) {
-        IdentityContractLib.consumeReceptionApproval(receptionApproval, _id, _from, _value);
+        IdentityContractLib.consumeReceptionApproval(receptionApproval, balancePeriodLength, _id, _from, _value);
         return 0xf23a6e61;
     }
     
     function onERC1155BatchReceived(address _operator, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external returns(bytes4) {
         for(uint32 i = 0; i < _ids.length; i++) {
-            IdentityContractLib.consumeReceptionApproval(receptionApproval, _ids[i], _from, _values[i]);
+            IdentityContractLib.consumeReceptionApproval(receptionApproval, balancePeriodLength, _ids[i], _from, _values[i]);
         }
         
         return 0xbc197c81;

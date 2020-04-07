@@ -18,7 +18,7 @@ contract IdentityContractFactory {
     }
     
     function createIdentityContract() public {
-        IdentityContract idc = new IdentityContract(marketAuthority);
+        IdentityContract idc = new IdentityContract(marketAuthority, 0);
         idc.changeOwner(msg.sender);
 
         identityContracts[address(idc)] = true;

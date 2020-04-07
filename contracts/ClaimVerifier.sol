@@ -18,7 +18,7 @@ library ClaimVerifier {
         ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(topic);
         
         if(_requiredStillValidAt != 0) {
-            if(getExpiryDate(data) < Commons.getBalancePeriod(_requiredStillValidAt))
+            if(getExpiryDate(data) < Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), _requiredStillValidAt))
                 return false;
         }
         
@@ -34,7 +34,7 @@ library ClaimVerifier {
     }
     
     function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
-        return verifyClaim(marketAuthority, _subject, _claimId, Commons.getBalancePeriod());
+        return verifyClaim(marketAuthority, _subject, _claimId, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
     }
     
     /**
@@ -87,7 +87,7 @@ library ClaimVerifier {
     }
     
     function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType) public view returns (uint256 __claimId) {
-        return getClaimOfType(marketAuthority, _subject, _claimType, Commons.getBalancePeriod());
+        return getClaimOfType(marketAuthority, _subject, _claimType, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
     }
     
     function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 _requiredStillValidAt) public view returns (uint256 __claimId) {
@@ -106,7 +106,7 @@ library ClaimVerifier {
     }
     
     function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer) public view returns (uint256 __claimId) {
-        return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, Commons.getBalancePeriod());
+        return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
     }
     
     function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, bool _requireNonExpired) public view returns (uint256 __claimId) {
@@ -119,7 +119,7 @@ library ClaimVerifier {
             if(cTopic != topic)
                 continue;
             
-            if(_requireNonExpired && getExpiryDate(cData) < Commons.getBalancePeriod())
+            if(_requireNonExpired && getExpiryDate(cData) < Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now))
                 continue;
             
             if(!verifyClaim(marketAuthority, _subject, claimIds[i]))

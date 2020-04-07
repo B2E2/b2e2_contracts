@@ -11,10 +11,10 @@ contract('Commons', function(accounts) {
 	  let timestamp_11_15_00 = 1579860900; // Friday, January 24, 2020 11:15:00 AM GMT+01:00
 	  let timestamp_11_15_01 = 1579860901; // Friday, January 24, 2020 11:15:01 AM GMT+01:00
 
-	  let period_11_00_00 = (await instance.getBalancePeriod(timestamp_11_00_00)).toNumber();
-	  let period_11_05_00 = (await instance.getBalancePeriod(timestamp_11_05_00)).toNumber();
-	  let period_11_15_00 = (await instance.getBalancePeriod(timestamp_11_15_00)).toNumber();
-	  let period_11_15_01 = (await instance.getBalancePeriod(timestamp_11_15_01)).toNumber();
+	  let period_11_00_00 = (await instance.getBalancePeriod(900, timestamp_11_00_00)).toNumber();
+	  let period_11_05_00 = (await instance.getBalancePeriod(900, timestamp_11_05_00)).toNumber();
+	  let period_11_15_00 = (await instance.getBalancePeriod(900, timestamp_11_15_00)).toNumber();
+	  let period_11_15_01 = (await instance.getBalancePeriod(900, timestamp_11_15_01)).toNumber();
 
 	  assert.equal(period_11_00_00, 1579859101);
 	  assert.equal(period_11_05_00, 1579860001);

@@ -25,6 +25,7 @@ contract EnergyToken is ERC1155 {
     }
     
     IdentityContract marketAuthority;
+
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) public energyDocumentations;
     mapping(uint64 => mapping(address => uint256)) public energyConsumedRelevantForGenerationPlant;
@@ -50,7 +51,7 @@ contract EnergyToken is ERC1155 {
             require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0);
         } else {
             require(msg.sender == generationPlant);
-            require(balancePeriod > Commons.getBalancePeriod());
+            require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
         }
         
         address payable generationPlantP = address(uint160(generationPlant));
@@ -105,7 +106,7 @@ contract EnergyToken is ERC1155 {
     
     function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(msg.sender, _balancePeriod) returns(uint256 __id) {
         require(_tokenKind != TokenKind.Certificate);
-        require(_balancePeriod > Commons.getBalancePeriod());
+        require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
         __id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
         
         setId2Distributor(__id, _distributor);
@@ -123,7 +124,7 @@ contract EnergyToken is ERC1155 {
         }
     }
 
-    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod()) public returns (bool __success) {
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
             assert(false);
@@ -145,7 +146,7 @@ contract EnergyToken is ERC1155 {
         return true;
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod()) public returns (bool __success) {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
             assert(false);
@@ -281,7 +282,7 @@ contract EnergyToken is ERC1155 {
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
          if(tokenKind != TokenKind.Certificate)
-            require(balancePeriod > Commons.getBalancePeriod());
+            require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
         
         if(tokenKind == TokenKind.ConsumptionBasedForward)
             addPlantRelationship(generationPlant, _to, balancePeriod);
@@ -294,7 +295,7 @@ contract EnergyToken is ERC1155 {
         address payable fromPayable = address(uint160(_from));
         address payable toPayable = address(uint160(_to));
         
-        uint64 currentBalancePeriod = Commons.getBalancePeriod();
+        uint64 currentBalancePeriod = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now);
         
         for (uint256 i = 0; i < _ids.length; ++i) {
             (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);
