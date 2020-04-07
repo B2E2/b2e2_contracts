@@ -1,6 +1,6 @@
 # Energietokens-Implementierung
 ## Installing Dependencies
-    sudo npm install -g truffle ganache
+    sudo npm install -g truffle ganache ganache-cli
     npm install
 
 ## Building & Deployment
