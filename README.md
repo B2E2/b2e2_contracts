@@ -1,7 +1,13 @@
 # Energietokens-Implementierung
+## Cloning the repository
+    git clone --recursive git@github.com:BlockInfinity/Energietokens-Implementierung.git
+
 ## Installing Dependencies
     sudo npm install -g truffle ganache ganache-cli
+    cd Energietokens-Implementierung
     npm install
+	cd dependencies/jsmnSol
+	npm install
 
 ## Building & Deployment
 Launch Ganache:
