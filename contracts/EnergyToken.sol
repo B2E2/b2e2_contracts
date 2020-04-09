@@ -24,6 +24,11 @@ contract EnergyToken is ERC1155 {
         bool entered;
     }
     
+    struct ForwardKindOfGenerationPlant {
+        TokenKind forwardKind;
+        bool set;
+    }
+    
     IdentityContract marketAuthority;
 
     mapping(address => bool) meteringAuthorityExistenceLookup;
@@ -32,6 +37,7 @@ contract EnergyToken is ERC1155 {
     mapping(uint64 => mapping(address => address[])) relevantGenerationPlantsForConsumptionPlant;
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant;
     mapping(uint256 => Distributor) public id2Distributor;
+    mapping(uint64 => mapping(address => ForwardKindOfGenerationPlant)) forwardKindOfGenerationPlant;
 
     constructor(IdentityContract _marketAuthority) public {
         marketAuthority = _marketAuthority;
@@ -110,6 +116,7 @@ contract EnergyToken is ERC1155 {
         __id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
         
         setId2Distributor(__id, _distributor);
+        setForwardKindOfGenerationPlant(_balancePeriod, msg.sender, _tokenKind);
         
         emit ForwardsCreated(_tokenKind, _balancePeriod, _distributor, __id);
         
@@ -328,5 +335,14 @@ contract EnergyToken is ERC1155 {
             require(false);
         
         id2Distributor[_id] = _distributor;
+    }
+    
+    function setForwardKindOfGenerationPlant(uint64 _balancePeriod, address _generationPlant, TokenKind _forwardKind) internal {
+        if(!forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].set) {
+            forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].forwardKind = _forwardKind;
+            forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].set = true;
+        } else {
+            require(_forwardKind == forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].forwardKind);
+        }
     }
 }
