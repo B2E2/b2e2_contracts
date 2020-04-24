@@ -511,6 +511,9 @@ contract('EnergyToken', function(accounts) {
 	let abiAddConsumptionCall5 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 3335, balancePeriod, false).encodeABI();
 	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall5).send({from: accounts[8], gas: 7000000}));
 
+	let energyConsumptionDocumentation = await energyTokenWeb3.methods.energyDocumentations(idcs[1].options.address, balancePeriod).call();
+	assert.equal(energyConsumptionDocumentation.documentingMeteringAuthority, meteringAuthority.options.address);
+
 	// All the same goes for energy generation.
 	// The call must revert if it comes from something that's not a metering authority's IDC (even if it's by the metering authority directly).
 	let abiAddGenerationCall1 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[2].options.address, 500, balancePeriod, false).encodeABI();
@@ -543,5 +546,11 @@ contract('EnergyToken', function(accounts) {
 	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall6).send({from: accounts[8], gas: 7000000});
 
 	assert.equal((await energyToken.energyDocumentations(idcs[0].options.address, balancePeriod)).value, 10000);
+
+	let energyConsumptionDocumentation2 = await energyTokenWeb3.methods.energyDocumentations(idcs[0].options.address, balancePeriod).call();
+	assert.equal(energyConsumptionDocumentation2.documentingMeteringAuthority, meteringAuthority.options.address);
+
+	let energyGenerationDocumentation = await energyTokenWeb3.methods.energyDocumentations(idcs[2].options.address, balancePeriod).call();
+	assert.equal(energyGenerationDocumentation.documentingMeteringAuthority, meteringAuthority.options.address);
   });
 })

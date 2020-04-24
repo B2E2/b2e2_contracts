@@ -18,6 +18,7 @@ contract EnergyToken is ERC1155 {
     mapping (uint256 => bool) createdGenerationBasedForwards;
     
     struct EnergyDocumentation {
+        IdentityContract documentingMeteringAuthority;
         uint256 value;
         bool corrected;
         bool generated;
@@ -147,7 +148,7 @@ contract EnergyToken is ERC1155 {
             }
         }
 
-        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, false, true);
+        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(IdentityContract(msg.sender), _value, _corrected, false, true);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
         return true;
@@ -159,7 +160,7 @@ contract EnergyToken is ERC1155 {
             assert(false);
         }
         
-        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(_value, _corrected, true, true);
+        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(IdentityContract(msg.sender), _value, _corrected, true, true);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
         return true;
