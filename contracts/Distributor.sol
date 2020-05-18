@@ -12,7 +12,7 @@ contract Distributor is IdentityContract {
     
     bool testing;
 
-    constructor(IdentityContract _marketAuthority, EnergyToken _energyToken, bool _testing) IdentityContract(_marketAuthority, 0) public {
+    constructor(EnergyToken _energyToken, bool _testing) IdentityContract(_energyToken.marketAuthority(), 0) public {
         energyToken = _energyToken;
         testing = _testing;
     }

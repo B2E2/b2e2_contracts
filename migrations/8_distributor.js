@@ -12,6 +12,6 @@ module.exports = function(deployer) {
   deployer.link(Commons, Distributor);
   deployer.link(ClaimVerifier, Distributor);
   deployer.link(IdentityContractLib, Distributor);
-  deployer.deploy(Distributor, marketAuthority.address, EnergyToken.address, true);
+  deployer.deploy(Distributor, EnergyToken.address, true);
 };
 
