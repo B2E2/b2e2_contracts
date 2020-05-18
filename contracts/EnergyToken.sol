@@ -29,7 +29,7 @@ contract EnergyToken is ERC1155 {
         bool set;
     }
     
-    IdentityContract marketAuthority;
+    IdentityContract public marketAuthority;
 
     mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) public energyDocumentations;
