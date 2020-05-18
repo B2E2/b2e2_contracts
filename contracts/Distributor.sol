@@ -42,7 +42,7 @@ contract Distributor is IdentityContract {
         if(tokenKind == EnergyToken.TokenKind.AbsoluteForward) {
             uint256 totalForwards = energyToken.totalSupply(_tokenId);
             uint256 absoluteForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
-            (uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(identityContractAddress, balancePeriod);
+            (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(identityContractAddress, balancePeriod);
             require(generated);
 
             energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, absoluteForwardsOfConsumer.mul(generatedEnergy).div(totalForwards)), additionalData);
@@ -51,7 +51,7 @@ contract Distributor is IdentityContract {
         
         if(tokenKind == EnergyToken.TokenKind.GenerationBasedForward) {
             uint256 generationBasedForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
-            (uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(identityContractAddress, balancePeriod);
+            (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(identityContractAddress, balancePeriod);
             require(generated);
 
             energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generationBasedForwardsOfConsumer.mul(generatedEnergy).div(100E18), additionalData);
@@ -81,8 +81,8 @@ contract Distributor is IdentityContract {
     }
     
     function getGeneratedAndConsumedEnergy(address _generationPlantAddress, address _consumptionPlantAddress, uint64 _balancePeriod) internal view returns (uint256 __generatedEnergy, uint256 __consumedEnergy) {
-        (uint256 generatedEnergy, , bool gGen, ) = energyToken.energyDocumentations(_generationPlantAddress, _balancePeriod);
-        (uint256 consumedEnergy, , bool gCon, ) = energyToken.energyDocumentations(_consumptionPlantAddress, _balancePeriod);
+        (, uint256 generatedEnergy, , bool gGen, ) = energyToken.energyDocumentations(_generationPlantAddress, _balancePeriod);
+        (, uint256 consumedEnergy, , bool gCon, ) = energyToken.energyDocumentations(_consumptionPlantAddress, _balancePeriod);
         require(gGen && !gCon);
         return (generatedEnergy, consumedEnergy);
     }
