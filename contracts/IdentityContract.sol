@@ -31,7 +31,7 @@ contract IdentityContract {
     
     // Attributes related to ERC-1155
     // id => (sender => PerishableValue)
-    mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue)) receptionApproval;
+    mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue)) public receptionApproval;
 
     // Other attributes
     IdentityContract public marketAuthority;
