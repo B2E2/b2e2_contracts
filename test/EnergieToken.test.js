@@ -162,6 +162,10 @@ contract('EnergyToken', function(accounts) {
 	// Grant reception approval.
 	idcs[2].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", id).send({from: accounts[7], gas: 7000000});
 
+	// Create forwards.
+	let abiCreateForwardsCall = energyTokenWeb3.methods.createForwards(1737540001, 2, "0x0000000000000000000000000000000000000001").encodeABI();
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall).send({from: accounts[5], gas: 7000000});
+
 	// Perform actual mint operation via execute() of IDC 0.
 	let abiMintCall = energyTokenWeb3.methods.mint(id, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
 	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall).send({from: accounts[5], gas: 7000000});
@@ -294,11 +298,16 @@ contract('EnergyToken', function(accounts) {
 	let abiApproveSenderCallMinting = idcs[2].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", id1).encodeABI();
 	await idcs[2].methods.execute(0, idcs[2].options.address, 0, abiApproveSenderCallMinting).send({from: accounts[7], gas: 7000000});
 
+	// Forwards creation.
+	let abiCreateForwardsCall = energyTokenWeb3.methods.createForwards(1737540901, 2, "0x0000000000000000000000000000000000000001").encodeABI();
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall).send({from: accounts[5], gas: 7000000});
+
 	// Minting.
 	let abiMintCall1 = energyTokenWeb3.methods.mint(id1, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
 	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall1).send({from: accounts[5], gas: 7000000});
 	
 	let abiMintCall2 = energyTokenWeb3.methods.mint(id2, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
+
 	// This mint call needs to revert because only metering authorities are allowed to mint certificates.
 	await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[5], gas: 7000000}));
 	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[8], gas: 7000000});

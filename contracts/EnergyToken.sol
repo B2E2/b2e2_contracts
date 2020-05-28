@@ -58,7 +58,12 @@ contract EnergyToken is ERC1155 {
             require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0);
         } else {
             require(msg.sender == generationPlant);
+            
+            // Forwards can only be minted prior to their balance period.
             require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
+            
+            // Forwards must have been created.
+            require(id2Distributor[_id] != Distributor(0));
         }
         
         address payable generationPlantP = address(uint160(generationPlant));
