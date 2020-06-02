@@ -155,4 +155,8 @@ contract IdentityContract {
             emit RequestTransfer(address(this), _sender, _values[i], _expiryDate, _ids[i]);
         }
     }
+    
+    function selfdestructIdc() public onlyOwner {
+        selfdestruct(address(uint160(owner)));
+    }
 }
