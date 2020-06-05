@@ -41,6 +41,29 @@ library IdentityContractLib {
     bytes constant public ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
     uint256 constant public ECDSA_SCHEME = 1;
     
+    function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) external {
+        if(_operationType == 0) {
+            (bool success, ) = _to.call.value(_value)(_data);
+            if(!success)
+                require(false);
+            return;
+        }
+        
+        // Copy calldata to memory so it can easily be accessed via assembly.
+        bytes memory dataMemory = _data;
+        
+        if(_operationType == 1) {
+            address newContract;
+            assembly {
+                newContract := create(0, add(dataMemory, 0x20), mload(dataMemory))
+            }
+            emit ContractCreated(newContract);
+            return;
+        }
+        
+        require(false);
+    }
+    
     function addClaim(mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (uint256 => bool) storage burnedClaimIds, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
         // Make sure that claim is correct if the topic is in the relevant range.
         if(_topic >= 10000 && _topic <= 11000) {

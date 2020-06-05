@@ -36,6 +36,7 @@ contract IdentityContract {
     // Other attributes
     IdentityContract public marketAuthority;
     uint32 public balancePeriodLength;
+    uint256 public executionNonce;
 
     /**
      * Market Authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
@@ -75,26 +76,16 @@ contract IdentityContract {
     }
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) external onlyOwner {
-        if(_operationType == 0) {
-            (bool success, ) = _to.call.value(_value)(_data);
-            if(!success)
-                require(false);
-            return;
-        }
+        IdentityContractLib.execute(_operationType, _to, _value, _data);
+    }
+    
+    function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
+        // address(this) needs to be part of the struct so that the tx cannot be replayed to a different IDC owned by the same EOA.
+        address signer = ECDSA.recover(keccak256(abi.encodePacked(_operationType, _to, _value, _data, address(this), executionNonce)), _signature);
+        require(signer == owner);
+        executionNonce++;
         
-        // Copy calldata to memory so it can easily be accessed via assembly.
-        bytes memory dataMemory = _data;
-        
-        if(_operationType == 1) {
-            address newContract;
-            assembly {
-                newContract := create(0, add(dataMemory, 0x20), mload(dataMemory))
-            }
-            emit ContractCreated(newContract);
-            return;
-        }
-        
-        require(false);
+        IdentityContractLib.execute(_operationType, _to, _value, _data);
     }
     
     // Functions ERC-735
