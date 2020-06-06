@@ -31,7 +31,7 @@ contract('EnergyToken', function(accounts) {
   before(async function() {
 	accounts = await web3.eth.getAccounts();
 
-    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000", 900, {from: accounts[9]});
+    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000", 900, accounts[9], {from: accounts[9]});
 	console.log(`Successfully deployed IdentityContract for Market Authority with address: ${marketAuthority.address}`);
     identityContractFactory = await IdentityContractFactory.new(marketAuthority.address, {from: accounts[9]});
 	console.log(`Successfully deployed IdentityContractFactory with address: ${identityContractFactory.address}`);
@@ -39,20 +39,20 @@ contract('EnergyToken', function(accounts) {
 	let abi = IdentityContract.abi;
 
 	let balanceAuthorityDeployment =  await identityContractFactory.createIdentityContract({from: accounts[8]});
-	assert.equal(balanceAuthorityDeployment.logs[1].event, 'IdentityContractCreation');
-	let balanceAuthorityAddress = balanceAuthorityDeployment.logs[1].args.idcAddress;
+	assert.equal(balanceAuthorityDeployment.logs[0].event, 'IdentityContractCreation');
+	let balanceAuthorityAddress = balanceAuthorityDeployment.logs[0].args.idcAddress;
 	balanceAuthority = new web3.eth.Contract(abi, balanceAuthorityAddress);
 	console.log(`Successfully deployed Balance Authority IDC with address: ${balanceAuthority.options.address}`);
 
 	let meteringAuthorityDeployment =  await identityContractFactory.createIdentityContract({from: accounts[8]});
-	assert.equal(meteringAuthorityDeployment.logs[1].event, 'IdentityContractCreation');
-	let meteringAuthorityAddress = meteringAuthorityDeployment.logs[1].args.idcAddress;
+	assert.equal(meteringAuthorityDeployment.logs[0].event, 'IdentityContractCreation');
+	let meteringAuthorityAddress = meteringAuthorityDeployment.logs[0].args.idcAddress;
 	meteringAuthority = new web3.eth.Contract(abi, meteringAuthorityAddress);
 	console.log(`Successfully deployed Metering Authority IDC with address: ${meteringAuthority.options.address}`);
 
 	let physicalAssetAuthorityDeployment =  await identityContractFactory.createIdentityContract({from: accounts[8]});
-	assert.equal(physicalAssetAuthorityDeployment.logs[1].event, 'IdentityContractCreation');
-	let physicalAssetAuthorityAddress = physicalAssetAuthorityDeployment.logs[1].args.idcAddress;
+	assert.equal(physicalAssetAuthorityDeployment.logs[0].event, 'IdentityContractCreation');
+	let physicalAssetAuthorityAddress = physicalAssetAuthorityDeployment.logs[0].args.idcAddress;
 	physicalAssetAuthority = new web3.eth.Contract(abi, physicalAssetAuthorityAddress);
 	console.log(`Successfully deployed Physical Asset Authority IDC with address: ${physicalAssetAuthority.options.address}`);
 
@@ -64,8 +64,8 @@ contract('EnergyToken', function(accounts) {
 	
 	for(let i=0; i < 3; i++) {
 	  let idcDeployment =  await identityContractFactory.createIdentityContract({from: accounts[i+5]});
-	  assert.equal(balanceAuthorityDeployment.logs[1].event, 'IdentityContractCreation');
-	  let idcAddress = idcDeployment.logs[1].args.idcAddress;
+	  assert.equal(balanceAuthorityDeployment.logs[0].event, 'IdentityContractCreation');
+	  let idcAddress = idcDeployment.logs[0].args.idcAddress;
 	  idcs[i] = new web3.eth.Contract(abi, idcAddress);
 	  console.log(`Successfully deployed IdentityContract ${i} with address: ${idcs[i].options.address}`);
 	}
@@ -74,7 +74,7 @@ contract('EnergyToken', function(accounts) {
 	energyTokenWeb3 = new web3.eth.Contract(EnergyToken.abi, energyToken.address);
 	console.log(`Successfully deployed EnergyToken with address: ${energyToken.address}`);
 	
-	distributor = await Distributor.new(energyToken.address, true);
+	distributor = await Distributor.new(energyToken.address, true, accounts[0]);
 	distributorWeb3 = new web3.eth.Contract(Distributor.abi, distributor.address);
 	console.log(`Successfully deployed Distributor with address: ${distributor.address}`);
   });

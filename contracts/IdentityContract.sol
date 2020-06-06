@@ -42,7 +42,7 @@ contract IdentityContract {
      * Market Authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
      * Other IdentityContracts need to specify the Market Authority's address as _marketAuthority. Their specification of _balancePeriodLength will be ignored.
      */
-    constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength) public {
+    constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength, address _owner) public {
         if(_marketAuthority == IdentityContract(0)) {
             marketAuthority = this;
             balancePeriodLength = _balancePeriodLength;
@@ -51,7 +51,7 @@ contract IdentityContract {
             balancePeriodLength = _marketAuthority.balancePeriodLength();
         }
         
-        owner = msg.sender;
+        owner = _owner;
     }
     
     // Modifiers ERC-725
