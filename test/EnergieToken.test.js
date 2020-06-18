@@ -56,7 +56,7 @@ contract('EnergyToken', function(accounts) {
 	physicalAssetAuthority = new web3.eth.Contract(abi, physicalAssetAuthorityAddress);
 	console.log(`Successfully deployed Physical Asset Authority IDC with address: ${physicalAssetAuthority.options.address}`);
 
-	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	let data = web3.utils.toHex(json);
 	await addClaim(balanceAuthority, 10010, marketAuthority.address, data, "", account9Sk);
 	await addClaim(meteringAuthority, 10020, marketAuthority.address, data, "", account9Sk);
@@ -131,12 +131,12 @@ contract('EnergyToken', function(accounts) {
 	// IDC 2 is the token recipient.
 
 	// Claim necessary for receiving.
-	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
+	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
 	await addClaim(idcs[2], 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
 	// Give claims to IDC 0.
-	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	let data = web3.utils.toHex(json);
 	await addClaim(idcs[0], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
@@ -216,7 +216,7 @@ contract('EnergyToken', function(accounts) {
 
 	// Before the transfer can happen, some claims need to be issued and published.
 	// Claims necessary for sending.
-	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	let data = web3.utils.toHex(json);
 	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[1], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
@@ -228,7 +228,7 @@ contract('EnergyToken', function(accounts) {
 	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
 
 	// Claim necessary for receiving.
-	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
+	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
 	await addClaim(idcs[1], 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
@@ -335,12 +335,12 @@ contract('EnergyToken', function(accounts) {
 
   it("distributes tokens correctly.", async function() {
 	// Make the distributor an accepted distributor.
-	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + distributorWeb3.options.address.slice(2).toLowerCase() + '" }';
+	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + distributorWeb3.options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
 	await addClaim(distributorWeb3, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
 	// Give the regular reception claims to the distributor.
-	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	let data = web3.utils.toHex(json);
 	await addClaim(distributorWeb3, 10040, meteringAuthority.options.address, data, "", account8Sk);
 	await addClaim(distributorWeb3, 10050, balanceAuthority.options.address, data, "", account8Sk);
@@ -485,7 +485,7 @@ contract('EnergyToken', function(accounts) {
   });
 
   it("keeps track of energy data.", async function() {
-	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	let data = web3.utils.toHex(json);
 	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
