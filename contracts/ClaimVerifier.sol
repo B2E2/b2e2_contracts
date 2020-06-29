@@ -13,13 +13,13 @@ library ClaimVerifier {
     /**
      * Iff _requiredValidAt is not zero, only claims that are not expired at that time and are already valid at that time are considered. If it is set to zero, no expiration or starting date check is performed.
      */
-    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId, uint64 _requiredValidAt) public view returns(bool __valid) {
+    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId, uint64 _requiredValidAt, bool allowFutureValidity) public view returns(bool __valid) {
         (uint256 topic, uint256 scheme, address issuer, bytes memory signature, bytes memory data, ) = IdentityContract(_subject).getClaim(_claimId);
         ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(topic);
         
         if(_requiredValidAt != 0) {
             uint64 currentTime = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), _requiredValidAt);
-            if(getExpiryDate(data) < currentTime || getStartDate(data) > currentTime)
+            if(getExpiryDate(data) < currentTime || ((!allowFutureValidity) && getStartDate(data) > currentTime))
                 return false;
         }
         
@@ -35,7 +35,7 @@ library ClaimVerifier {
     }
     
     function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
-        return verifyClaim(marketAuthority, _subject, _claimId, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
+        return verifyClaim(marketAuthority, _subject, _claimId, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), false);
     }
     
     /**
@@ -78,7 +78,7 @@ library ClaimVerifier {
             if(cTopic != topic)
                 continue;
             
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt, false))
                 continue;
             
             return claimIds[i];
@@ -100,7 +100,7 @@ library ClaimVerifier {
         if(cTopic != topic)
             return 0;
         
-        if(!verifyClaim(marketAuthority, _subject, claimId, _requiredValidAt))
+        if(!verifyClaim(marketAuthority, _subject, claimId, _requiredValidAt, false))
             return 0;
         
         return claimId;
