@@ -1,9 +1,9 @@
 [submodule "contracts/erc-1155"]
 	path = dependencies/erc-1155
-	url = git@github.com:BlockInfinity/erc-1155.git
+	url = https://github.com/BlockInfinity/erc-1155.git
 [submodule "contracts/jsmnSol"]
 	path = dependencies/jsmnSol
-	url = git@github.com:BlockInfinity/jsmnSol.git
+	url = https://github.com/BlockInfinity/jsmnSol.git
 [submodule "contracts/dapp-bin"]
 	path = dependencies/dapp-bin
-	url = git@github.com:BlockInfinity/dapp-bin.git
+	url = https://github.com/BlockInfinity/dapp-bin.git

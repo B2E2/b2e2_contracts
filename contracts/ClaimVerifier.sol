@@ -11,14 +11,15 @@ library ClaimVerifier {
     uint256 constant public ECDSA_SCHEME = 1;
     
     /**
-     * Iff requiredStillValidAt is not zero, only claims that are not expired at that time are considered. If it is set to zero, no expiration check is performed.
+     * Iff _requiredValidAt is not zero, only claims that are not expired at that time and are already valid at that time are considered. If it is set to zero, no expiration or starting date check is performed.
      */
-    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId, uint64 _requiredStillValidAt) public view returns(bool __valid) {
+    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId, uint64 _requiredValidAt, bool allowFutureValidity) public view returns(bool __valid) {
         (uint256 topic, uint256 scheme, address issuer, bytes memory signature, bytes memory data, ) = IdentityContract(_subject).getClaim(_claimId);
         ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(topic);
         
-        if(_requiredStillValidAt != 0) {
-            if(getExpiryDate(data) < Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), _requiredStillValidAt))
+        if(_requiredValidAt != 0) {
+            uint64 currentTime = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), _requiredValidAt);
+            if(getExpiryDate(data) < currentTime || ((!allowFutureValidity) && getStartDate(data) > currentTime))
                 return false;
         }
         
@@ -27,14 +28,14 @@ library ClaimVerifier {
         }
         
         if(claimType == ClaimCommons.ClaimType.MeteringClaim || claimType == ClaimCommons.ClaimType.BalanceClaim || claimType == ClaimCommons.ClaimType.ExistenceClaim || claimType == ClaimCommons.ClaimType.GenerationTypeClaim || claimType == ClaimCommons.ClaimType.LocationClaim || claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
-            return verifySignature(_subject, topic, scheme, issuer, signature, data) && (getClaimOfType(marketAuthority, address(uint160(issuer)), ClaimCommons.getHigherLevelClaim(claimType), _requiredStillValidAt) != 0);
+            return verifySignature(_subject, topic, scheme, issuer, signature, data) && (getClaimOfType(marketAuthority, address(uint160(issuer)), ClaimCommons.getHigherLevelClaim(claimType), _requiredValidAt) != 0);
         }
         
         require(false);
     }
     
     function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
-        return verifyClaim(marketAuthority, _subject, _claimId, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
+        return verifyClaim(marketAuthority, _subject, _claimId, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), false);
     }
     
     /**
@@ -65,9 +66,9 @@ library ClaimVerifier {
     /**
      * Returns the claim ID of a claim of the stated type. Only valid claims are considered.
      * 
-     * Iff requiredStillValidAt is not zero, only claims that are not expired at that time are considered. If it is set to zero, no expiration check is performed.
+     * Iff _requiredValidAt is not zero, only claims that are not expired at that time and are already valid at that time are considered. If it is set to zero, no expiration or startig date check is performed.
      */
-    function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, uint64 _requiredStillValidAt) public view returns (uint256 __claimId) {
+    function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
@@ -77,7 +78,7 @@ library ClaimVerifier {
             if(cTopic != topic)
                 continue;
             
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredStillValidAt))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt, false))
                 continue;
             
             return claimIds[i];
@@ -90,7 +91,7 @@ library ClaimVerifier {
         return getClaimOfType(marketAuthority, _subject, _claimType, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
     }
     
-    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 _requiredStillValidAt) public view returns (uint256 __claimId) {
+    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256 claimId = IdentityContractLib.getClaimId(_issuer, topic);
 
@@ -99,7 +100,7 @@ library ClaimVerifier {
         if(cTopic != topic)
             return 0;
         
-        if(!verifyClaim(marketAuthority, _subject, claimId, _requiredStillValidAt))
+        if(!verifyClaim(marketAuthority, _subject, claimId, _requiredValidAt, false))
             return 0;
         
         return claimId;
@@ -176,6 +177,10 @@ library ClaimVerifier {
     
     function getExpiryDate(bytes memory _data) public pure returns(uint64) {
         return getUint64Field("expiryDate", _data);
+    }
+    
+    function getStartDate(bytes memory _data) public pure returns(uint64) {
+        return getUint64Field("startDate", _data);
     }
     
     function claimAttributes2SigningFormat(address _subject, uint256 _topic, bytes memory _data) internal pure returns (bytes32 __claimInSigningFormat) {

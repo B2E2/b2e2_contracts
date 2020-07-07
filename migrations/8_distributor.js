@@ -8,10 +8,10 @@ const EnergyToken = artifacts.require("EnergyToken");
 
 const Distributor = artifacts.require("Distributor");
 
-module.exports = function(deployer) {
+module.exports = function(deployer, network, accounts) {
   deployer.link(Commons, Distributor);
   deployer.link(ClaimVerifier, Distributor);
   deployer.link(IdentityContractLib, Distributor);
-  deployer.deploy(Distributor, EnergyToken.address, true);
+  deployer.deploy(Distributor, EnergyToken.address, true, accounts[0]);
 };
 

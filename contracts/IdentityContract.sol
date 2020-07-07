@@ -31,17 +31,18 @@ contract IdentityContract {
     
     // Attributes related to ERC-1155
     // id => (sender => PerishableValue)
-    mapping (address => mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue))) receptionApproval;
+    mapping (address => mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue))) public receptionApproval;
 
     // Other attributes
     IdentityContract public marketAuthority;
     uint32 public balancePeriodLength;
+    uint256 public executionNonce;
 
     /**
      * Market Authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
      * Other IdentityContracts need to specify the Market Authority's address as _marketAuthority. Their specification of _balancePeriodLength will be ignored.
      */
-    constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength) public {
+    constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength, address _owner) public {
         if(_marketAuthority == IdentityContract(0)) {
             marketAuthority = this;
             balancePeriodLength = _balancePeriodLength;
@@ -50,7 +51,7 @@ contract IdentityContract {
             balancePeriodLength = _marketAuthority.balancePeriodLength();
         }
         
-        owner = msg.sender;
+        owner = _owner;
     }
     
     // Modifiers ERC-725
@@ -75,26 +76,16 @@ contract IdentityContract {
     }
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) external onlyOwner {
-        if(_operationType == 0) {
-            (bool success, ) = _to.call.value(_value)(_data);
-            if(!success)
-                require(false);
-            return;
-        }
+        IdentityContractLib.execute(_operationType, _to, _value, _data);
+    }
+    
+    function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
+        // address(this) needs to be part of the struct so that the tx cannot be replayed to a different IDC owned by the same EOA.
+        address signer = ECDSA.recover(keccak256(abi.encodePacked(_operationType, _to, _value, _data, address(this), executionNonce)), _signature);
+        require(signer == owner);
+        executionNonce++;
         
-        // Copy calldata to memory so it can easily be accessed via assembly.
-        bytes memory dataMemory = _data;
-        
-        if(_operationType == 1) {
-            address newContract;
-            assembly {
-                newContract := create(0, add(dataMemory, 0x20), mload(dataMemory))
-            }
-            emit ContractCreated(newContract);
-            return;
-        }
-        
-        require(false);
+        IdentityContractLib.execute(_operationType, _to, _value, _data);
     }
     
     // Functions ERC-735
@@ -154,5 +145,9 @@ contract IdentityContract {
             receptionApproval[_energyToken][_ids[i]][_sender] = IdentityContractLib.PerishableValue(_values[i], _expiryDate);
             emit RequestTransfer(address(this), _sender, _values[i], _expiryDate, _ids[i]);
         }
+    }
+    
+    function selfdestructIdc() public onlyOwner {
+        selfdestruct(address(uint160(owner)));
     }
 }

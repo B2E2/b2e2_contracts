@@ -31,7 +31,7 @@ contract('EnergyToken', function(accounts) {
   before(async function() {
 	accounts = await web3.eth.getAccounts();
 
-    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000", 900, {from: accounts[9]});
+    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000", 900, accounts[9], {from: accounts[9]});
 	console.log(`Successfully deployed IdentityContract for Market Authority with address: ${marketAuthority.address}`);
     identityContractFactory = await IdentityContractFactory.new(marketAuthority.address, {from: accounts[9]});
 	console.log(`Successfully deployed IdentityContractFactory with address: ${identityContractFactory.address}`);
@@ -39,24 +39,24 @@ contract('EnergyToken', function(accounts) {
 	let abi = IdentityContract.abi;
 
 	let balanceAuthorityDeployment =  await identityContractFactory.createIdentityContract({from: accounts[8]});
-	assert.equal(balanceAuthorityDeployment.logs[1].event, 'IdentityContractCreation');
-	let balanceAuthorityAddress = balanceAuthorityDeployment.logs[1].args.idcAddress;
+	assert.equal(balanceAuthorityDeployment.logs[0].event, 'IdentityContractCreation');
+	let balanceAuthorityAddress = balanceAuthorityDeployment.logs[0].args.idcAddress;
 	balanceAuthority = new web3.eth.Contract(abi, balanceAuthorityAddress);
 	console.log(`Successfully deployed Balance Authority IDC with address: ${balanceAuthority.options.address}`);
 
 	let meteringAuthorityDeployment =  await identityContractFactory.createIdentityContract({from: accounts[8]});
-	assert.equal(meteringAuthorityDeployment.logs[1].event, 'IdentityContractCreation');
-	let meteringAuthorityAddress = meteringAuthorityDeployment.logs[1].args.idcAddress;
+	assert.equal(meteringAuthorityDeployment.logs[0].event, 'IdentityContractCreation');
+	let meteringAuthorityAddress = meteringAuthorityDeployment.logs[0].args.idcAddress;
 	meteringAuthority = new web3.eth.Contract(abi, meteringAuthorityAddress);
 	console.log(`Successfully deployed Metering Authority IDC with address: ${meteringAuthority.options.address}`);
 
 	let physicalAssetAuthorityDeployment =  await identityContractFactory.createIdentityContract({from: accounts[8]});
-	assert.equal(physicalAssetAuthorityDeployment.logs[1].event, 'IdentityContractCreation');
-	let physicalAssetAuthorityAddress = physicalAssetAuthorityDeployment.logs[1].args.idcAddress;
+	assert.equal(physicalAssetAuthorityDeployment.logs[0].event, 'IdentityContractCreation');
+	let physicalAssetAuthorityAddress = physicalAssetAuthorityDeployment.logs[0].args.idcAddress;
 	physicalAssetAuthority = new web3.eth.Contract(abi, physicalAssetAuthorityAddress);
 	console.log(`Successfully deployed Physical Asset Authority IDC with address: ${physicalAssetAuthority.options.address}`);
 
-	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	let data = web3.utils.toHex(json);
 	await addClaim(balanceAuthority, 10010, marketAuthority.address, data, "", account9Sk);
 	await addClaim(meteringAuthority, 10020, marketAuthority.address, data, "", account9Sk);
@@ -64,8 +64,8 @@ contract('EnergyToken', function(accounts) {
 	
 	for(let i=0; i < 3; i++) {
 	  let idcDeployment =  await identityContractFactory.createIdentityContract({from: accounts[i+5]});
-	  assert.equal(balanceAuthorityDeployment.logs[1].event, 'IdentityContractCreation');
-	  let idcAddress = idcDeployment.logs[1].args.idcAddress;
+	  assert.equal(balanceAuthorityDeployment.logs[0].event, 'IdentityContractCreation');
+	  let idcAddress = idcDeployment.logs[0].args.idcAddress;
 	  idcs[i] = new web3.eth.Contract(abi, idcAddress);
 	  console.log(`Successfully deployed IdentityContract ${i} with address: ${idcs[i].options.address}`);
 	}
@@ -74,7 +74,7 @@ contract('EnergyToken', function(accounts) {
 	energyTokenWeb3 = new web3.eth.Contract(EnergyToken.abi, energyToken.address);
 	console.log(`Successfully deployed EnergyToken with address: ${energyToken.address}`);
 	
-	distributor = await Distributor.new(energyToken.address, true);
+	distributor = await Distributor.new(energyToken.address, true, accounts[0]);
 	distributorWeb3 = new web3.eth.Contract(Distributor.abi, distributor.address);
 	console.log(`Successfully deployed Distributor with address: ${distributor.address}`);
   });
@@ -131,12 +131,12 @@ contract('EnergyToken', function(accounts) {
 	// IDC 2 is the token recipient.
 
 	// Claim necessary for receiving.
-	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
+	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
 	await addClaim(idcs[2], 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
 	// Give claims to IDC 0.
-	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	let data = web3.utils.toHex(json);
 	await addClaim(idcs[0], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
@@ -161,6 +161,10 @@ contract('EnergyToken', function(accounts) {
 
 	// Grant reception approval.
 	idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "17000000000000000000", id).send({from: accounts[7], gas: 7000000});
+
+	// Create forwards.
+	let abiCreateForwardsCall = energyTokenWeb3.methods.createForwards(1737540001, 2, "0x0000000000000000000000000000000000000001").encodeABI();
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall).send({from: accounts[5], gas: 7000000});
 
 	// Perform actual mint operation via execute() of IDC 0.
 	let abiMintCall = energyTokenWeb3.methods.mint(id, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
@@ -212,7 +216,7 @@ contract('EnergyToken', function(accounts) {
 
 	// Before the transfer can happen, some claims need to be issued and published.
 	// Claims necessary for sending.
-	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	let data = web3.utils.toHex(json);
 	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[1], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
@@ -224,7 +228,7 @@ contract('EnergyToken', function(accounts) {
 	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
 
 	// Claim necessary for receiving.
-	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
+	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
 	await addClaim(idcs[1], 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
@@ -294,11 +298,16 @@ contract('EnergyToken', function(accounts) {
 	let abiApproveSenderCallMinting = idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "17000000000000000000", id1).encodeABI();
 	await idcs[2].methods.execute(0, idcs[2].options.address, 0, abiApproveSenderCallMinting).send({from: accounts[7], gas: 7000000});
 
+	// Forwards creation.
+	let abiCreateForwardsCall = energyTokenWeb3.methods.createForwards(1737540901, 2, "0x0000000000000000000000000000000000000001").encodeABI();
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall).send({from: accounts[5], gas: 7000000});
+
 	// Minting.
 	let abiMintCall1 = energyTokenWeb3.methods.mint(id1, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
 	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall1).send({from: accounts[5], gas: 7000000});
 	
 	let abiMintCall2 = energyTokenWeb3.methods.mint(id2, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
+
 	// This mint call needs to revert because only metering authorities are allowed to mint certificates.
 	await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[5], gas: 7000000}));
 	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[8], gas: 7000000});
@@ -326,12 +335,12 @@ contract('EnergyToken', function(accounts) {
 
   it("distributes tokens correctly.", async function() {
 	// Make the distributor an accepted distributor.
-	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "address": "' + distributorWeb3.options.address.slice(2).toLowerCase() + '" }';
+	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + distributorWeb3.options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
 	await addClaim(distributorWeb3, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
 	// Give the regular reception claims to the distributor.
-	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	let data = web3.utils.toHex(json);
 	await addClaim(distributorWeb3, 10040, meteringAuthority.options.address, data, "", account8Sk);
 	await addClaim(distributorWeb3, 10050, balanceAuthority.options.address, data, "", account8Sk);
@@ -476,7 +485,7 @@ contract('EnergyToken', function(accounts) {
   });
 
   it("keeps track of energy data.", async function() {
-	let json = '{ "q": "ab", "expiryDate": "1895220001" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	let data = web3.utils.toHex(json);
 	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
