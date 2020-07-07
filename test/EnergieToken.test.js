@@ -3,8 +3,8 @@
 const truffleAssert = require('truffle-assertions');
 const eutil = require('ethereumjs-util');
 
-const account8Sk = "0x0e3e3eaf624b8aa8a7855b7e1195a5d7cf9b86a146f47e4868ee5d7bc9fb71f2";
-const account9Sk = "0x86890046d59c769b4d9a65504122df9572b385848600c09ab1993f8c1a83e85f";
+const account8Sk = "0x56f01dc407e7462c8a47d048c35cd61794f2893696ec4aaafcc46cd33a22cd58";
+const account9Sk = "0x5b1b39d1cf63bdef178e6ad182b1ae852ac6b26a802121ab2c4df936665731d8";
 
 let accounts;
 
