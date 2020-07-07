@@ -31,7 +31,7 @@ contract IdentityContract {
     
     // Attributes related to ERC-1155
     // id => (sender => PerishableValue)
-    mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue)) receptionApproval;
+    mapping (address => mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue))) receptionApproval;
 
     // Other attributes
     IdentityContract public marketAuthority;
@@ -141,17 +141,17 @@ contract IdentityContract {
         return 0xbc197c81;
     }
     
-    function approveSender(address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) public onlyOwner returns (bool __success) {
-        receptionApproval[_id][_sender] = IdentityContractLib.PerishableValue(_value, _expiryDate);
+    function approveSender(address _energyToken, address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) public onlyOwner returns (bool __success) {
+        receptionApproval[_energyToken][_id][_sender] = IdentityContractLib.PerishableValue(_value, _expiryDate);
         emit RequestTransfer(address(this), _sender, _value, _expiryDate, _id);
         return true;
     }
     
-    function approveBatchSender(address _sender, uint64 _expiryDate, uint256[] memory _values, uint256[] memory _ids) public onlyOwner {
+    function approveBatchSender(address _energyToken, address _sender, uint64 _expiryDate, uint256[] memory _values, uint256[] memory _ids) public onlyOwner {
         require(_values.length < 4294967295);
         
         for(uint32 i; i < _values.length; i++) {
-            receptionApproval[_ids[i]][_sender] = IdentityContractLib.PerishableValue(_values[i], _expiryDate);
+            receptionApproval[_energyToken][_ids[i]][_sender] = IdentityContractLib.PerishableValue(_values[i], _expiryDate);
             emit RequestTransfer(address(this), _sender, _values[i], _expiryDate, _ids[i]);
         }
     }

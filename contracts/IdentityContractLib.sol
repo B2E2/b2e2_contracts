@@ -122,15 +122,16 @@ library IdentityContractLib {
     /**
      * Only consumes reception approval when handling forwards. Fails iff granted reception approval is insufficient.
      */
-    function consumeReceptionApproval(mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue)) storage receptionApproval, uint32 balancePeriodLength, uint256 _id, address _from, uint256 _value) public {
+    function consumeReceptionApproval(mapping (address => mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue))) storage receptionApproval, uint32 balancePeriodLength, uint256 _id, address _from, uint256 _value) public {
         // Accept all certificate ERC-1155 transfers.
         if(isCertificate(_id))
             return;
         
-        require(receptionApproval[_id][_from].expiryDate >= Commons.getBalancePeriod(balancePeriodLength, now));
-        require(receptionApproval[_id][_from].value >= _value);
+        address energyToken = msg.sender;
+        require(receptionApproval[energyToken][_id][_from].expiryDate >= Commons.getBalancePeriod(balancePeriodLength, now));
+        require(receptionApproval[energyToken][_id][_from].value >= _value);
         
-        receptionApproval[_id][_from].value = receptionApproval[_id][_from].value.sub(_value);
+        receptionApproval[energyToken][_id][_from].value = receptionApproval[energyToken][_id][_from].value.sub(_value);
     }
     
     function isCertificate(uint256 _id) internal pure returns (bool) {

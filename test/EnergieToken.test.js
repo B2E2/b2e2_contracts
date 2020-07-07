@@ -160,7 +160,7 @@ contract('EnergyToken', function(accounts) {
 	let id = "0x" + receivedTokenIdPadded;
 
 	// Grant reception approval.
-	idcs[2].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", id).send({from: accounts[7], gas: 7000000});
+	idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "17000000000000000000", id).send({from: accounts[7], gas: 7000000});
 
 	// Perform actual mint operation via execute() of IDC 0.
 	let abiMintCall = energyTokenWeb3.methods.mint(id, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
@@ -207,7 +207,7 @@ contract('EnergyToken', function(accounts) {
 	let id = "0x" + receivedTokenIdPadded;
 
 	// Grant reception approval for sending 12 tokens from IDC 2 to IDC 1.
-	let abiApproveSenderCall = idcs[1].methods.approveSender(idcs[2].options.address, "1895220001", "12000000000000000000", id).encodeABI();
+	let abiApproveSenderCall = idcs[1].methods.approveSender(energyToken.address, idcs[2].options.address, "1895220001", "12000000000000000000", id).encodeABI();
 	await idcs[1].methods.execute(0, idcs[1].options.address, 0, abiApproveSenderCall).send({from: accounts[6], gas: 7000000});
 
 	// Before the transfer can happen, some claims need to be issued and published.
@@ -263,7 +263,7 @@ contract('EnergyToken', function(accounts) {
 	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferSelf1).send({from: accounts[7], gas: 7000000}));
 
 	// Transferring tokens to a receiver without the necessary claims needs to fail.
-	let abiApproveSenderCallIdc0 = idcs[0].methods.approveSender(idcs[2].options.address, "1895220001", "1000000000000000000", id).encodeABI();
+	let abiApproveSenderCallIdc0 = idcs[0].methods.approveSender(energyToken.address, idcs[2].options.address, "1895220001", "1000000000000000000", id).encodeABI();
 	await idcs[0].methods.execute(0, idcs[0].options.address, 0, abiApproveSenderCallIdc0).send({from: accounts[5], gas: 7000000});
 	let abiTransferToIdc0 = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[0].options.address, id, "1000000000000000000", "0x00").encodeABI();
 	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferToIdc0).send({from: accounts[7], gas: 7000000}));
@@ -291,7 +291,7 @@ contract('EnergyToken', function(accounts) {
 	let id2 = "0x" + receivedTokenId2Padded;
 
 	// Reception approval for receiving minted forwards.
-	let abiApproveSenderCallMinting = idcs[2].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", id1).encodeABI();
+	let abiApproveSenderCallMinting = idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "17000000000000000000", id1).encodeABI();
 	await idcs[2].methods.execute(0, idcs[2].options.address, 0, abiApproveSenderCallMinting).send({from: accounts[7], gas: 7000000});
 
 	// Minting.
@@ -304,7 +304,7 @@ contract('EnergyToken', function(accounts) {
 	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[8], gas: 7000000});
 
 	// Reception approval is required for forwards.
-	let abiApproveSenderCall = idcs[1].methods.approveSender(idcs[2].options.address, "1895220001", "1000000000000000000", id1).encodeABI();
+	let abiApproveSenderCall = idcs[1].methods.approveSender(energyToken.address, idcs[2].options.address, "1895220001", "1000000000000000000", id1).encodeABI();
 	await idcs[1].methods.execute(0, idcs[1].options.address, 0, abiApproveSenderCall).send({from: accounts[6], gas: 7000000});
 
 	// Reception approval is not required for certificates.
@@ -376,7 +376,7 @@ contract('EnergyToken', function(accounts) {
 		continue; // Generation-based forwards cannot be minted.
 
 	  // Grant reception approval.
-	  idcs[1].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", forwardIds[forwardKind]).send({from: accounts[6], gas: 7000000});
+	  idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "17000000000000000000", forwardIds[forwardKind]).send({from: accounts[6], gas: 7000000});
 
 	  // Perform actual mint operation via execute() of IDC 0.
 	  let abiMintCall = energyTokenWeb3.methods.mint(forwardIds[forwardKind], [idcs[1].options.address], ["17000000000000000000"]).encodeABI();
@@ -384,7 +384,7 @@ contract('EnergyToken', function(accounts) {
 	}
 
 	// Transfer generation-based forwards.
-	idcs[1].methods.approveSender(idcs[0].options.address, "1895220001", "17000000000000000000", forwardIds[1]).send({from: accounts[6], gas: 7000000});
+	idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "17000000000000000000", forwardIds[1]).send({from: accounts[6], gas: 7000000});
 	let abiTransferGenerationBasedForwards = energyTokenWeb3.methods.safeTransferFrom(idcs[0].options.address, idcs[1].options.address, forwardIds[1], "17000000000000000000", "0x00").encodeABI();
 	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferGenerationBasedForwards).send({from: accounts[5], gas: 7000000});
 
@@ -431,7 +431,7 @@ contract('EnergyToken', function(accounts) {
 
 	// Mint more absolute forwards.
 	// Grant reception approval.
-	idcs[2].methods.approveSender(idcs[0].options.address, "1895220001", "83000000000000000000", forwardIds[0]).send({from: accounts[7], gas: 7000000});
+	idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "83000000000000000000", forwardIds[0]).send({from: accounts[7], gas: 7000000});
 
 	// Perform actual mint operation via execute() of IDC 0.
 	let abiMintCall = energyTokenWeb3.methods.mint(forwardIds[0], [idcs[2].options.address], ["83000000000000000000"]).encodeABI();
