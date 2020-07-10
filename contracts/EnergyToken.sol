@@ -67,12 +67,10 @@ contract EnergyToken is ERC1155 {
         }
         
         address payable generationPlantP = address(uint160(generationPlant));
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.BalanceClaim, balancePeriod) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.ExistenceClaim, balancePeriod) != 0);
         require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim, balancePeriod) != 0);
         require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.LocationClaim, balancePeriod) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.MeteringClaim, balancePeriod) != 0);
-        
+        checkClaimsForTransferSending(generationPlantP, _id);
+
         for (uint256 i = 0; i < _to.length; ++i) {
             address to = _to[i];
             uint256 quantity = _quantities[i];
@@ -80,7 +78,7 @@ contract EnergyToken is ERC1155 {
             require(to != address(0x0), "_to must be non-zero.");
 
             if(to != msg.sender) {
-                checkClaimsForTransfer(address(uint160(msg.sender)), address(uint160(to)), _id);
+                checkClaimsForTransferReception(address(uint160(to)), _id);
             }
 
             // Grant the items to the caller.
@@ -244,22 +242,45 @@ contract EnergyToken is ERC1155 {
         require(false);
     }
     
+
     /**
-     * Checks all claims required for the particular given transfer.
-     * 
-     * Checking a claim only makes sure that it exists. It does not verify the claim. However, this method makes sure that only non-expired claims are considered.
+     * Checks all claims required for the particular given transfer regarding the sending side.
      */
-    function checkClaimsForTransfer(address payable _from, address payable _to, uint256 _id) internal view {
+    function checkClaimsForTransferSending(address payable _from, uint256 _id) internal view {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim) != 0);
+            uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.BalanceClaim);
+            require(balanceClaimId != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.ExistenceClaim) != 0);
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.MeteringClaim) != 0);
+            
+            (, , address balanceAuthoritySender, , ,) = IdentityContract(_from).getClaim(balanceClaimId);
+            Distributor distributor = id2Distributor[_id];
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthoritySender) != 0);
+            return;
+        }
+        
+        if(tokenKind == TokenKind.Certificate) {
+            return;
+        }
+        
+        require(false);
+    }
+    
+    /**
+     * Checks all claims required for the particular given transfer regarding the reception side.
+     */
+    function checkClaimsForTransferReception(address payable _to, uint256 _id) internal view {
+        (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
+        if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
+            uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim);
+            require(balanceClaimId != 0);
             require(ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.ExistenceClaim) != 0);
             require(ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.MeteringClaim) != 0);
-
-            /*uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim);
-            (, , address balanceAuthority, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, _to, ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthority) != 0);*/
+            (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
+            Distributor distributor = id2Distributor[_id];
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver) != 0);
             return;
         }
         
@@ -273,7 +294,6 @@ contract EnergyToken is ERC1155 {
     function addressToHexString(address a) internal pure returns (string memory) {
         bytes memory h = new bytes(40);
         uint160 asInt = uint160(a);
-        uint160 mask = 0x00ff00000000000000000000000000000000000000;
         for (uint i = 0; i < 20; i++) {
             uint8 currentByte = uint8(asInt >> (160-(i+1)*8));
             
@@ -300,7 +320,8 @@ contract EnergyToken is ERC1155 {
         if(tokenKind == TokenKind.ConsumptionBasedForward)
             addPlantRelationship(generationPlant, _to, balancePeriod);
         
-        checkClaimsForTransfer(address(uint160(_from)), address(uint160(_to)), _id);
+        checkClaimsForTransferSending(address(uint160(_from)), _id);
+        checkClaimsForTransferReception(address(uint160(_to)), _id);
         ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
     }
     
@@ -319,7 +340,8 @@ contract EnergyToken is ERC1155 {
             if(tokenKind == TokenKind.ConsumptionBasedForward)
                 addPlantRelationship(generationPlant, _to, balancePeriod);
 
-            checkClaimsForTransfer(fromPayable, toPayable, _ids[i]);
+            checkClaimsForTransferSending(fromPayable, _ids[i]);
+            checkClaimsForTransferReception(toPayable, _ids[i]);
         }
         ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
     }

@@ -133,7 +133,7 @@ contract('EnergyToken', function(accounts) {
 	// Claim necessary for receiving.
 	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
-	await addClaim(idcs[2], 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
+	await addClaim(distributor, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
 	// Give claims to IDC 0.
 	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
@@ -163,7 +163,7 @@ contract('EnergyToken', function(accounts) {
 	idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "17000000000000000000", id).send({from: accounts[7], gas: 7000000});
 
 	// Create forwards.
-	let abiCreateForwardsCall = energyTokenWeb3.methods.createForwards(1737540001, 2, "0x0000000000000000000000000000000000000001").encodeABI();
+	let abiCreateForwardsCall = energyTokenWeb3.methods.createForwards(1737540001, 2, distributor.address).encodeABI();
 	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall).send({from: accounts[5], gas: 7000000});
 
 	// Perform actual mint operation via execute() of IDC 0.
@@ -267,10 +267,10 @@ contract('EnergyToken', function(accounts) {
 	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferSelf1).send({from: accounts[7], gas: 7000000}));
 
 	// Transferring tokens to a receiver without the necessary claims needs to fail.
-	let abiApproveSenderCallIdc0 = idcs[0].methods.approveSender(energyToken.address, idcs[2].options.address, "1895220001", "1000000000000000000", id).encodeABI();
-	await idcs[0].methods.execute(0, idcs[0].options.address, 0, abiApproveSenderCallIdc0).send({from: accounts[5], gas: 7000000});
-	let abiTransferToIdc0 = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[0].options.address, id, "1000000000000000000", "0x00").encodeABI();
-	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferToIdc0).send({from: accounts[7], gas: 7000000}));
+	let abiApproveSenderCallDistributor = distributorWeb3.methods.approveSender(energyToken.address, idcs[2].options.address, "1895220001", "1000000000000000000", id).encodeABI();
+	await distributorWeb3.methods.execute(0, distributorWeb3.options.address, 0, abiApproveSenderCallDistributor).send({from: accounts[0], gas: 7000000});
+	let abiTransferToDistributor = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, distributorWeb3.options.address, id, "1000000000000000000", "0x00").encodeABI();
+	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferToDistributor).send({from: accounts[7], gas: 7000000}));
   });
 
   it("can perform batch transfers.", async function() {
@@ -299,7 +299,7 @@ contract('EnergyToken', function(accounts) {
 	await idcs[2].methods.execute(0, idcs[2].options.address, 0, abiApproveSenderCallMinting).send({from: accounts[7], gas: 7000000});
 
 	// Forwards creation.
-	let abiCreateForwardsCall = energyTokenWeb3.methods.createForwards(1737540901, 2, "0x0000000000000000000000000000000000000001").encodeABI();
+	let abiCreateForwardsCall = energyTokenWeb3.methods.createForwards(1737540901, 2, distributor.address).encodeABI();
 	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall).send({from: accounts[5], gas: 7000000});
 
 	// Minting.
