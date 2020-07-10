@@ -91,7 +91,7 @@ contract EnergyToken is ERC1155 {
             // It will also provide the circulating supply info.
             emit TransferSingle(msg.sender, address(0x0), to, _id, quantity);
 
-            if (to.isContract() && to != msg.sender) {
+            if (to != msg.sender) {
                 _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, to, _id, quantity, '');
             }
             
