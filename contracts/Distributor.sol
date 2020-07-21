@@ -68,7 +68,7 @@ contract Distributor is IdentityContract {
             if(totalConsumedEnergy > 0) {
                 option2 = ((consumptionBasedForwards.mul(consumedEnergy)).mul(generatedEnergy)).div(100E18).div(totalConsumedEnergy);
             } else {
-                 option2 = option1;
+                option2 = option1;
             }
             
             require(energyToken.numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant(balancePeriod, identityContractAddress) == 0);

@@ -51,20 +51,16 @@ contract EnergyToken is ERC1155 {
     function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public returns(uint256 __id) {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
-        require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward || tokenKind == TokenKind.Certificate);
+        require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward);
         
         // msg.sender needs to be allowed to mint.
-        if(tokenKind == TokenKind.Certificate) {
-            require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0);
-        } else {
-            require(msg.sender == generationPlant);
-            
-            // Forwards can only be minted prior to their balance period.
-            require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
-            
-            // Forwards must have been created.
-            require(id2Distributor[_id] != Distributor(0));
-        }
+        require(msg.sender == generationPlant);
+        
+        // Forwards can only be minted prior to their balance period.
+        require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
+        
+        // Forwards must have been created.
+        require(id2Distributor[_id] != Distributor(0));
         
         address payable generationPlantP = address(uint160(generationPlant));
         require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim, balancePeriod) != 0);
@@ -166,6 +162,22 @@ contract EnergyToken is ERC1155 {
         EnergyDocumentation memory energyDocumentation = EnergyDocumentation(IdentityContract(msg.sender), _value, _corrected, true, true);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
+        // Mint certificates unless correcting
+        if(!_corrected) {
+            ForwardKindOfGenerationPlant memory forwardKind = forwardKindOfGenerationPlant[_balancePeriod][_plant];
+            require(forwardKind.set);
+            uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant);
+            Distributor distributor = id2Distributor[forwardId];
+            uint256 certificateId = getTokenId(TokenKind.Certificate, _balancePeriod, _plant);
+            balances[certificateId][address(distributor)] = _value.add(balances[certificateId][address(distributor)]);
+            supply[certificateId] = supply[certificateId].add(balances[certificateId][address(distributor)]);
+            // Emit the Transfer/Mint event.
+            // the 0x0 source address implies a mint
+            // It will also provide the circulating supply info.
+            emit TransferSingle(msg.sender, address(0x0), address(distributor), certificateId, _value);
+            _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, address(distributor), certificateId, _value, '');
+        }
+
         return true;
     }
     
