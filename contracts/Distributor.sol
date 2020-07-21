@@ -45,7 +45,13 @@ contract Distributor is IdentityContract {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(identityContractAddress, balancePeriod);
             require(generated);
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, absoluteForwardsOfConsumer.mul(generatedEnergy).div(totalForwards)), additionalData);
+            if(_consumptionPlantAddress != identityContractAddress) {
+                energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, absoluteForwardsOfConsumer.mul(generatedEnergy).div(totalForwards)), additionalData);
+            } else {
+                if(generatedEnergy > totalForwards) {
+                    energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generatedEnergy.sub(totalForwards), additionalData);
+                }
+            }
             return;
         }
         
@@ -54,7 +60,12 @@ contract Distributor is IdentityContract {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(identityContractAddress, balancePeriod);
             require(generated);
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generationBasedForwardsOfConsumer.mul(generatedEnergy).div(100E18), additionalData);
+            if(_consumptionPlantAddress != identityContractAddress) {
+                energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generationBasedForwardsOfConsumer.mul(generatedEnergy).div(100E18), additionalData);
+            } else {
+                uint256 totalForwards = energyToken.totalSupply(_tokenId);
+                energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generatedEnergy.sub(totalForwards), additionalData);
+            }
             return;
         }
         
