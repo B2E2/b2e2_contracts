@@ -37,6 +37,7 @@ contract EnergyToken is ERC1155 {
     mapping(uint64 => mapping(address => uint256)) public energyConsumedRelevantForGenerationPlant;
     mapping(uint64 => mapping(address => address[])) relevantGenerationPlantsForConsumptionPlant;
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant;
+    mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsForGenerationPlant;
     mapping(uint256 => Distributor) public id2Distributor;
     mapping(uint64 => mapping(address => ForwardKindOfGenerationPlant)) forwardKindOfGenerationPlant;
 
@@ -364,6 +365,7 @@ contract EnergyToken is ERC1155 {
         if(!energyDocumentations[_consumptionPlant][_balancePeriod].generated)
             require(energyDocumentations[_consumptionPlant][_balancePeriod].value == 0);
         
+        numberOfRelevantConsumptionPlantsForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
         numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
     }
     

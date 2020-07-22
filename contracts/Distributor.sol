@@ -9,6 +9,7 @@ contract Distributor is IdentityContract {
     
     // token ID => consumption plant address => bool
     mapping(uint256 => mapping(address => bool)) completedDistributions;
+    mapping(uint64 => mapping(address => uint256)) numberOfCompletedConsumptionBasedDistributions;
     
     bool testing;
 
@@ -63,28 +64,35 @@ contract Distributor is IdentityContract {
             if(_consumptionPlantAddress != identityContractAddress) {
                 energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generationBasedForwardsOfConsumer.mul(generatedEnergy).div(100E18), additionalData);
             } else {
-                uint256 totalForwards = energyToken.totalSupply(_tokenId);
-                energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generatedEnergy.sub(totalForwards), additionalData);
+                require(false);
             }
             return;
         }
         
         if(tokenKind == EnergyToken.TokenKind.ConsumptionBasedForward) {
-            uint256 consumptionBasedForwards = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
-            (uint256 generatedEnergy, uint256 consumedEnergy) = getGeneratedAndConsumedEnergy(identityContractAddress, _consumptionPlantAddress, balancePeriod);
-            uint256 totalConsumedEnergy = energyToken.energyConsumedRelevantForGenerationPlant(balancePeriod, identityContractAddress);
-
-            uint256 option1 = (consumptionBasedForwards.mul(consumedEnergy)).div(100E18);
-            uint256 option2;
-            if(totalConsumedEnergy > 0) {
-                option2 = ((consumptionBasedForwards.mul(consumedEnergy)).mul(generatedEnergy)).div(100E18).div(totalConsumedEnergy);
+            if(_consumptionPlantAddress != identityContractAddress) {
+                uint256 consumptionBasedForwards = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
+                (uint256 generatedEnergy, uint256 consumedEnergy) = getGeneratedAndConsumedEnergy(identityContractAddress, _consumptionPlantAddress, balancePeriod);
+                uint256 totalConsumedEnergy = energyToken.energyConsumedRelevantForGenerationPlant(balancePeriod, identityContractAddress);
+    
+                uint256 option1 = (consumptionBasedForwards.mul(consumedEnergy)).div(100E18);
+                uint256 option2;
+                if(totalConsumedEnergy > 0) {
+                    option2 = ((consumptionBasedForwards.mul(consumedEnergy)).mul(generatedEnergy)).div(100E18).div(totalConsumedEnergy);
+                } else {
+                    option2 = option1;
+                }
+                
+                require(energyToken.numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant(balancePeriod, identityContractAddress) == 0);
+                
+                numberOfCompletedConsumptionBasedDistributions[balancePeriod][identityContractAddress]++;
+                energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(option1, option2), additionalData);
             } else {
-                option2 = option1;
+                // Only allow transfer of undistributable certificates if all consumption plants have gotten their certificates because otherwise it's not possible to figure out how many certificates are undistributable.
+                require(energyToken.numberOfRelevantConsumptionPlantsForGenerationPlant(balancePeriod, identityContractAddress) == numberOfCompletedConsumptionBasedDistributions[balancePeriod][identityContractAddress]);
+                uint256 distributorCertificatesBalance = energyToken.balanceOf(address(this), certificateTokenId);
+                energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, distributorCertificatesBalance, additionalData);
             }
-            
-            require(energyToken.numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant(balancePeriod, identityContractAddress) == 0);
-            
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(option1, option2), additionalData);
             return;
         }
         
