@@ -56,7 +56,7 @@ contract IdentityContract {
     
     // Modifiers ERC-725
     modifier onlyOwner {
-        require(msg.sender == owner || msg.sender == address(this));
+        require(msg.sender == owner || msg.sender == address(this), "Only owner.");
         _;
     }
     
@@ -82,7 +82,7 @@ contract IdentityContract {
     function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
         // address(this) needs to be part of the struct so that the tx cannot be replayed to a different IDC owned by the same EOA.
         address signer = ECDSA.recover(keccak256(abi.encodePacked(_operationType, _to, _value, _data, address(this), executionNonce)), _signature);
-        require(signer == owner);
+        require(signer == owner, "signer must be equal to owner.");
         executionNonce++;
         
         IdentityContractLib.execute(_operationType, _to, _value, _data);
@@ -139,7 +139,7 @@ contract IdentityContract {
     }
     
     function approveBatchSender(address _energyToken, address _sender, uint64 _expiryDate, uint256[] memory _values, uint256[] memory _ids) public onlyOwner {
-        require(_values.length < 4294967295);
+        require(_values.length < 4294967295, "_values array is too long.");
         
         for(uint32 i; i < _values.length; i++) {
             receptionApproval[_energyToken][_ids[i]][_sender] = IdentityContractLib.PerishableValue(_values[i], _expiryDate);

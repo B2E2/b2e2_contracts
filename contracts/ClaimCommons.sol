@@ -45,7 +45,7 @@ library ClaimCommons {
             return 10120;
         }
 
-        require(false);
+        require(false, "_claimType unknown.");
     }
     
     function topic2ClaimType(uint256 _topic) public pure returns (ClaimType __claimType) {
@@ -86,7 +86,7 @@ library ClaimCommons {
             return ClaimType.AcceptedDistributorClaim;
         }
 
-        require(false);
+        require(false, "_topic unknown");
     }
     
     function getHigherLevelClaim(ClaimType _claimType) public pure returns (ClaimType __higherLevelClaimType) {
@@ -109,6 +109,6 @@ library ClaimCommons {
             return ClaimType.IsBalanceAuthority;
         }
 
-        require(false);
+        require(false, "no __higherLevelClaimType found.");
     }
 }

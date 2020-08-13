@@ -52,16 +52,16 @@ contract EnergyToken is ERC1155 {
     function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public returns(uint256 __id) {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
-        require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward);
+        require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward, "tokenKind must be AbsoluteForward or ConsumptionBasedForward.");
         
         // msg.sender needs to be allowed to mint.
-        require(msg.sender == generationPlant);
+        require(msg.sender == generationPlant, "msg.sender needs to be allowed to mint.");
         
         // Forwards can only be minted prior to their balance period.
-        require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
+        require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), "Forwards can only be minted prior to their balance period.");
         
         // Forwards must have been created.
-        require(id2Distributor[_id] != Distributor(0));
+        require(id2Distributor[_id] != Distributor(0), "Forwards must have been created.");
         
         address payable generationPlantP = address(uint160(generationPlant));
         require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlantP, ClaimCommons.ClaimType.GenerationTypeClaim, balancePeriod) != 0);
@@ -98,21 +98,21 @@ contract EnergyToken is ERC1155 {
     }
     
     modifier onlyMeteringAuthorities {
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0, "No valid claim of type IsMeteringAuthority found.");
         _;
     }
     
     modifier onlyGenerationPlants(address _plant, uint64 _balancePeriod) {
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.GenerationTypeClaim, _balancePeriod) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.LocationClaim, _balancePeriod) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "No valid claim of type BalanceClaim found.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0, "No valid claim of type ExistenceClaim found.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.GenerationTypeClaim, _balancePeriod) != 0, "No valid claim of type GenerationTypeClaim found.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.LocationClaim, _balancePeriod) != 0, "No valid claim of type LocationClaim found.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "No valid claim of type MeteringClaim found.");
         _;
     }
     
     function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(msg.sender, _balancePeriod) returns(uint256 __id) {
-        require(_tokenKind != TokenKind.Certificate);
+        require(_tokenKind != TokenKind.Certificate, "_tokenKind cannot be Certificate.");
         require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
         __id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
         
@@ -122,7 +122,7 @@ contract EnergyToken is ERC1155 {
         emit ForwardsCreated(_tokenKind, _balancePeriod, _distributor, __id);
         
         if(_tokenKind == TokenKind.GenerationBasedForward) {
-            require(!createdGenerationBasedForwards[__id]);
+            require(!createdGenerationBasedForwards[__id], "Generation based forward has already been created.");
             createdGenerationBasedForwards[__id] = true;
             
             uint256 value = 100E18;
@@ -166,7 +166,7 @@ contract EnergyToken is ERC1155 {
         // Mint certificates unless correcting
         if(!_corrected) {
             ForwardKindOfGenerationPlant memory forwardKind = forwardKindOfGenerationPlant[_balancePeriod][_plant];
-            require(forwardKind.set);
+            require(forwardKind.set, "forwardKind not set.");
             uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant);
             Distributor distributor = id2Distributor[forwardId];
             uint256 certificateId = getTokenId(TokenKind.Certificate, _balancePeriod, _plant);
@@ -202,7 +202,7 @@ contract EnergyToken is ERC1155 {
         
         // Make sure that the tokenId can actually be derived via getTokenId().
         // Without this check, it would be possible to create a second but different tokenId with the same constituents as not all bits are used.
-        require(getTokenId(__tokenKind, __balancePeriod, __identityContractAddress) == _tokenId);
+        require(getTokenId(__tokenKind, __balancePeriod, __identityContractAddress) == _tokenId, "tokenId cannot be derived via getTokenId method.");
     }
     
     /**
@@ -234,7 +234,7 @@ contract EnergyToken is ERC1155 {
         }
         
         // Invalid TokenKind.
-        require(false);
+        require(false, "Invalid TokenKind.");
     }
     
     function number2TokenKind(uint8 _number) public pure returns (TokenKind __tokenKind) {
@@ -252,7 +252,7 @@ contract EnergyToken is ERC1155 {
         }
         
         // Invalid number.
-        require(false);
+        require(false, "Invalid number.");
     }
     
 
@@ -263,13 +263,13 @@ contract EnergyToken is ERC1155 {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
             uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.BalanceClaim);
-            require(balanceClaimId != 0);
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.ExistenceClaim) != 0);
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.MeteringClaim) != 0);
+            require(balanceClaimId != 0, "No valid claim of type BalanceClaim found.");
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.ExistenceClaim) != 0, "No valid claim of type ExistenceClaim found.");
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, ClaimCommons.ClaimType.MeteringClaim) != 0, "No valid claim of type MeteringClaim found.");
             
             (, , address balanceAuthoritySender, , ,) = IdentityContract(_from).getClaim(balanceClaimId);
             Distributor distributor = id2Distributor[_id];
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthoritySender) != 0);
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthoritySender) != 0, "No valid claim of type AcceptedDistributorClaim found.");
             return;
         }
         
@@ -277,7 +277,7 @@ contract EnergyToken is ERC1155 {
             return;
         }
         
-        require(false);
+        require(false, "Unknown tokenKind.");
     }
     
     /**
@@ -287,13 +287,13 @@ contract EnergyToken is ERC1155 {
         (TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
         if(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.GenerationBasedForward || tokenKind == TokenKind.ConsumptionBasedForward) {
             uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.BalanceClaim);
-            require(balanceClaimId != 0);
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.ExistenceClaim) != 0);
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.MeteringClaim) != 0);
+            require(balanceClaimId != 0, "No valid claim of type BalanceClaim found.");
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.ExistenceClaim) != 0,"No valid claim of type ExistenceClaim found." );
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, ClaimCommons.ClaimType.MeteringClaim) != 0,"No valid claim of type MeteringClaim found.");
             
             (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             Distributor distributor = id2Distributor[_id];
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver) != 0);
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver) != 0, "No valid claim of type AcceptedDistributorClaim found.");
             return;
         }
         
@@ -301,7 +301,7 @@ contract EnergyToken is ERC1155 {
             return;
         }
         
-        require(false);
+        require(false, "Unknown tokenKind.");
     }
     
     function addressToHexString(address a) internal pure returns (string memory) {
@@ -328,7 +328,7 @@ contract EnergyToken is ERC1155 {
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
          if(tokenKind != TokenKind.Certificate)
-            require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
+            require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), "balancePeriod must be in the future.");
         
         if(tokenKind == TokenKind.ConsumptionBasedForward)
             addPlantRelationship(generationPlant, _to, balancePeriod);
@@ -347,7 +347,7 @@ contract EnergyToken is ERC1155 {
         for (uint256 i = 0; i < _ids.length; ++i) {
             (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);
             if(tokenKind != TokenKind.Certificate) {
-                require(balancePeriod > currentBalancePeriod);
+                require(balancePeriod > currentBalancePeriod, "balancePeriod must be in the future.");
             }
             
             if(tokenKind == TokenKind.ConsumptionBasedForward)
@@ -363,7 +363,7 @@ contract EnergyToken is ERC1155 {
         relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_consumptionPlant].push(_generationPlant);
         
         if(!energyDocumentations[_consumptionPlant][_balancePeriod].generated)
-            require(energyDocumentations[_consumptionPlant][_balancePeriod].value == 0);
+            require(energyDocumentations[_consumptionPlant][_balancePeriod].value == 0, "_consumptionPlant does already have energyDocumentations for _balancePeriod.");
         
         numberOfRelevantConsumptionPlantsForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
         numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
@@ -374,7 +374,7 @@ contract EnergyToken is ERC1155 {
             return;
         
         if(id2Distributor[_id] != Distributor(0))
-            require(false);
+            require(false, "Distributor _id already used.");
         
         id2Distributor[_id] = _distributor;
     }
@@ -384,7 +384,7 @@ contract EnergyToken is ERC1155 {
             forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].forwardKind = _forwardKind;
             forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].set = true;
         } else {
-            require(_forwardKind == forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].forwardKind);
+            require(_forwardKind == forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].forwardKind, "Cannot set _forwardKind, because _generationPlant does have a different forwardKind.");
         }
     }
 }
