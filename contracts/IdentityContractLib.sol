@@ -42,10 +42,10 @@ library IdentityContractLib {
     uint256 constant public ECDSA_SCHEME = 1;
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) external {
-        if(_operationType == 0) {
-            (bool success, ) = _to.call.value(_value)(_data);
+      if(_operationType == 0) {
+            (bool success, bytes memory returnData) = _to.call.value(_value)(_data);
             if(!success)
-                require(false);
+                require(false, string(formatRevertMessage(returnData)));
             return;
         }
         
@@ -159,5 +159,21 @@ library IdentityContractLib {
     
     function isCertificate(uint256 _id) internal pure returns (bool) {
         return (_id & 0x000000ff00000000000000000000000000000000000000000000000000000000) == 0x0000000400000000000000000000000000000000000000000000000000000000;
+    }
+
+    function formatRevertMessage(bytes memory text) public pure returns (bytes memory){
+        // slice text
+        uint startAt = 5;
+        bytes memory res = new bytes(text.length-startAt+1);
+        for(uint i=0;i<=text.length-startAt;i++){
+            res[i] = text[i+startAt-1];
+        }
+        // only allow the following ASCII encoded symbols that conform to the following regex (A-Z|a-z|\.| )*
+        for(uint i=0;i<res.length;i++){
+            if (!((uint8(res[i]) >= 65 && uint8(res[i]) <= 90) || (uint8(res[i]) >= 97 && uint8(res[i]) <= 122) || uint8(res[i]) == 32 || uint8(res[i]) == 44 || uint8(res[i]) == 46 ))  {
+                res[i] = "";
+            }
+        }
+        return res;
     }
 }
