@@ -42,10 +42,10 @@ library IdentityContractLib {
     uint256 constant public ECDSA_SCHEME = 1;
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) external {
-        if(_operationType == 0) {
-            (bool success, ) = _to.call.value(_value)(_data);
+      if(_operationType == 0) {
+            (bool success, bytes memory returnData) = _to.call.value(_value)(_data);
             if(!success)
-                require(false);
+                require(false, string(formatRevertMessage(returnData)));
             return;
         }
         
@@ -61,21 +61,21 @@ library IdentityContractLib {
             return;
         }
         
-        require(false);
+        require(false, "Unknown _operationType.");
     }
     
     function addClaim(mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (uint256 => bool) storage burnedClaimIds, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
         // Make sure that claim is correct if the topic is in the relevant range.
         if(_topic >= 10000 && _topic <= 11000) {
             ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(_topic);
-            require(ClaimVerifier.validateClaim(marketAuthority, claimType, address(this), _topic, _scheme, _issuer, _signature, _data));
+            require(ClaimVerifier.validateClaim(marketAuthority, claimType, address(this), _topic, _scheme, _issuer, _signature, _data), "Invalid claim.");
         }
         
         claimRequestId = getClaimId(_issuer, _topic);
         
         // Check for burned claim IDs.
         if(burnedClaimIds[claimRequestId])
-            require(false);
+            require(false, "Claim id burned.");
         
         // Emit and modify before adding to save gas.
         if(keccak256(claims[claimRequestId].signature) != keccak256(new bytes(32))) { // Claim existence check since signature cannot be 0.
@@ -85,7 +85,7 @@ library IdentityContractLib {
             topics2ClaimIds[_topic][topics2ClaimIds[_topic].length - 1] = claimRequestId;
         } else {
             // Make sure that only issuer or holder can change claims
-            require(msg.sender == address(this) || msg.sender == _issuer);
+            require(msg.sender == address(this) || msg.sender == _issuer, "Only issuer or holder can change claims.");
             emit ClaimChanged(claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
         }
         
@@ -93,7 +93,7 @@ library IdentityContractLib {
     }
     
     function removeClaim(address owner, mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (uint256 => bool) storage burnedClaimIds, uint256 _claimId) public returns (bool success) {
-        require(msg.sender == owner || msg.sender == claims[_claimId].issuer);
+        require(msg.sender == owner || msg.sender == claims[_claimId].issuer, "Only issuer or holder can remove claims.");
         
         // Emit event and store burned signature before deleting to save gas for copy.
         IdentityContractLib.Claim storage claim = claims[_claimId];
@@ -108,7 +108,7 @@ library IdentityContractLib {
         }
         
         // Make sure that the element has actually been found.
-        require(positionInArray < topics2ClaimIds[claim.topic].length);
+        require(positionInArray < topics2ClaimIds[claim.topic].length, "Claim element has not been found.");
         
         // Swap the last element in for it.
         topics2ClaimIds[claim.topic][positionInArray] = topics2ClaimIds[claim.topic][topics2ClaimIds[claim.topic].length - 1];
@@ -151,13 +151,29 @@ library IdentityContractLib {
             return;
         
         address energyToken = msg.sender;
-        require(receptionApproval[energyToken][_id][_from].expiryDate >= Commons.getBalancePeriod(balancePeriodLength, now));
-        require(receptionApproval[energyToken][_id][_from].value >= _value);
+        require(receptionApproval[energyToken][_id][_from].expiryDate >= Commons.getBalancePeriod(balancePeriodLength, now), "Approval for token reception is expired.");
+        require(receptionApproval[energyToken][_id][_from].value >= _value, "Approval for token value is too little.");
         
         receptionApproval[energyToken][_id][_from].value = receptionApproval[energyToken][_id][_from].value.sub(_value);
     }
     
     function isCertificate(uint256 _id) internal pure returns (bool) {
         return (_id & 0x000000ff00000000000000000000000000000000000000000000000000000000) == 0x0000000400000000000000000000000000000000000000000000000000000000;
+    }
+
+    function formatRevertMessage(bytes memory text) public pure returns (bytes memory){
+        // slice text
+        uint startAt = 5;
+        bytes memory res = new bytes(text.length-startAt+1);
+        for(uint i=0;i<=text.length-startAt;i++){
+            res[i] = text[i+startAt-1];
+        }
+        // only allow the following ASCII encoded symbols that conform to the following regex (A-Z|a-z|\.| )*
+        for(uint i=0;i<res.length;i++){
+            if (!((uint8(res[i]) >= 65 && uint8(res[i]) <= 90) || (uint8(res[i]) >= 97 && uint8(res[i]) <= 122) || uint8(res[i]) == 32 || uint8(res[i]) == 44 || uint8(res[i]) == 46 ))  {
+                res[i] = "";
+            }
+        }
+        return res;
     }
 }

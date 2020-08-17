@@ -20,31 +20,31 @@ contract Distributor is IdentityContract {
     
     function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) public {
         // Distributor applicability check
-        require(energyToken.id2Distributor(_tokenId) == this);
+        require(energyToken.id2Distributor(_tokenId) == this, "Distributor contract does not belong to this _tokenId");
         
         // Single execution check
-        require(testing || !completedDistributions[_tokenId][_consumptionPlantAddress]);
+        require(testing || !completedDistributions[_tokenId][_consumptionPlantAddress], "_consumptionPlantAddress can only distribute certificates once.");
         completedDistributions[_tokenId][_consumptionPlantAddress] = true;
         
         (EnergyToken.TokenKind tokenKind, uint64 balancePeriod, address identityContractAddress) = energyToken.getTokenIdConstituents(_tokenId);
         
         // Time period check
-        require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, now));
+        require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, now), "balancePeriod has not yet ended.");
         
         uint256 certificateTokenId = energyToken.getTokenId(EnergyToken.TokenKind.Certificate, balancePeriod, identityContractAddress);
         bytes memory additionalData;
 
         // Claim check
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.BalanceClaim) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.ExistenceClaim) != 0);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.MeteringClaim) != 0);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.BalanceClaim) != 0, "Claim check for BalanceClaim failed.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Claim check for ExistenceClaim failed.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.MeteringClaim) != 0, "Claim check for MeteringClaim failed.");
         
         // Distribution
         if(tokenKind == EnergyToken.TokenKind.AbsoluteForward) {
             uint256 totalForwards = energyToken.totalSupply(_tokenId);
             uint256 absoluteForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(identityContractAddress, balancePeriod);
-            require(generated);
+            require(generated, "Generation plant has not produced any energy.");
 
             if(_consumptionPlantAddress != identityContractAddress) {
                 energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, absoluteForwardsOfConsumer.mul(generatedEnergy).div(totalForwards)), additionalData);
@@ -59,12 +59,12 @@ contract Distributor is IdentityContract {
         if(tokenKind == EnergyToken.TokenKind.GenerationBasedForward) {
             uint256 generationBasedForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(identityContractAddress, balancePeriod);
-            require(generated);
+            require(generated, "Generation plant has not produced any energy.");
 
             if(_consumptionPlantAddress != identityContractAddress) {
                 energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generationBasedForwardsOfConsumer.mul(generatedEnergy).div(100E18), additionalData);
             } else {
-                require(false);
+                require(false, "_consumptionPlantAddress cannot be equal to address of generation plant.");
             }
             return;
         }
@@ -83,26 +83,26 @@ contract Distributor is IdentityContract {
                     option2 = option1;
                 }
                 
-                require(energyToken.numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant(balancePeriod, identityContractAddress) == 0);
+                require(energyToken.numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant(balancePeriod, identityContractAddress) == 0, "Missing energy energy documentations for at least one consumption plant.");
                 
                 numberOfCompletedConsumptionBasedDistributions[balancePeriod][identityContractAddress]++;
                 energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(option1, option2), additionalData);
             } else {
                 // Only allow transfer of undistributable certificates if all consumption plants have gotten their certificates because otherwise it's not possible to figure out how many certificates are undistributable.
-                require(energyToken.numberOfRelevantConsumptionPlantsForGenerationPlant(balancePeriod, identityContractAddress) == numberOfCompletedConsumptionBasedDistributions[balancePeriod][identityContractAddress]);
+                require(energyToken.numberOfRelevantConsumptionPlantsForGenerationPlant(balancePeriod, identityContractAddress) == numberOfCompletedConsumptionBasedDistributions[balancePeriod][identityContractAddress], "Only transfers of undistributable certificates are allowed, if all consumption plants have gotten their certificates.");
                 uint256 distributorCertificatesBalance = energyToken.balanceOf(address(this), certificateTokenId);
                 energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, distributorCertificatesBalance, additionalData);
             }
             return;
         }
         
-        require(false);
+        require(false, "Unknown tokenKind.");
     }
     
     function getGeneratedAndConsumedEnergy(address _generationPlantAddress, address _consumptionPlantAddress, uint64 _balancePeriod) internal view returns (uint256 __generatedEnergy, uint256 __consumedEnergy) {
         (, uint256 generatedEnergy, , bool gGen, ) = energyToken.energyDocumentations(_generationPlantAddress, _balancePeriod);
         (, uint256 consumedEnergy, , bool gCon, ) = energyToken.energyDocumentations(_consumptionPlantAddress, _balancePeriod);
-        require(gGen && !gCon);
+        require(gGen && !gCon, "Either the generation plant has not generated or the consumption plant has not consumed any energy.");
         return (generatedEnergy, consumedEnergy);
     }
 }

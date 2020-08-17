@@ -31,7 +31,7 @@ library ClaimVerifier {
             return verifySignature(_subject, topic, scheme, issuer, signature, data) && (getClaimOfType(marketAuthority, address(uint160(issuer)), ClaimCommons.getHigherLevelClaim(claimType), _requiredValidAt) != 0);
         }
         
-        require(false);
+        require(false, "Claim verification failed.");
     }
     
     function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
@@ -60,7 +60,7 @@ library ClaimVerifier {
             return correctAccordingToSecondLevelAuthority && (getClaimOfType(marketAuthority, address(uint160(_issuer)), ClaimCommons.getHigherLevelClaim(_claimType)) != 0);
         }
         
-        require(false);
+        require(false, "Claim validation failed.");
     }
     
     /**
@@ -153,8 +153,8 @@ library ClaimVerifier {
     
     function getUint64Field(string memory _fieldName, bytes memory _data) public pure returns(uint64) {
         int fieldAsInt = JsmnSolLib.parseInt(getStringField(_fieldName, _data));
-        require(fieldAsInt >= 0);
-        require(fieldAsInt < 0x10000000000000000);
+        require(fieldAsInt >= 0, "fieldAsInt must be greater than 0");
+        require(fieldAsInt < 0x10000000000000000, "fieldAsInt must be less than 0x10000000000000000");
         return uint64(fieldAsInt);
     }
     
@@ -178,7 +178,7 @@ library ClaimVerifier {
             }
         }
         
-        require(false);
+        require(false, "_fieldName not found.");
     }
     
     function getExpiryDate(bytes memory _data) public pure returns(uint64) {
