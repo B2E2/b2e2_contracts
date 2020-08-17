@@ -136,18 +136,22 @@ contract('EnergyToken', function(accounts) {
 	await addClaim(distributor, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
 	// Give claims to IDC 0.
-	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
-	let data = web3.utils.toHex(json);
+	const json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
+	const data = web3.utils.toHex(json);
+    const jsonMaxGen = '{ "maxGen": "300000000000000000000", "expiryDate": "1895220001", "startDate": "1"}';
+    const dataMaxGen = web3.utils.toHex(jsonMaxGen);
 	await addClaim(idcs[0], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[0], 10070, physicalAssetAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[0], 10080, physicalAssetAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[0], 10040, meteringAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[0], 10065, physicalAssetAuthority.options.address, dataMaxGen, "", account8Sk);
 
 	// Give claims to IDC 2.
 	await addClaim(idcs[2], 10040, meteringAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[2], 10065, physicalAssetAuthority.options.address, dataMaxGen, "", account8Sk);
 
 	// Get token ID.
 	let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address);
@@ -333,6 +337,26 @@ contract('EnergyToken', function(accounts) {
 	assert.equal(balance22, 3E18);
   });
 
+  it("rejects too big energy documentations", async function() {
+    let balancePeriod = 1737524701;
+
+    // Forwards must be created first so distributor is set.
+    let abiCreateForwards = energyTokenWeb3.methods.createForwards(balancePeriod, 0, distributorWeb3.options.address).encodeABI();
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwards).send({from: accounts[5], gas: 7000000});
+
+    // Zero must work.
+    let abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, 0, balancePeriod, false).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
+
+    // Must work right up to the maximum.
+    abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, "1200000000000000000000000", balancePeriod, false).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
+
+    // Must not work for 1 above the maximum.
+    abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, "1200000000000000000000001", balancePeriod, false).encodeABI();
+	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000}));
+  });
+
   it("distributes tokens correctly.", async function() {
 	// Make the distributor an accepted distributor.
 	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + distributorWeb3.options.address.slice(2).toLowerCase() + '" }';
@@ -404,7 +428,7 @@ contract('EnergyToken', function(accounts) {
 	// The certificate balance of IDC 1 must stay zero if all energy measurements are zero.
 	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
 	  let abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, 0, balancePeriod + 9000*forwardKind, false).encodeABI();
-	  await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});;
+	  await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
 
 	  // Call distribute() function.
 	  if(forwardKind != 2) {
