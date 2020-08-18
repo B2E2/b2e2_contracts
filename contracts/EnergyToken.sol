@@ -81,6 +81,10 @@ contract EnergyToken is ERC1155 {
             // Grant the items to the caller.
             balances[_id][to] = quantity.add(balances[_id][to]);
             supply[_id] = supply[_id].add(balances[_id][to]);
+            // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
+            uint256 maxGen = getPlantGenerationCapability(generationPlant);
+            require(supply[_id] * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of minting absolute forwards above plant's capability.");
+
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
             // It will also provide the circulating supply info.
@@ -187,10 +191,14 @@ contract EnergyToken is ERC1155 {
     }
     
     function addMeasuredEnergyGeneration_capabilityCheck(address _plant, uint256 _value) internal view {
+        uint256 maxGen = getPlantGenerationCapability(_plant);
+        require(_value * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of documenting a value above plant's capability.");
+    }
+    
+    function getPlantGenerationCapability(address _plant) internal view returns (uint256 __maxGen) {
         uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim);
         (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerGenerationClaimId);
-        uint256 maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
-        require(_value * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of documenting a value above plant's capability.");
+        __maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
     }
     
     /**
