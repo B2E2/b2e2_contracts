@@ -372,7 +372,7 @@ contract('EnergyToken', function(accounts) {
 
 	// Set balance period different from any other balance period in the tests.
 	let balancePeriod = 1737549001;
-	let certificateId = [];
+	let certificateIds = [];
 	
 	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
 	  // Get certificate ID.
@@ -383,7 +383,7 @@ contract('EnergyToken', function(accounts) {
 	  while(receivedCertificateIdPadded.length < 64) {
 		receivedCertificateIdPadded = "0" + receivedCertificateIdPadded;
 	  }
-	  certificateId[forwardKind] = "0x" + receivedCertificateIdPadded;
+	  certificateIds[forwardKind] = "0x" + receivedCertificateIdPadded;
 	}
 
 	// Determine forward IDs.
@@ -437,7 +437,7 @@ contract('EnergyToken', function(accounts) {
 		await truffleAssert.reverts(distributeCall(forwardKind));
 	  }
 
-	  assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateId[forwardKind]), 0);
+	  assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateIds[forwardKind]), 0);
 	}
 
 	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
@@ -452,10 +452,10 @@ contract('EnergyToken', function(accounts) {
 
 	// Run absolute distributor.
 	await distributeCall(0);
-	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateId[0]), "17000000000000000000");
+	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateIds[0]), "17000000000000000000");
 
 	// Send certificates back for another test.
-	let abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateId[0], "17000000000000000000", "0x00").encodeABI();
+	let abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateIds[0], "17000000000000000000", "0x00").encodeABI();
 	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsBack).send({from: accounts[6], gas: 7000000});
 
 	// Mint more absolute forwards.
@@ -468,28 +468,28 @@ contract('EnergyToken', function(accounts) {
 
 	// Run absolute distributor again.
 	await distributeCall(0);
-	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateId[0]), "5100000000000000000");
+	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateIds[0]), "5100000000000000000");
 
 	// Send certificates back for another test.
-	abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateId[0], "5100000000000000000", "0x00").encodeABI();
+	abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateIds[0], "5100000000000000000", "0x00").encodeABI();
 	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsBack).send({from: accounts[6], gas: 7000000});
 
 	// Test generation-based distributor.
 	// Run generation-based distributor.
 	await distributeCall(1);
 
-	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateId[1]), "5100000000000000000");
+	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateIds[1]), "5100000000000000000");
 
 	// Send certificates back for another test.
-	abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateId[1], "5100000000000000000", "0x00").encodeABI();
+	abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateIds[1], "5100000000000000000", "0x00").encodeABI();
 	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsBack).send({from: accounts[6], gas: 7000000});
 
 	// Test consumption-based distributor.
 	await distributeCall(2);
-	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateId[2]), "1360000000000000000");
+	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateIds[2]), "1360000000000000000");
 
 	// Send certificates back for another test.
-	abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateId[2], "1360000000000000000", "0x00").encodeABI();
+	abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateIds[2], "1360000000000000000", "0x00").encodeABI();
 	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsBack).send({from: accounts[6], gas: 7000000});
 
 	// Increase consumed energy beyond generated energy.
@@ -497,11 +497,92 @@ contract('EnergyToken', function(accounts) {
 	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddConsumptionCall2).send({from: accounts[8], gas: 7000000});
 
 	await distributeCall(2);
-	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateId[2]), "5100000000000000000");
+	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateIds[2]), "5100000000000000000");
 
 	// Send certificates back for good measure.
-	abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateId[2], "5100000000000000000", "0x00").encodeABI();
+	abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateIds[2], "5100000000000000000", "0x00").encodeABI();
 	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsBack).send({from: accounts[6], gas: 7000000});
+  });
+
+  it("distributes surplus certificates correctly.", async function() {
+    let balancePeriod = 1737560701;
+    let certificateIds = [];
+	
+	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
+	  // Get certificate ID.
+	  let receivedCertificateId = await energyToken.getTokenId(3, balancePeriod + 9000*forwardKind, idcs[0].options.address);
+
+	  // Pad token ID to full length.
+	  let receivedCertificateIdPadded = receivedCertificateId.toString('hex');
+	  while(receivedCertificateIdPadded.length < 64) {
+		receivedCertificateIdPadded = "0" + receivedCertificateIdPadded;
+	  }
+	  certificateIds[forwardKind] = "0x" + receivedCertificateIdPadded;
+	}
+
+	// Determine forward IDs.
+	let forwardIds = [];
+	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
+	  // Get forward ID.
+	  let receivedForwardId = await energyToken.getTokenId(forwardKind, balancePeriod + 9000*forwardKind, idcs[0].options.address);
+
+	  // Pad token ID to full length.
+	  let receivedForwardIdPadded = receivedForwardId.toString('hex');
+	  while(receivedForwardIdPadded.length < 64) {
+		receivedForwardIdPadded = "0" + receivedForwardIdPadded;
+	  }
+	  forwardIds[forwardKind] = "0x" + receivedForwardIdPadded;
+	}
+
+    // Mint forwards.
+	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
+	  let abiCreateForwards = energyTokenWeb3.methods.createForwards(balancePeriod + 9000*forwardKind, forwardKind, distributorWeb3.options.address).encodeABI();
+	  await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwards).send({from: accounts[5], gas: 7000000});
+	  
+	  if(forwardKind == 1)
+		continue; // Generation-based forwards cannot be minted.
+
+	  // Grant reception approval.
+	  idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "17000000000000000000", forwardIds[forwardKind]).send({from: accounts[6], gas: 7000000});
+
+	  // Perform actual mint operation via execute() of IDC 0.
+	  let abiMintCall = energyTokenWeb3.methods.mint(forwardIds[forwardKind], [idcs[1].options.address], ["17000000000000000000"]).encodeABI();
+	  await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall).send({from: accounts[5], gas: 7000000});
+	}
+
+	let distributeCall = async function(forwardKind) {
+	  await distributorWeb3.methods.distribute(idcs[1].options.address, forwardIds[forwardKind]).send({from: accounts[0], gas: 7000000});
+	};
+
+    let documentationCall = async function(forwardKind) {
+      let abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, "20000000000000000000", balancePeriod + 9000*forwardKind, false).encodeABI();
+	  await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
+
+      abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, "10000000000000000000", balancePeriod + 9000*forwardKind, false).encodeABI();
+	  await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
+    };
+
+    let surplusWithdrawalCall = async function (forwardKind) {
+      await distributorWeb3.methods.withdrawSurplusCertificates(forwardIds[forwardKind]).send({from: accounts[0], gas: 7000000});
+    };
+    
+    // For absolute forwards, surplus withdrawal must work immediately after documentation.
+    await documentationCall(0);
+    await surplusWithdrawalCall(0);
+    // Distribution still needs to work after surplus distribution.
+    await distributeCall(0);
+
+    // For generation-based forwards, surplus withdrawal must revert.
+    await documentationCall(1);
+    await truffleAssert.reverts(surplusWithdrawalCall(1));
+    // But distribution needs to work nonetheless.
+    await distributeCall(1);
+
+    // For consumption-based forwards, surplus withdrawal must not work before all distributions have occurred.
+    await documentationCall(2);
+    await truffleAssert.reverts(surplusWithdrawalCall(2));
+    await distributeCall(2);
+    await surplusWithdrawalCall(2);
   });
 
   it("keeps track of energy data.", async function() {
