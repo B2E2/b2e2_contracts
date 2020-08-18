@@ -97,15 +97,14 @@ contract Distributor is IdentityContract {
      * Surplus certificates due to rounding errors are neglected. For surplus due to unsold forwards, the reglur distribute() functions has to be called.
      */
     function withdrawSurplusCertificates(uint256 _tokenId) public {
+        (EnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
+        
         // Distributor applicability check
         require(energyToken.id2Distributor(_tokenId) == this, "Distributor contract does not belong to this _tokenId");
         
         // Single execution check
-        require(testing || !completedSurplusDistributions[_tokenId][msg.sender], "_generationPlantAddress can only call withdrawSurplusCertificates() once.");
-        completedSurplusDistributions[_tokenId][msg.sender] = true;
-        
-        (EnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
-        require(generationPlantAddress == msg.sender, "withdrawSurplusCertificates() must be called by the generation plant associated with the stated token ID.");
+        require(testing || !completedSurplusDistributions[_tokenId][generationPlantAddress], "_generationPlantAddress can only call withdrawSurplusCertificates() once.");
+        completedSurplusDistributions[_tokenId][generationPlantAddress] = true;
         
         // Time period check
         require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, now), "balancePeriod has not yet ended.");
@@ -119,7 +118,7 @@ contract Distributor is IdentityContract {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
             if(generatedEnergy > totalForwards) {
-                energyToken.safeTransferFrom(address(this), msg.sender, certificateTokenId, generatedEnergy.sub(totalForwards), additionalData);
+                energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, generatedEnergy.sub(totalForwards), additionalData);
             }
             return;
         }
@@ -128,7 +127,7 @@ contract Distributor is IdentityContract {
             // Only allow transfer of undistributable certificates if all consumption plants have gotten their certificates because otherwise it's not possible to figure out how many certificates are undistributable.
             require(energyToken.numberOfRelevantConsumptionPlantsForGenerationPlant(balancePeriod, generationPlantAddress) == numberOfCompletedConsumptionBasedDistributions[balancePeriod][generationPlantAddress], "Transfer of undistributable certificates is only allowed after all consumption plants have received their certificates.");
             uint256 distributorCertificatesBalance = energyToken.balanceOf(address(this), certificateTokenId);
-            energyToken.safeTransferFrom(address(this), msg.sender, certificateTokenId, distributorCertificatesBalance, additionalData);
+            energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, distributorCertificatesBalance, additionalData);
             return;
         }
         
