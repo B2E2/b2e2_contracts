@@ -106,6 +106,7 @@ contract EnergyToken is ERC1155 {
         require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "No valid claim of type BalanceClaim found.");
         require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0, "No valid claim of type ExistenceClaim found.");
         require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.GenerationTypeClaim, _balancePeriod) != 0, "No valid claim of type GenerationTypeClaim found.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim, _balancePeriod) != 0, "No valid claim of type MaxPowerGenerationClaim found.");
         require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.LocationClaim, _balancePeriod) != 0, "No valid claim of type LocationClaim found.");
         require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "No valid claim of type MeteringClaim found.");
         _;
@@ -160,6 +161,9 @@ contract EnergyToken is ERC1155 {
             assert(false);
         }
         
+        // Don't allow documentation of a reading above capability.
+        addMeasuredEnergyGeneration_capabilityCheck(_plant, _value);
+
         EnergyDocumentation memory energyDocumentation = EnergyDocumentation(IdentityContract(msg.sender), _value, _corrected, true, true);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
@@ -180,6 +184,13 @@ contract EnergyToken is ERC1155 {
         }
 
         return true;
+    }
+    
+    function addMeasuredEnergyGeneration_capabilityCheck(address _plant, uint256 _value) internal view {
+        uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim);
+        (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerGenerationClaimId);
+        uint256 maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
+        require(_value * marketAuthority.balancePeriodLength() <= maxGen * 3600 * 1000, "Attempt of documenting a value above plant's capability.");
     }
     
     /**

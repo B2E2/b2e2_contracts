@@ -5,7 +5,7 @@ pragma solidity ^0.5.0;
 * So all contracts which need to access these enums and methods instead are subcontracts of this contract.
 */
 library ClaimCommons {
-    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorClaim }
+    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, MaxPowerGenerationClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorClaim }
 
     function claimType2Topic(ClaimType _claimType) public pure returns (uint256 __topic) {
         if(_claimType == ClaimType.IsBalanceAuthority) {
@@ -25,6 +25,9 @@ library ClaimCommons {
         }
         if(_claimType == ClaimType.ExistenceClaim) {
             return 10060;
+        }
+        if(_claimType == ClaimType.MaxPowerGenerationClaim) {
+            return 10065;
         }
         if(_claimType == ClaimType.GenerationTypeClaim) {
             return 10070;
@@ -67,6 +70,9 @@ library ClaimCommons {
         if(_topic == 10060) {
             return ClaimType.ExistenceClaim;
         }
+        if(_topic == 10065) {
+            return ClaimType.MaxPowerGenerationClaim;
+        }
         if(_topic == 10070) {
             return ClaimType.GenerationTypeClaim;
         }
@@ -103,6 +109,9 @@ library ClaimCommons {
             return ClaimType.IsPhysicalAssetAuthority;
         }
         if(_claimType == ClaimType.LocationClaim) {
+            return ClaimType.IsPhysicalAssetAuthority;
+        }
+        if(_claimType == ClaimType.MaxPowerGenerationClaim) {
             return ClaimType.IsPhysicalAssetAuthority;
         }
         if(_claimType == ClaimType.AcceptedDistributorClaim) {
