@@ -434,7 +434,7 @@ contract('EnergyToken', function(accounts) {
 	  if(forwardKind != 2) {
 		await distributeCall(forwardKind);
 	  } else {
-		truffleAssert.reverts(distributeCall(forwardKind));
+		await truffleAssert.reverts(distributeCall(forwardKind));
 	  }
 
 	  assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateId[forwardKind]), 0);
