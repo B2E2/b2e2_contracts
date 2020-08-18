@@ -190,7 +190,7 @@ contract EnergyToken is ERC1155 {
         uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim);
         (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerGenerationClaimId);
         uint256 maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
-        require(_value * marketAuthority.balancePeriodLength() <= maxGen * 3600 * 1000, "Attempt of documenting a value above plant's capability.");
+        require(_value * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of documenting a value above plant's capability.");
     }
     
     /**

@@ -138,7 +138,7 @@ contract('EnergyToken', function(accounts) {
 	// Give claims to IDC 0.
 	const json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
 	const data = web3.utils.toHex(json);
-    const jsonMaxGen = '{ "maxGen": "300000000000000000000", "expiryDate": "1895220001", "startDate": "1"}';
+    const jsonMaxGen = '{ "maxGen": "300", "expiryDate": "1895220001", "startDate": "1"}';
     const dataMaxGen = web3.utils.toHex(jsonMaxGen);
 	await addClaim(idcs[0], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
@@ -349,11 +349,11 @@ contract('EnergyToken', function(accounts) {
 	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
 
     // Must work right up to the maximum.
-    abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, "1200000000000000000000000", balancePeriod, false).encodeABI();
+    abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, "75000000000000000000000", balancePeriod, false).encodeABI();
 	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
 
     // Must not work for 1 above the maximum.
-    abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, "1200000000000000000000001", balancePeriod, false).encodeABI();
+    abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, "75000000000000000000001", balancePeriod, false).encodeABI();
 	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000}));
   });
 
