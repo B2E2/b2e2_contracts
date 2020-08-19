@@ -162,7 +162,7 @@ contract EnergyToken is ERC1155 {
     function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) public returns (bool __success) {
         // Don't allow a corrected value to be overwritten with a non-corrected value.
         if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
-            assert(false);
+            require(false, "A corrected value cannot be overwritten by a non-corrected value.");
         }
         
         // Don't allow documentation of a reading above capability.

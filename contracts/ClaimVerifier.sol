@@ -138,7 +138,7 @@ library ClaimVerifier {
     function doesMatchingFieldExist(string memory _fieldName, string memory _fieldContent, bytes memory _data) internal pure returns(bool) {
         string memory json = string(_data);
         (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 20);
-        assert(exitCode == 0);
+        require(exitCode == 0, "Error in doesMatchingFieldExist. Exit code is not 0.");
         
         for(uint i = 1; i < numberOfTokensFound; i += 2) {
             JsmnSolLib.Token memory keyToken = tokens[i];
@@ -168,7 +168,7 @@ library ClaimVerifier {
         string memory json = string(_data);
         (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 20);
 
-        assert(exitCode == 0);
+        assert(exitCode == 0, "Error in getStringField. Exit code is not 0.");
         for(uint i = 1; i < numberOfTokensFound; i += 2) {
             JsmnSolLib.Token memory keyToken = tokens[i];
             JsmnSolLib.Token memory valueToken = tokens[i+1];
