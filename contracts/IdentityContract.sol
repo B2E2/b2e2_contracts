@@ -44,6 +44,8 @@ contract IdentityContract {
      */
     constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength, address _owner) public {
         if(_marketAuthority == IdentityContract(0)) {
+            require(3600 % _balancePeriodLength == 0, "Balance period length must be a unit fraction of an hour.");
+            
             marketAuthority = this;
             balancePeriodLength = _balancePeriodLength;
         } else {
