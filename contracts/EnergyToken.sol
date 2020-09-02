@@ -137,42 +137,39 @@ contract EnergyToken is ERC1155 {
         }
     }
 
-    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities public returns (bool __success) {
-        // Don't allow a corrected value to be overwritten with a non-corrected value.
-        if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
-            require(false, "A corrected value cannot be overwritten by a non-corrected value.");
-        }
-        
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) onlyMeteringAuthorities public returns (bool __success) {
+        bool corrected = false;
+        // Recognize corrected energy documentations.
+        if(energyDocumentations[_plant][_balancePeriod].entered) {
+            corrected = true;
+        } else {
         address[] storage affectedGenerationPlants = relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_plant];
-        for(uint32 i = 0; i < affectedGenerationPlants.length; i++) {
-            // In case this is merely a correction, remove the previously stated value from the total.
-            energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] = energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]].sub(energyDocumentations[_plant][_balancePeriod].value).add(_value);
-        
-            if(!energyDocumentations[_plant][_balancePeriod].entered) {
+            for(uint32 i = 0; i < affectedGenerationPlants.length; i++) {
+                energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] = energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]].add(_value);
                 numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] = numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]].sub(1);
             }
         }
 
-        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(IdentityContract(msg.sender), _value, _corrected, false, true);
-        energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
+        energyDocumentations[_plant][_balancePeriod] = EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, false, true);
         
         return true;
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod, bool _corrected) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) public returns (bool __success) {
-        // Don't allow a corrected value to be overwritten with a non-corrected value.
-        if(energyDocumentations[_plant][_balancePeriod].corrected && !_corrected) {
-            require(false, "A corrected value cannot be overwritten by a non-corrected value.");
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) public returns (bool __success) {
+        bool corrected = false;
+        // Recognize corrected energy documentations.
+        if(energyDocumentations[_plant][_balancePeriod].entered) {
+            corrected = true;
         }
         
         // Don't allow documentation of a reading above capability.
         addMeasuredEnergyGeneration_capabilityCheck(_plant, _value);
 
-        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(IdentityContract(msg.sender), _value, _corrected, true, true);
+        EnergyDocumentation memory energyDocumentation = EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, true, true);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
         
-        // Mint certificates unless correcting
-        if(!_corrected) {
+        // Mint certificates unless correcting.
+        if(!corrected) {
             ForwardKindOfGenerationPlant memory forwardKind = forwardKindOfGenerationPlant[_balancePeriod][_plant];
             require(forwardKind.set, "forwardKind not set.");
             uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant);
