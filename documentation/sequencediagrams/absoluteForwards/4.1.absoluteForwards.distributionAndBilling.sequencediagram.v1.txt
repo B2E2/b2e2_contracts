@@ -34,7 +34,7 @@ Distributor ->ConsumptionPlant.sol:get Claims
 
 
 activate ConsumptionPlant.sol
-ConsumptionPlant.sol-->>Distributor:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Metering Claim>>]
+ConsumptionPlant.sol-->>Distributor:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>]
 deactivate ConsumptionPlant.sol
 Distributor->Distributor:verify claims
 EnergyToken.sol<-Distributor:**totalSupply**(\n<<tokenID>>)

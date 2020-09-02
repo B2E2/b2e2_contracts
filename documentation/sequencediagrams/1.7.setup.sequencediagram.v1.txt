@@ -19,33 +19,33 @@ group Authentication and Authorization with Claims
 
 
 
-MeteringAuthority -> Producer:<<Metering Claim>>
+MeteringAuthority -> Producer:<<MeteringClaim>>
 activate Producer
-Producer ->GenerationPlant.sol:add Claim (<<Metering Claim>>)
+Producer ->GenerationPlant.sol:add Claim (<<MeteringClaim>>)
 
 activate GenerationPlant.sol
 deactivate Producer
-GenerationPlant.sol -> MeteringAuthority.sol:get Claim with _claimType="Is Metering Authority"
+GenerationPlant.sol -> MeteringAuthority.sol:get Claim with _claimType="IsMeteringAuthority"
 
 
 
 
 activate MeteringAuthority.sol
-GenerationPlant.sol<<--MeteringAuthority.sol:<<Is Metering Authority Claim>>
+GenerationPlant.sol<<--MeteringAuthority.sol:<<IsMeteringAuthority>>
 deactivate MeteringAuthority.sol
 GenerationPlant.sol->GenerationPlant.sol:verify claims
 deactivate GenerationPlant.sol
-MeteringAuthority -> Consumer:<<Metering Claim>>
+MeteringAuthority -> Consumer:<<MeteringClaim>>
 activate Consumer
-Consumer ->ConsumptionPlant.sol:add Claim (<<Metering Claim>>)
+Consumer ->ConsumptionPlant.sol:add Claim (<<MeteringClaim>>)
 deactivate Consumer
 
 
 
 activate ConsumptionPlant.sol
-ConsumptionPlant.sol->MeteringAuthority.sol:get Claim with _claimType =\n"Is Metering Authority"
+ConsumptionPlant.sol->MeteringAuthority.sol:get Claim with _claimType =\n"IsMeteringAuthority"
 activate MeteringAuthority.sol
-ConsumptionPlant.sol<<--MeteringAuthority.sol:<<Is Metering Authority Claim>>
+ConsumptionPlant.sol<<--MeteringAuthority.sol:<<IsMeteringAuthority>>
 deactivate MeteringAuthority.sol
 ConsumptionPlant.sol->ConsumptionPlant.sol:verify claims
 deactivate ConsumptionPlant.sol

@@ -18,16 +18,16 @@ group Authentication and Authorization with Claims
 
 
 deactivate ConsumptionPlant.sol
-BalanceAuthority_P -> Producer:<<Balance Claim>>
+BalanceAuthority_P -> Producer:<<BalanceClaim>>
 activate Producer
-Producer->GenerationPlant.sol:add Claim (<<Balance Claim>>)
+Producer->GenerationPlant.sol:add Claim (<<BalanceClaim>>)
 activate GenerationPlant.sol
 
 deactivate Producer
-GenerationPlant.sol -> BalanceAuthority_P.sol:get Claim with _claimType="Is Balance Authority"
+GenerationPlant.sol -> BalanceAuthority_P.sol:get Claim with _claimType="IsBalanceAuthority"
 deactivate Producer
 activate BalanceAuthority_P.sol
-GenerationPlant.sol<<--BalanceAuthority_P.sol:<<Is Balance Authority Claim>>
+GenerationPlant.sol<<--BalanceAuthority_P.sol:<<IsBalanceAuthority>>
 deactivate BalanceAuthority_P.sol
 GenerationPlant.sol->GenerationPlant.sol:verify claims
 deactivate GenerationPlant.sol
@@ -36,16 +36,16 @@ deactivate GenerationPlant.sol
 activate GenerationPlant.sol
 deactivate GenerationPlant.sol
 
-BalanceAuthority_C -> Consumer:<<Balance Claim>>
+BalanceAuthority_C -> Consumer:<<BalanceClaim>>
 activate Consumer
-Consumer->ConsumptionPlant.sol:add Claim (<<Balance Claim>>)
+Consumer->ConsumptionPlant.sol:add Claim (<<BalanceClaim>>)
 activate ConsumptionPlant.sol
 deactivate Consumer
-ConsumptionPlant.sol -> BalanceAuthority_C.sol:get Claim with _claimType = \n"Is Balance Authority"
+ConsumptionPlant.sol -> BalanceAuthority_C.sol:get Claim with _claimType = \n"IsBalanceAuthority"
 
 deactivate Consumer
 activate BalanceAuthority_C.sol
-ConsumptionPlant.sol<<--BalanceAuthority_C.sol:<<Is Balance Authority Claim>>
+ConsumptionPlant.sol<<--BalanceAuthority_C.sol:<<IsBalanceAuthority>>
 deactivate BalanceAuthority_C.sol
 ConsumptionPlant.sol->ConsumptionPlant.sol:verify claims
 deactivate ConsumptionPlant.sol

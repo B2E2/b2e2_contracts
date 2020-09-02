@@ -19,8 +19,8 @@ BalanceAuthority_P<<--Distributor.sol:<<address of Distributor.sol>>
 space
 
 
-BalanceAuthority_P->Distributor.sol:add Claim (<<Accepted Distributor Contracts Claim>>)
-BalanceAuthority_C->Distributor.sol:add Claim (<<Accepted Distributor Contracts Claim>>)
+BalanceAuthority_P->Distributor.sol:add Claim (<<AcceptedDistributorClaim>>)
+BalanceAuthority_C->Distributor.sol:add Claim (<<AcceptedDistributorClaim>>)
 
 
 

@@ -23,14 +23,10 @@ activate GenerationPlant.sol
 GenerationPlant.sol ->EnergyToken.sol:**createForwards**(\n<<balancePeriod>>, \nGenerationBasedForward,\n<<address of Distributor.sol>>\n)
 deactivate GenerationPlant.sol
 activate EnergyToken.sol
+
 GenerationPlant.sol<-EnergyToken.sol:get Claims
-
-
 activate GenerationPlant.sol
-GenerationPlant.sol-->>EnergyToken.sol:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Generation Type Claim>>, \n<<Location Claim>>, \n<<Metering Claim>>]
-
-
-
+GenerationPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>,\n<<GenerationTypeClaim>>,\n<<MaxPowerGenerationClaim>>,\n<<LocationClaim>>]
 deactivate GenerationPlant.sol
 
 EnergyToken.sol -> Distributor.sol:get Claim
@@ -78,13 +74,17 @@ deactivate ConsumptionPlant.sol
 
 activate EnergyToken.sol
 
+GenerationPlant.sol<-EnergyToken.sol:get Claims
+activate GenerationPlant.sol
+GenerationPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>,\n<<GenerationTypeClaim>>,\n<<MaxPowerGenerationClaim>>,\n<<LocationClaim>>]
+deactivate GenerationPlant.sol
 
 ConsumptionPlant.sol<-EnergyToken.sol:get Claims
 
 
 
 activate ConsumptionPlant.sol
-ConsumptionPlant.sol-->>EnergyToken.sol:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Metering Claim>>]
+ConsumptionPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>]
 deactivate ConsumptionPlant.sol
 
 

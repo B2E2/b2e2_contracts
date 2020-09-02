@@ -23,7 +23,7 @@ Distributor ->ConsumptionPlant.sol:get claims
 
 
 activate ConsumptionPlant.sol
-ConsumptionPlant.sol-->>Distributor:[<<Balance Claim>>, \n<<Existence Claim>>, \n<<Metering Claim>>]
+ConsumptionPlant.sol-->>Distributor:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>]
 deactivate ConsumptionPlant.sol
 
 

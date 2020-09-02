@@ -19,23 +19,23 @@ entryspacing 0.8
 
 MarketAuthority -> PhysicalAssetAuthority:<<Is Physical Asset \nAuthority Claim>>
 activate PhysicalAssetAuthority
-PhysicalAssetAuthority ->PhysicalAssetAuthority.sol:add Claim (<<Is Physical Asset Authority Claim>>)
+PhysicalAssetAuthority ->PhysicalAssetAuthority.sol:add Claim (<<IsPhysicalAssetAuthority>>)
 deactivate PhysicalAssetAuthority
 
 activate PhysicalAssetAuthority.sol
 PhysicalAssetAuthority.sol->PhysicalAssetAuthority.sol:verify claim
 deactivate PhysicalAssetAuthority.sol
-MarketAuthority -> MeteringAuthority:<<Is Metering Authority Claim>>
+MarketAuthority -> MeteringAuthority:<<IsMeteringAuthority>>
 activate MeteringAuthority
-MeteringAuthority ->MeteringAuthority.sol:add Claim (<<Is Metering Authority Claim>>)
+MeteringAuthority ->MeteringAuthority.sol:add Claim (<<IsMeteringAuthority>>)
 deactivate MeteringAuthority
 
 activate MeteringAuthority.sol
 MeteringAuthority.sol->MeteringAuthority.sol:verify claim
 deactivate MeteringAuthority.sol
-MarketAuthority -> BalanceAuthority_P:<<Is Balance Authority Claim>>
+MarketAuthority -> BalanceAuthority_P:<<IsBalanceAuthority>>
 activate BalanceAuthority_P
-BalanceAuthority_P ->BalanceAuthority_P.sol:add Claim (<<Is Balance Authority Claim>>)
+BalanceAuthority_P ->BalanceAuthority_P.sol:add Claim (<<IsBalanceAuthority>>)
 
 deactivate BalanceAuthority_P
 
@@ -43,10 +43,10 @@ activate BalanceAuthority_P.sol
 BalanceAuthority_P.sol->BalanceAuthority_P.sol:verify claim
 deactivate BalanceAuthority_P.sol
 
-MarketAuthority -> BalanceAuthority_C:<<Is Balance Authority Claim>>
+MarketAuthority -> BalanceAuthority_C:<<IsBalanceAuthority>>
 
 activate BalanceAuthority_C
-BalanceAuthority_C ->BalanceAuthority_C.sol:add Claim (<<Is Balance Authority Claim>>)
+BalanceAuthority_C ->BalanceAuthority_C.sol:add Claim (<<IsBalanceAuthority>>)
 
 activate BalanceAuthority_C.sol
 deactivate BalanceAuthority_C
