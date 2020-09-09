@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
+import "./../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 import "./../dependencies/erc-1155/contracts/SafeMath.sol";
 import "./Commons.sol";
 import "./ClaimCommons.sol";
