@@ -2,9 +2,11 @@ pragma solidity ^0.5.0;
 
 import "./Commons.sol";
 import "./IdentityContract.sol";
+import "./IdentityContractLib.sol";
 import "./ClaimCommons.sol";
 import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
 import "./../dependencies/dapp-bin/library/stringUtils.sol";
+import "./../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 library ClaimVerifier {
     // Constants ERC-735
