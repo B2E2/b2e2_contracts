@@ -90,7 +90,7 @@ contract EnergyToken is ERC1155 {
             // It will also provide the circulating supply info.
             emit TransferSingle(msg.sender, address(0x0), to, _id, quantity);
 
-            if (to != msg.sender) {
+            if(to != msg.sender) {
                 _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, to, _id, quantity, '');
             }
             
@@ -171,17 +171,25 @@ contract EnergyToken is ERC1155 {
         // Mint certificates unless correcting.
         if(!corrected) {
             ForwardKindOfGenerationPlant memory forwardKind = forwardKindOfGenerationPlant[_balancePeriod][_plant];
-            require(forwardKind.set, "forwardKind not set.");
-            uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant);
-            Distributor distributor = id2Distributor[forwardId];
             uint256 certificateId = getTokenId(TokenKind.Certificate, _balancePeriod, _plant);
-            balances[certificateId][address(distributor)] = _value.add(balances[certificateId][address(distributor)]);
-            supply[certificateId] = supply[certificateId].add(balances[certificateId][address(distributor)]);
+
+			// If the forwards were not created, send the certificates to the generation plant. Otherwise, send them to the distributor of the forwards.
+			address certificateReceiver;
+			if(!forwardKind.set) {
+				certificateReceiver = _plant;
+			} else {
+				uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant);
+				Distributor distributor = id2Distributor[forwardId];
+				certificateReceiver = address(distributor);
+			}
+
+			balances[certificateId][certificateReceiver] = _value.add(balances[certificateId][certificateReceiver]);
+            supply[certificateId] = supply[certificateId].add(balances[certificateId][certificateReceiver]);
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
             // It will also provide the circulating supply info.
-            emit TransferSingle(msg.sender, address(0x0), address(distributor), certificateId, _value);
-            _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, address(distributor), certificateId, _value, '');
+            emit TransferSingle(msg.sender, address(0x0), certificateReceiver, certificateId, _value);
+            _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, certificateReceiver, certificateId, _value, '');
         }
 
         return true;
