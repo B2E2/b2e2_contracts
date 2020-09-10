@@ -37,7 +37,7 @@ library ClaimVerifier {
     }
     
     function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
-        return verifyClaim(marketAuthority, _subject, _claimId, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), false);
+        return verifyClaim(marketAuthority, _subject, _claimId, uint64(now), false);
     }
     
     /**
