@@ -17,6 +17,9 @@ contract IdentityContract {
     // Events related to ERC-1155
     event RequestTransfer(address recipient, address sender, uint256 value, uint64 expiryDate, uint256 tokenId);
     
+    // Other events.
+    event IdentityContractCreation(IdentityContract indexed marketAuthority, IdentityContract identityContract);
+    
     // Constants ERC-735
     uint256 constant public ECDSA_SCHEME = 1;
     
@@ -54,6 +57,8 @@ contract IdentityContract {
         }
         
         owner = _owner;
+        
+        emit IdentityContractCreation(_marketAuthority, this);
     }
     
     // Modifiers ERC-725
