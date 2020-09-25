@@ -365,13 +365,6 @@ contract('EnergyToken', function(accounts) {
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
 	await addClaim(distributorWeb3, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
-	// Give the regular reception claims to the distributor.
-	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
-	let data = web3.utils.toHex(json);
-	await addClaim(distributorWeb3, 10040, meteringAuthority.options.address, data, "", account8Sk);
-	await addClaim(distributorWeb3, 10050, balanceAuthority.options.address, data, "", account8Sk);
-	await addClaim(distributorWeb3, 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
-
 	// Set balance period different from any other balance period in the tests.
 	let balancePeriod = 1737549001;
 	let certificateIds = [];
