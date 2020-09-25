@@ -108,7 +108,7 @@ contract EnergyToken is ERC1155 {
     
     modifier onlyGenerationPlants(address _plant, uint64 _balancePeriod) {
         require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "No valid claim of type BalanceClaim found.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0, "No valid claim of type ExistenceClaim found.");
+        require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, _plant, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", _balancePeriod) != 0, "No valid claim of type ExistenceClaim of type generation found.");
         require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.GenerationTypeClaim, _balancePeriod) != 0, "No valid claim of type GenerationTypeClaim found.");
         require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim, _balancePeriod) != 0, "No valid claim of type MaxPowerGenerationClaim found.");
         require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.LocationClaim, _balancePeriod) != 0, "No valid claim of type LocationClaim found.");
