@@ -1,5 +1,5 @@
 {
-  "name": "energietokens-implementierung",
+  "name": "b2e2_contracts",
   "version": "1.0.0",
   "description": "",
   "main": "truffle-config.js",
@@ -14,14 +14,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/BlockInfinity/Energietokens-Implementierung.git"
-  },
-  "author": "Christoph Michelbach",
-  "license": "UNLICENSED",
-  "bugs": {
-    "url": "https://github.com/BlockInfinity/Energietokens-Implementierung/issues"
-  },
-  "homepage": "https://github.com/BlockInfinity/Energietokens-Implementierung#readme"
+  "author": "B2E2 Community <b2e2@enbw.com>",
+  "license": "MIT"
 }
