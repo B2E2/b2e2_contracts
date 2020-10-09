@@ -200,12 +200,6 @@ contract EnergyToken is ERC1155 {
         require(_value * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of documenting a value above plant's capability.");
     }
     
-    function getPlantGenerationCapability(address _plant) internal view returns (uint256 __maxGen) {
-        uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim);
-        (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerGenerationClaimId);
-        __maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
-    }
-    
     /**
      * tokenId: zeros (24 bit) || tokenKind number (8 bit) || balancePeriod (64 bit) || address of IdentityContract (160 bit)
      */
@@ -328,27 +322,6 @@ contract EnergyToken is ERC1155 {
         require(false, "Unknown tokenKind.");
     }
     
-    function addressToHexString(address a) internal pure returns (string memory) {
-        bytes memory h = new bytes(40);
-        uint160 asInt = uint160(a);
-        for (uint i = 0; i < 20; i++) {
-            uint8 currentByte = uint8(asInt >> (160-(i+1)*8));
-            
-            h[2*i] = numberToHexDigit(currentByte / 16);
-            h[2*i + 1] = numberToHexDigit(currentByte % 16);
-        }
-        
-        return string(h);
-    }
-    
-    function numberToHexDigit(uint8 number) internal pure returns (bytes1) {
-        if(number < 10) {
-            return bytes1(number + 48);
-        } else {
-            return bytes1(number - 10 + 97);
-        }
-    }
-    
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
          if(tokenKind != TokenKind.Certificate)
@@ -383,6 +356,9 @@ contract EnergyToken is ERC1155 {
         ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
     }
     
+    // ########################
+    // # Internal functions
+    // ########################
     function addPlantRelationship(address _generationPlant, address _consumptionPlant, uint64 _balancePeriod) internal {
         relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_consumptionPlant].push(_generationPlant);
         
@@ -391,6 +367,12 @@ contract EnergyToken is ERC1155 {
         
         numberOfRelevantConsumptionPlantsForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
         numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
+    }
+    
+    function getPlantGenerationCapability(address _plant) internal view returns (uint256 __maxGen) {
+        uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim);
+        (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerGenerationClaimId);
+        __maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
     }
     
     function setId2Distributor(uint256 _id, Distributor _distributor) internal {

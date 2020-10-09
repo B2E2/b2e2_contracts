@@ -135,13 +135,6 @@ library IdentityContractLib {
         burnedClaimIds[getClaimId(msg.sender, _topic)] = false;
     }
     
-    function getClaimId(address _issuer, uint256 _topic) internal pure returns (uint256 __claimRequestId) {
-        // TODO: Addition or concatenation?
-        bytes memory preimageIssuer = abi.encodePacked(_issuer);
-        bytes memory preimageTopic = abi.encodePacked(_topic);
-        return uint256(keccak256(abi.encodePacked(preimageIssuer, preimageTopic)));
-    }
-    
     /**
      * Only consumes reception approval when handling forwards. Fails iff granted reception approval is insufficient.
      */
@@ -157,11 +150,21 @@ library IdentityContractLib {
         receptionApproval[energyToken][_id][_from].value = receptionApproval[energyToken][_id][_from].value.sub(_value);
     }
     
+    // ########################
+    // # Internal functions
+    // ########################
+    function getClaimId(address _issuer, uint256 _topic) internal pure returns (uint256 __claimRequestId) {
+        // TODO: Addition or concatenation?
+        bytes memory preimageIssuer = abi.encodePacked(_issuer);
+        bytes memory preimageTopic = abi.encodePacked(_topic);
+        return uint256(keccak256(abi.encodePacked(preimageIssuer, preimageTopic)));
+    }
+    
     function isCertificate(uint256 _id) internal pure returns (bool) {
         return (_id & 0x000000ff00000000000000000000000000000000000000000000000000000000) == 0x0000000400000000000000000000000000000000000000000000000000000000;
     }
 
-    function formatRevertMessage(bytes memory text) public pure returns (bytes memory){
+    function formatRevertMessage(bytes memory text) internal pure returns (bytes memory){
         // slice text
         uint startAt = 5;
         bytes memory res = new bytes(text.length-startAt+1);

@@ -20,9 +20,6 @@ contract IdentityContract {
     // Other events.
     event IdentityContractCreation(IdentityContract indexed marketAuthority, IdentityContract identityContract);
     
-    // Constants ERC-735
-    uint256 constant public ECDSA_SCHEME = 1;
-    
     // Attributes ERC-725
     address public owner;
     mapping (bytes32 => bytes) public data;

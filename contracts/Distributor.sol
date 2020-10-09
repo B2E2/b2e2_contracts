@@ -63,7 +63,7 @@ contract Distributor is IdentityContract {
         
         if(tokenKind == EnergyToken.TokenKind.ConsumptionBasedForward) {
             uint256 consumptionBasedForwards = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
-            (uint256 generatedEnergy, uint256 consumedEnergy) = getGeneratedAndConsumedEnergy(generationPlantAddress, _consumptionPlantAddress, balancePeriod);
+            (uint256 generatedEnergy, uint256 consumedEnergy) = distribute_getGeneratedAndConsumedEnergy(generationPlantAddress, _consumptionPlantAddress, balancePeriod);
             uint256 totalConsumedEnergy = energyToken.energyConsumedRelevantForGenerationPlant(balancePeriod, generationPlantAddress);
 
             uint256 option1 = (consumptionBasedForwards.mul(consumedEnergy)).div(100E18);
@@ -84,7 +84,7 @@ contract Distributor is IdentityContract {
         require(false, "Inapplicable token kind.");
     }
     
-    function getGeneratedAndConsumedEnergy(address _generationPlantAddress, address _consumptionPlantAddress, uint64 _balancePeriod) internal view returns (uint256 __generatedEnergy, uint256 __consumedEnergy) {
+    function distribute_getGeneratedAndConsumedEnergy(address _generationPlantAddress, address _consumptionPlantAddress, uint64 _balancePeriod) internal view returns (uint256 __generatedEnergy, uint256 __consumedEnergy) {
         (, uint256 generatedEnergy, , bool gGen, ) = energyToken.energyDocumentations(_generationPlantAddress, _balancePeriod);
         (, uint256 consumedEnergy, , bool gCon, ) = energyToken.energyDocumentations(_consumptionPlantAddress, _balancePeriod);
         require(gGen && !gCon, "Either the generation plant has not generated or the consumption plant has not consumed any energy.");
