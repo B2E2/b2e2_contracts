@@ -79,8 +79,7 @@ contract EnergyToken is ERC1155 {
             }
 
             // Grant the items to the caller.
-            balances[_id][to] = quantity.add(balances[_id][to]);
-            supply[_id] = supply[_id].add(balances[_id][to]);
+            mint(to, _id, quantity);
             // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
             uint256 maxGen = getPlantGenerationCapability(generationPlant);
             require(supply[_id] * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of minting absolute forwards above plant's capability.");
@@ -131,8 +130,7 @@ contract EnergyToken is ERC1155 {
             createdGenerationBasedForwards[__id] = true;
             
             uint256 value = 100E18;
-            balances[__id][msg.sender] = value;
-            supply[__id] = supply[__id].add(value);
+            mint(msg.sender, __id, value);
             emit TransferSingle(msg.sender, address(0x0), msg.sender, __id, value);
         }
     }
@@ -183,8 +181,7 @@ contract EnergyToken is ERC1155 {
 				certificateReceiver = address(distributor);
 			}
 
-			balances[certificateId][certificateReceiver] = _value.add(balances[certificateId][certificateReceiver]);
-            supply[certificateId] = supply[certificateId].add(balances[certificateId][certificateReceiver]);
+            mint(certificateReceiver, certificateId, _value);
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
             // It will also provide the circulating supply info.
