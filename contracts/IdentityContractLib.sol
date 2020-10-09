@@ -37,11 +37,7 @@ library IdentityContractLib {
         string uri;
     }
     
-    // Constants ERC-735
-    bytes constant public ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
-    uint256 constant public ECDSA_SCHEME = 1;
-    
-    function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) external {
+    function execute(uint256 _operationType, address _to, uint256 _value, bytes memory _data) public {
       if(_operationType == 0) {
             (bool success, bytes memory returnData) = _to.call.value(_value)(_data);
             if(!success)
@@ -62,6 +58,14 @@ library IdentityContractLib {
         }
         
         require(false, "Unknown _operationType.");
+    }
+    
+    function execute(address owner, uint256 executionNonce, uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
+        // address(this) needs to be part of the struct so that the tx cannot be replayed to a different IDC owned by the same EOA.
+        address signer = ECDSA.recover(keccak256(abi.encodePacked(_operationType, _to, _value, _data, address(this), executionNonce)), _signature);
+        require(signer == owner, "signer must be equal to owner.");
+        
+        execute(_operationType, _to, _value, _data);
     }
     
     function addClaim(mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (uint256 => bool) storage burnedClaimIds, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
