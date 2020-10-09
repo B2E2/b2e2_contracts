@@ -1,19 +1,10 @@
 pragma solidity ^0.5.0;
 
 import "./IdentityContractLib.sol";
+import "./IERC725.sol";
+import "./IERC735.sol";
 
-contract IdentityContract {
-    // Events ERC-725
-    event DataChanged(bytes32 indexed key, bytes value);
-    event ContractCreated(address indexed contractAddress);
-    event OwnerChanged(address indexed ownerAddress);
-    
-    // Events ERC-735
-    event ClaimRequested(uint256 indexed claimRequestId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    
+contract IdentityContract is IERC725, IERC735 {
     // Events related to ERC-1155
     event RequestTransfer(address recipient, address sender, uint256 value, uint64 expiryDate, uint256 tokenId);
     
@@ -67,7 +58,6 @@ contract IdentityContract {
     // Functions ERC-725
     function changeOwner(address _owner) public onlyOwner {
         owner = _owner;
-        emit OwnerChanged(_owner);
     }
     
     function getData(bytes32 _key) external view returns (bytes memory _value) {

@@ -10,13 +10,10 @@ import "./IdentityContract.sol";
 library IdentityContractLib {
     using SafeMath for uint256;
     
-    // Events ERC-725
-    event DataChanged(bytes32 indexed key, bytes value);
+    // Events ERC-725 (partially)
     event ContractCreated(address indexed contractAddress);
-    event OwnerChanged(address indexed ownerAddress);
     
-    // Events ERC-735
-    event ClaimRequested(uint256 indexed claimRequestId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    // Events ERC-735 (partially)
     event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
