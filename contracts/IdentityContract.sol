@@ -122,10 +122,9 @@ contract IdentityContract is IERC725, IERC735 {
         return 0xbc197c81;
     }
     
-    function approveSender(address _energyToken, address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) public onlyOwner returns (bool __success) {
+    function approveSender(address _energyToken, address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) public onlyOwner {
         receptionApproval[_energyToken][_id][_sender] = IdentityContractLib.PerishableValue(_value, _expiryDate);
         emit RequestTransfer(address(this), _sender, _value, _expiryDate, _id);
-        return true;
     }
     
     function approveBatchSender(address _energyToken, address _sender, uint64 _expiryDate, uint256[] memory _values, uint256[] memory _ids) public onlyOwner {

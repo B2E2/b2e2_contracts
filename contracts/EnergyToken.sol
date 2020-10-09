@@ -49,7 +49,7 @@ contract EnergyToken is ERC1155 {
         return 18;
     }
     
-    function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public returns(uint256 __id) {
+    function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
         require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward, "tokenKind must be AbsoluteForward or ConsumptionBasedForward.");
@@ -96,8 +96,6 @@ contract EnergyToken is ERC1155 {
             if(tokenKind == TokenKind.ConsumptionBasedForward)
                 addPlantRelationship(generationPlant, _to[i], balancePeriod);
         }
-        
-        __id = _id;
     }
     
     modifier onlyMeteringAuthorities {
@@ -115,27 +113,27 @@ contract EnergyToken is ERC1155 {
         _;
     }
     
-    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(msg.sender, _balancePeriod) returns(uint256 __id) {
+    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(msg.sender, _balancePeriod) {
         require(_tokenKind != TokenKind.Certificate, "_tokenKind cannot be Certificate.");
         require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
-        __id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
+        uint256 id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
         
-        setId2Distributor(__id, _distributor);
+        setId2Distributor(id, _distributor);
         setForwardKindOfGenerationPlant(_balancePeriod, msg.sender, _tokenKind);
         
-        emit ForwardsCreated(_tokenKind, _balancePeriod, _distributor, __id);
+        emit ForwardsCreated(_tokenKind, _balancePeriod, _distributor, id);
         
         if(_tokenKind == TokenKind.GenerationBasedForward) {
-            require(!createdGenerationBasedForwards[__id], "Generation based forward has already been created.");
-            createdGenerationBasedForwards[__id] = true;
+            require(!createdGenerationBasedForwards[id], "Generation based forward has already been created.");
+            createdGenerationBasedForwards[id] = true;
             
             uint256 value = 100E18;
-            mint(msg.sender, __id, value);
-            emit TransferSingle(msg.sender, address(0x0), msg.sender, __id, value);
+            mint(msg.sender, id, value);
+            emit TransferSingle(msg.sender, address(0x0), msg.sender, id, value);
         }
     }
 
-    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) onlyMeteringAuthorities public returns (bool __success) {
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) onlyMeteringAuthorities public {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -149,11 +147,9 @@ contract EnergyToken is ERC1155 {
         }
 
         energyDocumentations[_plant][_balancePeriod] = EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, false, true);
-        
-        return true;
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) public returns (bool __success) {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) public {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -188,8 +184,6 @@ contract EnergyToken is ERC1155 {
             emit TransferSingle(msg.sender, address(0x0), certificateReceiver, certificateId, _value);
             _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, certificateReceiver, certificateId, _value, '');
         }
-
-        return true;
     }
     
     function addMeasuredEnergyGeneration_capabilityCheck(address _plant, uint256 _value) internal view {
