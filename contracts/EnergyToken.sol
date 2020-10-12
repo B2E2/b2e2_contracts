@@ -40,6 +40,15 @@ contract EnergyToken is ERC1155 {
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsForGenerationPlant;
     mapping(uint256 => Distributor) public id2Distributor;
     mapping(uint64 => mapping(address => ForwardKindOfGenerationPlant)) forwardKindOfGenerationPlant;
+    
+    bool reentrancyLock;
+    modifier noReentrancy {
+        require(!reentrancyLock);
+        reentrancyLock = true;
+        _;
+        reentrancyLock = false;
+    }
+
 
     constructor(IdentityContract _marketAuthority) public {
         marketAuthority = _marketAuthority;
@@ -49,7 +58,7 @@ contract EnergyToken is ERC1155 {
         return 18;
     }
     
-    function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public {
+    function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public noReentrancy {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
         require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward, "tokenKind must be AbsoluteForward or ConsumptionBasedForward.");
@@ -113,6 +122,7 @@ contract EnergyToken is ERC1155 {
         _;
     }
     
+    // A reentrancy lock is not needed for this function because it does not call a different contract. The recipient always is msg.sender. Therefore, _doSafeTransferAcceptanceCheck() is not called.
     function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(msg.sender, _balancePeriod) {
         require(_tokenKind != TokenKind.Certificate, "_tokenKind cannot be Certificate.");
         require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
@@ -133,7 +143,7 @@ contract EnergyToken is ERC1155 {
         }
     }
 
-    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) onlyMeteringAuthorities public {
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) public onlyMeteringAuthorities {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -149,7 +159,7 @@ contract EnergyToken is ERC1155 {
         energyDocumentations[_plant][_balancePeriod] = EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, false, true);
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) public {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) public onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) noReentrancy {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -313,7 +323,7 @@ contract EnergyToken is ERC1155 {
         require(false, "Unknown tokenKind.");
     }
     
-    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public noReentrancy {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
          if(tokenKind != TokenKind.Certificate)
             require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), "balancePeriod must be in the future.");
@@ -326,7 +336,7 @@ contract EnergyToken is ERC1155 {
         ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
     }
     
-    function safeBatchTransferFrom(address _from, address _to, uint256[] memory _ids, uint256[] memory _values, bytes memory _data) public {
+    function safeBatchTransferFrom(address _from, address _to, uint256[] memory _ids, uint256[] memory _values, bytes memory _data) public noReentrancy {
         address payable fromPayable = address(uint160(_from));
         address payable toPayable = address(uint160(_to));
         
