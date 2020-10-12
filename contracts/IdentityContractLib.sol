@@ -151,6 +151,7 @@ library IdentityContractLib {
         receptionApproval[energyToken][_id][_from].value = receptionApproval[energyToken][_id][_from].value.sub(_value);
     }
     
+    
     // ########################
     // # Internal functions
     // ########################

@@ -28,6 +28,12 @@ contract IdentityContract is IERC725, IERC735 {
     IdentityContract public marketAuthority;
     uint32 public balancePeriodLength;
     uint256 public executionNonce;
+    
+    // Modifiers ERC-725
+    modifier onlyOwner {
+        require(msg.sender == owner || msg.sender == address(this), "Only owner.");
+        _;
+    }
 
     /**
      * Market Authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
@@ -49,10 +55,8 @@ contract IdentityContract is IERC725, IERC735 {
         emit IdentityContractCreation(_marketAuthority, this);
     }
     
-    // Modifiers ERC-725
-    modifier onlyOwner {
-        require(msg.sender == owner || msg.sender == address(this), "Only owner.");
-        _;
+    function selfdestructIdc() public onlyOwner {
+        selfdestruct(address(uint160(owner)));
     }
     
     // Functions ERC-725
@@ -134,9 +138,5 @@ contract IdentityContract is IERC725, IERC735 {
             receptionApproval[_energyToken][_ids[i]][_sender] = IdentityContractLib.PerishableValue(_values[i], _expiryDate);
             emit RequestTransfer(address(this), _sender, _values[i], _expiryDate, _ids[i]);
         }
-    }
-    
-    function selfdestructIdc() public onlyOwner {
-        selfdestruct(address(uint160(owner)));
     }
 }
