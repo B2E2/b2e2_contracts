@@ -78,8 +78,11 @@ contract IdentityContract is IERC725, IERC735 {
     }
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
-        IdentityContractLib.execute(owner, executionNonce, _operationType, _to, _value, _data, _signature);
+        // Increment the execution nonce first, then send its value minus one to the lib function.
+        // This prevents attacks where a contract that is called later (e.g. because it receives money) replays the call to the execution function.
+        // As long as execute() is external, this cannot happen anyway. But it might get changed to public later on.
         executionNonce++;
+        IdentityContractLib.execute(owner, executionNonce-1, _operationType, _to, _value, _data, _signature);
     }
     
     // Functions ERC-735
