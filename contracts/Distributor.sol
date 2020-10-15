@@ -20,7 +20,7 @@ contract Distributor is IdentityContract {
         testing = _testing;
     }
     
-    function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) public {
+    function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) external {
         // Distributor applicability check
         require(energyToken.id2Distributor(_tokenId) == this, "Distributor contract does not belong to this _tokenId");
         
@@ -96,7 +96,7 @@ contract Distributor is IdentityContract {
      * 
      * Surplus certificates due to rounding errors are neglected. For surplus due to unsold forwards, the reglur distribute() functions has to be called.
      */
-    function withdrawSurplusCertificates(uint256 _tokenId) public {
+    function withdrawSurplusCertificates(uint256 _tokenId) external {
         (EnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
         
         // Distributor applicability check

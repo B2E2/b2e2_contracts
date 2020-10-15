@@ -72,7 +72,7 @@ contract EnergyToken is ERC1155 {
         return 18;
     }
     
-    function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public noReentrancy {
+    function mint(uint256 _id, address[] calldata _to, uint256[] calldata _quantities) external noReentrancy {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
         require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward, "tokenKind must be AbsoluteForward or ConsumptionBasedForward.");
@@ -104,8 +104,7 @@ contract EnergyToken is ERC1155 {
             // Grant the items to the caller.
             mint(to, _id, quantity);
             // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
-            uint256 maxGen = getPlantGenerationCapability(generationPlant);
-            require(supply[_id] * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of minting absolute forwards above plant's capability.");
+            require(supply[_id] * 3600 <= getPlantGenerationCapability(generationPlant) * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of minting absolute forwards above plant's capability.");
 
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
@@ -122,7 +121,7 @@ contract EnergyToken is ERC1155 {
     }
     
     // A reentrancy lock is not needed for this function because it does not call a different contract. The recipient always is msg.sender. Therefore, _doSafeTransferAcceptanceCheck() is not called.
-    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(msg.sender, _balancePeriod) {
+    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) external onlyGenerationPlants(msg.sender, _balancePeriod) {
         require(_tokenKind != TokenKind.Certificate, "_tokenKind cannot be Certificate.");
         require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
         uint256 id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
@@ -142,7 +141,7 @@ contract EnergyToken is ERC1155 {
         }
     }
 
-    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) public onlyMeteringAuthorities {
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) external onlyMeteringAuthorities {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -158,7 +157,7 @@ contract EnergyToken is ERC1155 {
         energyDocumentations[_plant][_balancePeriod] = EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, false, true);
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) public onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) noReentrancy {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) noReentrancy {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -204,7 +203,7 @@ contract EnergyToken is ERC1155 {
     // ########################
     // # Overridden ERC-1155 functions
     // ########################
-    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public noReentrancy {
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external noReentrancy {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
          if(tokenKind != TokenKind.Certificate)
             require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), "balancePeriod must be in the future.");
@@ -214,13 +213,31 @@ contract EnergyToken is ERC1155 {
         
         checkClaimsForTransferSending(address(uint160(_from)), _id);
         checkClaimsForTransferReception(address(uint160(_to)), _id);
-        ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
+        
+        
+        
+        // ########################
+        // ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
+        // ########################
+        require(_to != address(0x0), "_to must be non-zero.");
+        require(_from == msg.sender || operatorApproval[_from][msg.sender] == true, "Need operator approval for 3rd party transfers.");
+
+        // SafeMath will throw with insuficient funds _from
+        // or if _id is not valid (balance will be 0)
+        balances[_id][_from] = balances[_id][_from].sub(_value);
+        balances[_id][_to]   = _value.add(balances[_id][_to]);
+
+        // MUST emit event
+        emit TransferSingle(msg.sender, _from, _to, _id, _value);
+
+        // Now that the balance is updated and the event was emitted,
+        // call onERC1155Received if the destination is a contract.
+        if (_to.isContract()) {
+            _doSafeTransferAcceptanceCheck(msg.sender, _from, _to, _id, _value, _data);
+        }
     }
     
-    function safeBatchTransferFrom(address _from, address _to, uint256[] memory _ids, uint256[] memory _values, bytes memory _data) public noReentrancy {
-        address payable fromPayable = address(uint160(_from));
-        address payable toPayable = address(uint160(_to));
-        
+    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external noReentrancy {
         uint64 currentBalancePeriod = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now);
         
         for (uint256 i = 0; i < _ids.length; ++i) {
@@ -232,10 +249,41 @@ contract EnergyToken is ERC1155 {
             if(tokenKind == TokenKind.ConsumptionBasedForward)
                 addPlantRelationship(generationPlant, _to, balancePeriod);
 
-            checkClaimsForTransferSending(fromPayable, _ids[i]);
-            checkClaimsForTransferReception(toPayable, _ids[i]);
+            checkClaimsForTransferSending(address(uint160(_from)), _ids[i]);
+            checkClaimsForTransferReception(address(uint160(_to)), _ids[i]);
         }
-        ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
+        
+        // ########################
+        // ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
+        // ########################
+        // MUST Throw on errors
+        require(_to != address(0x0), "destination address must be non-zero.");
+        require(_ids.length == _values.length, "_ids and _values array lenght must match.");
+        require(_from == msg.sender || operatorApproval[_from][msg.sender] == true, "Need operator approval for 3rd party transfers.");
+
+        for (uint256 i = 0; i < _ids.length; ++i) {
+            uint256 id = _ids[i];
+            uint256 value = _values[i];
+
+            // SafeMath will throw with insuficient funds _from
+            // or if _id is not valid (balance will be 0)
+            balances[id][_from] = balances[id][_from].sub(value);
+            balances[id][_to]   = value.add(balances[id][_to]);
+        }
+
+        // Note: instead of the below batch versions of event and acceptance check you MAY have emitted a TransferSingle
+        // event and a subsequent call to _doSafeTransferAcceptanceCheck in above loop for each balance change instead.
+        // Or emitted a TransferSingle event for each in the loop and then the single _doSafeBatchTransferAcceptanceCheck below.
+        // However it is implemented the balance changes and events MUST match when a check (i.e. calling an external contract) is done.
+
+        // MUST emit event
+        emit TransferBatch(msg.sender, _from, _to, _ids, _values);
+
+        // Now that the balances are updated and the events are emitted,
+        // call onERC1155BatchReceived if the destination is a contract.
+        if (_to.isContract()) {
+            _doSafeBatchTransferAcceptanceCheck(msg.sender, _from, _to, _ids, _values, _data);
+        }
     }
     
     

@@ -55,12 +55,12 @@ contract IdentityContract is IERC725, IERC735 {
         emit IdentityContractCreation(_marketAuthority, this);
     }
     
-    function selfdestructIdc() public onlyOwner {
+    function selfdestructIdc() external onlyOwner {
         selfdestruct(address(uint160(owner)));
     }
     
     // Functions ERC-725
-    function changeOwner(address _owner) public onlyOwner {
+    function changeOwner(address _owner) external onlyOwner {
         owner = _owner;
     }
     
@@ -95,7 +95,7 @@ contract IdentityContract is IERC725, IERC735 {
         __uri = claims[_claimId].uri;
     }
     
-    function getClaimIdsByTopic(uint256 _topic) public view returns(uint256[] memory claimIds) {
+    function getClaimIdsByTopic(uint256 _topic) external view returns(uint256[] memory claimIds) {
         return topics2ClaimIds[_topic];
     }
     
@@ -103,15 +103,15 @@ contract IdentityContract is IERC725, IERC735 {
         return IdentityContractLib.addClaim(claims, topics2ClaimIds, burnedClaimIds, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
-    function removeClaim(uint256 _claimId) public returns (bool success) {
+    function removeClaim(uint256 _claimId) external returns (bool success) {
         return IdentityContractLib.removeClaim(owner, claims, topics2ClaimIds, burnedClaimIds, _claimId);
     }
 
-    function burnClaimId(uint256 _topic) public {
+    function burnClaimId(uint256 _topic) external {
         IdentityContractLib.burnClaimId(burnedClaimIds, _topic);
     }
     
-    function reinstateClaimId(uint256 _topic) public {
+    function reinstateClaimId(uint256 _topic) external {
         IdentityContractLib.reinstateClaimId(burnedClaimIds, _topic);
     }
     
@@ -129,12 +129,12 @@ contract IdentityContract is IERC725, IERC735 {
         return 0xbc197c81;
     }
     
-    function approveSender(address _energyToken, address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) public onlyOwner {
+    function approveSender(address _energyToken, address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) external onlyOwner {
         receptionApproval[_energyToken][_id][_sender] = IdentityContractLib.PerishableValue(_value, _expiryDate);
         emit RequestTransfer(address(this), _sender, _value, _expiryDate, _id);
     }
     
-    function approveBatchSender(address _energyToken, address _sender, uint64 _expiryDate, uint256[] memory _values, uint256[] memory _ids) public onlyOwner {
+    function approveBatchSender(address _energyToken, address _sender, uint64 _expiryDate, uint256[] calldata _values, uint256[] calldata _ids) external onlyOwner {
         require(_values.length < 4294967295, "_values array is too long.");
         
         for(uint32 i; i < _values.length; i++) {
