@@ -40,6 +40,29 @@ contract EnergyToken is ERC1155 {
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsForGenerationPlant;
     mapping(uint256 => Distributor) public id2Distributor;
     mapping(uint64 => mapping(address => ForwardKindOfGenerationPlant)) forwardKindOfGenerationPlant;
+    
+    bool reentrancyLock;
+    modifier noReentrancy {
+        require(!reentrancyLock);
+        reentrancyLock = true;
+        _;
+        reentrancyLock = false;
+    }
+    
+    modifier onlyMeteringAuthorities {
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0, "No valid claim of type IsMeteringAuthority found.");
+        _;
+    }
+    
+    modifier onlyGenerationPlants(address _plant, uint64 _balancePeriod) {
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "No valid claim of type BalanceClaim found.");
+        require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, _plant, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", _balancePeriod) != 0, "No valid claim of type ExistenceClaim of type generation found.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.GenerationTypeClaim, _balancePeriod) != 0, "No valid claim of type GenerationTypeClaim found.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim, _balancePeriod) != 0, "No valid claim of type MaxPowerGenerationClaim found.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.LocationClaim, _balancePeriod) != 0, "No valid claim of type LocationClaim found.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "No valid claim of type MeteringClaim found.");
+        _;
+    }
 
     constructor(IdentityContract _marketAuthority) public {
         marketAuthority = _marketAuthority;
@@ -49,7 +72,7 @@ contract EnergyToken is ERC1155 {
         return 18;
     }
     
-    function mint(uint256 _id, address[] memory _to, uint256[] memory _quantities) public returns(uint256 __id) {
+    function mint(uint256 _id, address[] calldata _to, uint256[] calldata _quantities) external noReentrancy {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
         require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward, "tokenKind must be AbsoluteForward or ConsumptionBasedForward.");
@@ -79,11 +102,9 @@ contract EnergyToken is ERC1155 {
             }
 
             // Grant the items to the caller.
-            balances[_id][to] = quantity.add(balances[_id][to]);
-            supply[_id] = supply[_id].add(balances[_id][to]);
+            mint(to, _id, quantity);
             // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
-            uint256 maxGen = getPlantGenerationCapability(generationPlant);
-            require(supply[_id] * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of minting absolute forwards above plant's capability.");
+            require(supply[_id] * 3600 <= getPlantGenerationCapability(generationPlant) * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of minting absolute forwards above plant's capability.");
 
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
@@ -97,47 +118,30 @@ contract EnergyToken is ERC1155 {
             if(tokenKind == TokenKind.ConsumptionBasedForward)
                 addPlantRelationship(generationPlant, _to[i], balancePeriod);
         }
-        
-        __id = _id;
     }
     
-    modifier onlyMeteringAuthorities {
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, ClaimCommons.ClaimType.IsMeteringAuthority) != 0, "No valid claim of type IsMeteringAuthority found.");
-        _;
-    }
-    
-    modifier onlyGenerationPlants(address _plant, uint64 _balancePeriod) {
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "No valid claim of type BalanceClaim found.");
-        require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, _plant, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", _balancePeriod) != 0, "No valid claim of type ExistenceClaim of type generation found.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.GenerationTypeClaim, _balancePeriod) != 0, "No valid claim of type GenerationTypeClaim found.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim, _balancePeriod) != 0, "No valid claim of type MaxPowerGenerationClaim found.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.LocationClaim, _balancePeriod) != 0, "No valid claim of type LocationClaim found.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "No valid claim of type MeteringClaim found.");
-        _;
-    }
-    
-    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) public onlyGenerationPlants(msg.sender, _balancePeriod) returns(uint256 __id) {
+    // A reentrancy lock is not needed for this function because it does not call a different contract. The recipient always is msg.sender. Therefore, _doSafeTransferAcceptanceCheck() is not called.
+    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) external onlyGenerationPlants(msg.sender, _balancePeriod) {
         require(_tokenKind != TokenKind.Certificate, "_tokenKind cannot be Certificate.");
         require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
-        __id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
+        uint256 id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
         
-        setId2Distributor(__id, _distributor);
+        setId2Distributor(id, _distributor);
         setForwardKindOfGenerationPlant(_balancePeriod, msg.sender, _tokenKind);
         
-        emit ForwardsCreated(_tokenKind, _balancePeriod, _distributor, __id);
+        emit ForwardsCreated(_tokenKind, _balancePeriod, _distributor, id);
         
         if(_tokenKind == TokenKind.GenerationBasedForward) {
-            require(!createdGenerationBasedForwards[__id], "Generation based forward has already been created.");
-            createdGenerationBasedForwards[__id] = true;
+            require(!createdGenerationBasedForwards[id], "Generation based forward has already been created.");
+            createdGenerationBasedForwards[id] = true;
             
             uint256 value = 100E18;
-            balances[__id][msg.sender] = value;
-            supply[__id] = supply[__id].add(value);
-            emit TransferSingle(msg.sender, address(0x0), msg.sender, __id, value);
+            mint(msg.sender, id, value);
+            emit TransferSingle(msg.sender, address(0x0), msg.sender, id, value);
         }
     }
 
-    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) onlyMeteringAuthorities public returns (bool __success) {
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) external onlyMeteringAuthorities {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -151,11 +155,9 @@ contract EnergyToken is ERC1155 {
         }
 
         energyDocumentations[_plant][_balancePeriod] = EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, false, true);
-        
-        return true;
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) public returns (bool __success) {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) noReentrancy {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -183,16 +185,13 @@ contract EnergyToken is ERC1155 {
 				certificateReceiver = address(distributor);
 			}
 
-			balances[certificateId][certificateReceiver] = _value.add(balances[certificateId][certificateReceiver]);
-            supply[certificateId] = supply[certificateId].add(balances[certificateId][certificateReceiver]);
+            mint(certificateReceiver, certificateId, _value);
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
             // It will also provide the circulating supply info.
             emit TransferSingle(msg.sender, address(0x0), certificateReceiver, certificateId, _value);
             _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, certificateReceiver, certificateId, _value, '');
         }
-
-        return true;
     }
     
     function addMeasuredEnergyGeneration_capabilityCheck(address _plant, uint256 _value) internal view {
@@ -200,12 +199,97 @@ contract EnergyToken is ERC1155 {
         require(_value * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of documenting a value above plant's capability.");
     }
     
-    function getPlantGenerationCapability(address _plant) internal view returns (uint256 __maxGen) {
-        uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim);
-        (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerGenerationClaimId);
-        __maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
+    
+    // ########################
+    // # Overridden ERC-1155 functions
+    // ########################
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external noReentrancy {
+        (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
+         if(tokenKind != TokenKind.Certificate)
+            require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), "balancePeriod must be in the future.");
+        
+        if(tokenKind == TokenKind.ConsumptionBasedForward)
+            addPlantRelationship(generationPlant, _to, balancePeriod);
+        
+        checkClaimsForTransferSending(address(uint160(_from)), _id);
+        checkClaimsForTransferReception(address(uint160(_to)), _id);
+        
+        
+        
+        // ########################
+        // ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
+        // ########################
+        require(_to != address(0x0), "_to must be non-zero.");
+        require(_from == msg.sender || operatorApproval[_from][msg.sender] == true, "Need operator approval for 3rd party transfers.");
+
+        // SafeMath will throw with insuficient funds _from
+        // or if _id is not valid (balance will be 0)
+        balances[_id][_from] = balances[_id][_from].sub(_value);
+        balances[_id][_to]   = _value.add(balances[_id][_to]);
+
+        // MUST emit event
+        emit TransferSingle(msg.sender, _from, _to, _id, _value);
+
+        // Now that the balance is updated and the event was emitted,
+        // call onERC1155Received if the destination is a contract.
+        if (_to.isContract()) {
+            _doSafeTransferAcceptanceCheck(msg.sender, _from, _to, _id, _value, _data);
+        }
     }
     
+    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external noReentrancy {
+        uint64 currentBalancePeriod = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now);
+        
+        for (uint256 i = 0; i < _ids.length; ++i) {
+            (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);
+            if(tokenKind != TokenKind.Certificate) {
+                require(balancePeriod > currentBalancePeriod, "balancePeriod must be in the future.");
+            }
+            
+            if(tokenKind == TokenKind.ConsumptionBasedForward)
+                addPlantRelationship(generationPlant, _to, balancePeriod);
+
+            checkClaimsForTransferSending(address(uint160(_from)), _ids[i]);
+            checkClaimsForTransferReception(address(uint160(_to)), _ids[i]);
+        }
+        
+        // ########################
+        // ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
+        // ########################
+        // MUST Throw on errors
+        require(_to != address(0x0), "destination address must be non-zero.");
+        require(_ids.length == _values.length, "_ids and _values array lenght must match.");
+        require(_from == msg.sender || operatorApproval[_from][msg.sender] == true, "Need operator approval for 3rd party transfers.");
+
+        for (uint256 i = 0; i < _ids.length; ++i) {
+            uint256 id = _ids[i];
+            uint256 value = _values[i];
+
+            // SafeMath will throw with insuficient funds _from
+            // or if _id is not valid (balance will be 0)
+            balances[id][_from] = balances[id][_from].sub(value);
+            balances[id][_to]   = value.add(balances[id][_to]);
+        }
+
+        // Note: instead of the below batch versions of event and acceptance check you MAY have emitted a TransferSingle
+        // event and a subsequent call to _doSafeTransferAcceptanceCheck in above loop for each balance change instead.
+        // Or emitted a TransferSingle event for each in the loop and then the single _doSafeBatchTransferAcceptanceCheck below.
+        // However it is implemented the balance changes and events MUST match when a check (i.e. calling an external contract) is done.
+
+        // MUST emit event
+        emit TransferBatch(msg.sender, _from, _to, _ids, _values);
+
+        // Now that the balances are updated and the events are emitted,
+        // call onERC1155BatchReceived if the destination is a contract.
+        if (_to.isContract()) {
+            _doSafeBatchTransferAcceptanceCheck(msg.sender, _from, _to, _ids, _values, _data);
+        }
+    }
+    
+    
+    // ########################
+    // # Public support functions
+    // ########################
     /**
      * tokenId: zeros (24 bit) || tokenKind number (8 bit) || balancePeriod (64 bit) || address of IdentityContract (160 bit)
      */
@@ -279,7 +363,45 @@ contract EnergyToken is ERC1155 {
         require(false, "Invalid number.");
     }
     
-
+    
+    // ########################
+    // # Internal functions
+    // ########################
+    function addPlantRelationship(address _generationPlant, address _consumptionPlant, uint64 _balancePeriod) internal {
+        relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_consumptionPlant].push(_generationPlant);
+        
+        if(!energyDocumentations[_consumptionPlant][_balancePeriod].generated)
+            require(energyDocumentations[_consumptionPlant][_balancePeriod].value == 0, "_consumptionPlant does already have energyDocumentations for _balancePeriod.");
+        
+        numberOfRelevantConsumptionPlantsForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
+        numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
+    }
+    
+    function getPlantGenerationCapability(address _plant) internal view returns (uint256 __maxGen) {
+        uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, ClaimCommons.ClaimType.MaxPowerGenerationClaim);
+        (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerGenerationClaimId);
+        __maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
+    }
+    
+    function setId2Distributor(uint256 _id, Distributor _distributor) internal {
+        if(id2Distributor[_id] == _distributor)
+            return;
+        
+        if(id2Distributor[_id] != Distributor(0))
+            require(false, "Distributor _id already used.");
+        
+        id2Distributor[_id] = _distributor;
+    }
+    
+    function setForwardKindOfGenerationPlant(uint64 _balancePeriod, address _generationPlant, TokenKind _forwardKind) internal {
+        if(!forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].set) {
+            forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].forwardKind = _forwardKind;
+            forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].set = true;
+        } else {
+            require(_forwardKind == forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].forwardKind, "Cannot set _forwardKind, because _generationPlant does have a different forwardKind.");
+        }
+    }
+    
     /**
      * Checks all claims required for the particular given transfer regarding the sending side.
      */
@@ -326,89 +448,5 @@ contract EnergyToken is ERC1155 {
         }
         
         require(false, "Unknown tokenKind.");
-    }
-    
-    function addressToHexString(address a) internal pure returns (string memory) {
-        bytes memory h = new bytes(40);
-        uint160 asInt = uint160(a);
-        for (uint i = 0; i < 20; i++) {
-            uint8 currentByte = uint8(asInt >> (160-(i+1)*8));
-            
-            h[2*i] = numberToHexDigit(currentByte / 16);
-            h[2*i + 1] = numberToHexDigit(currentByte % 16);
-        }
-        
-        return string(h);
-    }
-    
-    function numberToHexDigit(uint8 number) internal pure returns (bytes1) {
-        if(number < 10) {
-            return bytes1(number + 48);
-        } else {
-            return bytes1(number - 10 + 97);
-        }
-    }
-    
-    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes memory _data) public {
-        (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
-         if(tokenKind != TokenKind.Certificate)
-            require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), "balancePeriod must be in the future.");
-        
-        if(tokenKind == TokenKind.ConsumptionBasedForward)
-            addPlantRelationship(generationPlant, _to, balancePeriod);
-        
-        checkClaimsForTransferSending(address(uint160(_from)), _id);
-        checkClaimsForTransferReception(address(uint160(_to)), _id);
-        ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
-    }
-    
-    function safeBatchTransferFrom(address _from, address _to, uint256[] memory _ids, uint256[] memory _values, bytes memory _data) public {
-        address payable fromPayable = address(uint160(_from));
-        address payable toPayable = address(uint160(_to));
-        
-        uint64 currentBalancePeriod = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now);
-        
-        for (uint256 i = 0; i < _ids.length; ++i) {
-            (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);
-            if(tokenKind != TokenKind.Certificate) {
-                require(balancePeriod > currentBalancePeriod, "balancePeriod must be in the future.");
-            }
-            
-            if(tokenKind == TokenKind.ConsumptionBasedForward)
-                addPlantRelationship(generationPlant, _to, balancePeriod);
-
-            checkClaimsForTransferSending(fromPayable, _ids[i]);
-            checkClaimsForTransferReception(toPayable, _ids[i]);
-        }
-        ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
-    }
-    
-    function addPlantRelationship(address _generationPlant, address _consumptionPlant, uint64 _balancePeriod) internal {
-        relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_consumptionPlant].push(_generationPlant);
-        
-        if(!energyDocumentations[_consumptionPlant][_balancePeriod].generated)
-            require(energyDocumentations[_consumptionPlant][_balancePeriod].value == 0, "_consumptionPlant does already have energyDocumentations for _balancePeriod.");
-        
-        numberOfRelevantConsumptionPlantsForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
-        numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
-    }
-    
-    function setId2Distributor(uint256 _id, Distributor _distributor) internal {
-        if(id2Distributor[_id] == _distributor)
-            return;
-        
-        if(id2Distributor[_id] != Distributor(0))
-            require(false, "Distributor _id already used.");
-        
-        id2Distributor[_id] = _distributor;
-    }
-    
-    function setForwardKindOfGenerationPlant(uint64 _balancePeriod, address _generationPlant, TokenKind _forwardKind) internal {
-        if(!forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].set) {
-            forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].forwardKind = _forwardKind;
-            forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].set = true;
-        } else {
-            require(_forwardKind == forwardKindOfGenerationPlant[_balancePeriod][_generationPlant].forwardKind, "Cannot set _forwardKind, because _generationPlant does have a different forwardKind.");
-        }
     }
 }

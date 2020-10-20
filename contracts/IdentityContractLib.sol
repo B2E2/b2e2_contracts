@@ -10,13 +10,10 @@ import "./IdentityContract.sol";
 library IdentityContractLib {
     using SafeMath for uint256;
     
-    // Events ERC-725
-    event DataChanged(bytes32 indexed key, bytes value);
+    // Events ERC-725 (partially)
     event ContractCreated(address indexed contractAddress);
-    event OwnerChanged(address indexed ownerAddress);
     
-    // Events ERC-735
-    event ClaimRequested(uint256 indexed claimRequestId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    // Events ERC-735 (partially)
     event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
@@ -37,11 +34,7 @@ library IdentityContractLib {
         string uri;
     }
     
-    // Constants ERC-735
-    bytes constant public ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
-    uint256 constant public ECDSA_SCHEME = 1;
-    
-    function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) external {
+    function execute(uint256 _operationType, address _to, uint256 _value, bytes memory _data) public {
       if(_operationType == 0) {
             (bool success, bytes memory returnData) = _to.call.value(_value)(_data);
             if(!success)
@@ -62,6 +55,14 @@ library IdentityContractLib {
         }
         
         require(false, "Unknown _operationType.");
+    }
+    
+    function execute(address owner, uint256 executionNonce, uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
+        // address(this) needs to be part of the struct so that the tx cannot be replayed to a different IDC owned by the same EOA.
+        address signer = ECDSA.recover(keccak256(abi.encodePacked(_operationType, _to, _value, _data, address(this), executionNonce)), _signature);
+        require(signer == owner, "signer must be equal to owner.");
+        
+        execute(_operationType, _to, _value, _data);
     }
     
     function addClaim(mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (uint256 => bool) storage burnedClaimIds, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
@@ -135,13 +136,6 @@ library IdentityContractLib {
         burnedClaimIds[getClaimId(msg.sender, _topic)] = false;
     }
     
-    function getClaimId(address _issuer, uint256 _topic) internal pure returns (uint256 __claimRequestId) {
-        // TODO: Addition or concatenation?
-        bytes memory preimageIssuer = abi.encodePacked(_issuer);
-        bytes memory preimageTopic = abi.encodePacked(_topic);
-        return uint256(keccak256(abi.encodePacked(preimageIssuer, preimageTopic)));
-    }
-    
     /**
      * Only consumes reception approval when handling forwards. Fails iff granted reception approval is insufficient.
      */
@@ -157,11 +151,22 @@ library IdentityContractLib {
         receptionApproval[energyToken][_id][_from].value = receptionApproval[energyToken][_id][_from].value.sub(_value);
     }
     
+    
+    // ########################
+    // # Internal functions
+    // ########################
+    function getClaimId(address _issuer, uint256 _topic) internal pure returns (uint256 __claimRequestId) {
+        // TODO: Addition or concatenation?
+        bytes memory preimageIssuer = abi.encodePacked(_issuer);
+        bytes memory preimageTopic = abi.encodePacked(_topic);
+        return uint256(keccak256(abi.encodePacked(preimageIssuer, preimageTopic)));
+    }
+    
     function isCertificate(uint256 _id) internal pure returns (bool) {
         return (_id & 0x000000ff00000000000000000000000000000000000000000000000000000000) == 0x0000000400000000000000000000000000000000000000000000000000000000;
     }
 
-    function formatRevertMessage(bytes memory text) public pure returns (bytes memory){
+    function formatRevertMessage(bytes memory text) internal pure returns (bytes memory){
         // slice text
         uint startAt = 5;
         bytes memory res = new bytes(text.length-startAt+1);

@@ -137,22 +137,6 @@ library ClaimVerifier {
         return 0;
     }
     
-    function doesMatchingFieldExist(string memory _fieldName, string memory _fieldContent, bytes memory _data) internal pure returns(bool) {
-        string memory json = string(_data);
-        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 20);
-        require(exitCode == 0, "Error in doesMatchingFieldExist. Exit code is not 0.");
-        
-        for(uint i = 1; i < numberOfTokensFound; i += 2) {
-            JsmnSolLib.Token memory keyToken = tokens[i];
-            JsmnSolLib.Token memory valueToken = tokens[i+1];
-
-            if(StringUtils.equal(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end), _fieldName) && StringUtils.equal(JsmnSolLib.getBytes(json, valueToken.start, valueToken.end), _fieldContent)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
     function getUint64Field(string memory _fieldName, bytes memory _data) public pure returns(uint64) {
         int fieldAsInt = JsmnSolLib.parseInt(getStringField(_fieldName, _data));
         require(fieldAsInt >= 0, "fieldAsInt must be greater than or equal to 0.");
@@ -191,14 +175,6 @@ library ClaimVerifier {
         return getUint64Field("startDate", _data);
     }
     
-    function claimAttributes2SigningFormat(address _subject, uint256 _topic, bytes memory _data) internal pure returns (bytes32 __claimInSigningFormat) {
-        return keccak256(abi.encodePacked(_subject, _topic, _data));
-    }
-    
-    function getSignerAddress(bytes32 _claimInSigningFormat, bytes memory _signature) internal pure returns (address __signer) {
-        return ECDSA.recover(_claimInSigningFormat, _signature);
-    }
-    
     function verifySignature(address _subject, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data) public view returns (bool __valid) {
          // Check for currently unsupported signature.
         if(_scheme != ECDSA_SCHEME)
@@ -211,6 +187,33 @@ library ClaimVerifier {
         } else {
             return signer == _issuer;
         }
+    }
+    
+    // ########################
+    // # Internal functions
+    // ########################
+    function doesMatchingFieldExist(string memory _fieldName, string memory _fieldContent, bytes memory _data) internal pure returns(bool) {
+        string memory json = string(_data);
+        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 20);
+        require(exitCode == 0, "Error in doesMatchingFieldExist. Exit code is not 0.");
+        
+        for(uint i = 1; i < numberOfTokensFound; i += 2) {
+            JsmnSolLib.Token memory keyToken = tokens[i];
+            JsmnSolLib.Token memory valueToken = tokens[i+1];
+
+            if(StringUtils.equal(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end), _fieldName) && StringUtils.equal(JsmnSolLib.getBytes(json, valueToken.start, valueToken.end), _fieldContent)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    function claimAttributes2SigningFormat(address _subject, uint256 _topic, bytes memory _data) internal pure returns (bytes32 __claimInSigningFormat) {
+        return keccak256(abi.encodePacked(_subject, _topic, _data));
+    }
+    
+    function getSignerAddress(bytes32 _claimInSigningFormat, bytes memory _signature) internal pure returns (address __signer) {
+        return ECDSA.recover(_claimInSigningFormat, _signature);
     }
     
     // https://stackoverflow.com/a/40939341

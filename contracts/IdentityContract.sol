@@ -1,27 +1,15 @@
 pragma solidity ^0.5.0;
 
 import "./IdentityContractLib.sol";
+import "./IERC725.sol";
+import "./IERC735.sol";
 
-contract IdentityContract {
-    // Events ERC-725
-    event DataChanged(bytes32 indexed key, bytes value);
-    event ContractCreated(address indexed contractAddress);
-    event OwnerChanged(address indexed ownerAddress);
-    
-    // Events ERC-735
-    event ClaimRequested(uint256 indexed claimRequestId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    
+contract IdentityContract is IERC725, IERC735 {
     // Events related to ERC-1155
     event RequestTransfer(address recipient, address sender, uint256 value, uint64 expiryDate, uint256 tokenId);
     
     // Other events.
     event IdentityContractCreation(IdentityContract indexed marketAuthority, IdentityContract identityContract);
-    
-    // Constants ERC-735
-    uint256 constant public ECDSA_SCHEME = 1;
     
     // Attributes ERC-725
     address public owner;
@@ -40,6 +28,12 @@ contract IdentityContract {
     IdentityContract public marketAuthority;
     uint32 public balancePeriodLength;
     uint256 public executionNonce;
+    
+    // Modifiers ERC-725
+    modifier onlyOwner {
+        require(msg.sender == owner || msg.sender == address(this), "Only owner.");
+        _;
+    }
 
     /**
      * Market Authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
@@ -61,16 +55,13 @@ contract IdentityContract {
         emit IdentityContractCreation(_marketAuthority, this);
     }
     
-    // Modifiers ERC-725
-    modifier onlyOwner {
-        require(msg.sender == owner || msg.sender == address(this), "Only owner.");
-        _;
+    function selfdestructIdc() external onlyOwner {
+        selfdestruct(address(uint160(owner)));
     }
     
     // Functions ERC-725
-    function changeOwner(address _owner) public onlyOwner {
+    function changeOwner(address _owner) external onlyOwner {
         owner = _owner;
-        emit OwnerChanged(_owner);
     }
     
     function getData(bytes32 _key) external view returns (bytes memory _value) {
@@ -87,12 +78,11 @@ contract IdentityContract {
     }
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
-        // address(this) needs to be part of the struct so that the tx cannot be replayed to a different IDC owned by the same EOA.
-        address signer = ECDSA.recover(keccak256(abi.encodePacked(_operationType, _to, _value, _data, address(this), executionNonce)), _signature);
-        require(signer == owner, "signer must be equal to owner.");
+        // Increment the execution nonce first, then send its value minus one to the lib function.
+        // This prevents attacks where a contract that is called later (e.g. because it receives money) replays the call to the execution function.
+        // As long as execute() is external, this cannot happen anyway. But it might get changed to public later on.
         executionNonce++;
-        
-        IdentityContractLib.execute(_operationType, _to, _value, _data);
+        IdentityContractLib.execute(owner, executionNonce-1, _operationType, _to, _value, _data, _signature);
     }
     
     // Functions ERC-735
@@ -105,7 +95,7 @@ contract IdentityContract {
         __uri = claims[_claimId].uri;
     }
     
-    function getClaimIdsByTopic(uint256 _topic) public view returns(uint256[] memory claimIds) {
+    function getClaimIdsByTopic(uint256 _topic) external view returns(uint256[] memory claimIds) {
         return topics2ClaimIds[_topic];
     }
     
@@ -113,15 +103,15 @@ contract IdentityContract {
         return IdentityContractLib.addClaim(claims, topics2ClaimIds, burnedClaimIds, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
-    function removeClaim(uint256 _claimId) public returns (bool success) {
+    function removeClaim(uint256 _claimId) external returns (bool success) {
         return IdentityContractLib.removeClaim(owner, claims, topics2ClaimIds, burnedClaimIds, _claimId);
     }
 
-    function burnClaimId(uint256 _topic) public {
+    function burnClaimId(uint256 _topic) external {
         IdentityContractLib.burnClaimId(burnedClaimIds, _topic);
     }
     
-    function reinstateClaimId(uint256 _topic) public {
+    function reinstateClaimId(uint256 _topic) external {
         IdentityContractLib.reinstateClaimId(burnedClaimIds, _topic);
     }
     
@@ -139,22 +129,17 @@ contract IdentityContract {
         return 0xbc197c81;
     }
     
-    function approveSender(address _energyToken, address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) public onlyOwner returns (bool __success) {
+    function approveSender(address _energyToken, address _sender, uint64 _expiryDate, uint256 _value, uint256 _id) external onlyOwner {
         receptionApproval[_energyToken][_id][_sender] = IdentityContractLib.PerishableValue(_value, _expiryDate);
         emit RequestTransfer(address(this), _sender, _value, _expiryDate, _id);
-        return true;
     }
     
-    function approveBatchSender(address _energyToken, address _sender, uint64 _expiryDate, uint256[] memory _values, uint256[] memory _ids) public onlyOwner {
+    function approveBatchSender(address _energyToken, address _sender, uint64 _expiryDate, uint256[] calldata _values, uint256[] calldata _ids) external onlyOwner {
         require(_values.length < 4294967295, "_values array is too long.");
         
         for(uint32 i; i < _values.length; i++) {
             receptionApproval[_energyToken][_ids[i]][_sender] = IdentityContractLib.PerishableValue(_values[i], _expiryDate);
             emit RequestTransfer(address(this), _sender, _values[i], _expiryDate, _ids[i]);
         }
-    }
-    
-    function selfdestructIdc() public onlyOwner {
-        selfdestruct(address(uint160(owner)));
     }
 }
