@@ -34,7 +34,6 @@ contract Distributor is IdentityContract {
         require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, now), "balancePeriod has not yet ended.");
         
         uint256 certificateTokenId = energyToken.getTokenId(EnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress);
-        bytes memory additionalData;
 
         // Claim check
         require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.BalanceClaim) != 0, "Claim check for BalanceClaim failed.");
@@ -48,7 +47,7 @@ contract Distributor is IdentityContract {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, absoluteForwardsOfConsumer.mul(generatedEnergy).div(totalForwards)), additionalData);
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, absoluteForwardsOfConsumer.mul(generatedEnergy).div(totalForwards)), new bytes(0));
             return;
         }
         
@@ -57,7 +56,7 @@ contract Distributor is IdentityContract {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generationBasedForwardsOfConsumer.mul(generatedEnergy).div(100E18), additionalData);
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generationBasedForwardsOfConsumer.mul(generatedEnergy).div(100E18), new bytes(0));
             return;
         }
         
@@ -77,7 +76,7 @@ contract Distributor is IdentityContract {
             require(energyToken.numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant(balancePeriod, generationPlantAddress) == 0, "Missing energy energy documentations for at least one consumption plant.");
             
             numberOfCompletedConsumptionBasedDistributions[balancePeriod][generationPlantAddress]++;
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(option1, option2), additionalData);
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(option1, option2), new bytes(0));
             return;
         }
         
@@ -110,7 +109,6 @@ contract Distributor is IdentityContract {
         require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, now), "balancePeriod has not yet ended.");
         
         uint256 certificateTokenId = energyToken.getTokenId(EnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress);
-        bytes memory additionalData;
         
         // Surplus Distribution
         if(tokenKind == EnergyToken.TokenKind.AbsoluteForward) {
@@ -118,7 +116,7 @@ contract Distributor is IdentityContract {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
             if(generatedEnergy > totalForwards) {
-                energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, generatedEnergy.sub(totalForwards), additionalData);
+                energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, generatedEnergy.sub(totalForwards), new bytes(0));
             }
             return;
         }
@@ -127,7 +125,7 @@ contract Distributor is IdentityContract {
             // Only allow transfer of undistributable certificates if all consumption plants have gotten their certificates because otherwise it's not possible to figure out how many certificates are undistributable.
             require(energyToken.numberOfRelevantConsumptionPlantsForGenerationPlant(balancePeriod, generationPlantAddress) == numberOfCompletedConsumptionBasedDistributions[balancePeriod][generationPlantAddress], "Transfer of undistributable certificates is only allowed after all consumption plants have received their certificates.");
             uint256 distributorCertificatesBalance = energyToken.balanceOf(address(this), certificateTokenId);
-            energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, distributorCertificatesBalance, additionalData);
+            energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, distributorCertificatesBalance, new bytes(0));
             return;
         }
         

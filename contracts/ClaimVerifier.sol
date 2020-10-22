@@ -5,7 +5,6 @@ import "./IdentityContract.sol";
 import "./IdentityContractLib.sol";
 import "./ClaimCommons.sol";
 import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
-import "./../dependencies/dapp-bin/library/stringUtils.sol";
 import "./../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 library ClaimVerifier {
@@ -75,8 +74,8 @@ library ClaimVerifier {
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
+            // Checking the claim's type is important because a malicious IDC can return claims of a different topic via getClaimIdsByTopic().
             (uint256 cTopic, , , , ,) = IdentityContract(_subject).getClaim(claimIds[i]);
-            
             if(cTopic != topic)
                 continue;
             
@@ -108,11 +107,11 @@ library ClaimVerifier {
         return claimId;
     }
     
-    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer) public view returns (uint256 __claimId) {
+    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer) external view returns (uint256 __claimId) {
         return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
     }
     
-    function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
+    function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, string calldata _fieldName, string calldata _fieldContent, uint64 _requiredValidAt) external view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
@@ -144,7 +143,7 @@ library ClaimVerifier {
         return uint64(fieldAsInt);
     }
     
-    function getUint256Field(string memory _fieldName, bytes memory _data) public pure returns(uint256) {
+    function getUint256Field(string calldata _fieldName, bytes calldata _data) external pure returns(uint256) {
         int fieldAsInt = JsmnSolLib.parseInt(getStringField(_fieldName, _data));
         require(fieldAsInt >= 0, "fieldAsInt must be greater than or equal to 0.");
         return uint256(fieldAsInt);
@@ -159,7 +158,7 @@ library ClaimVerifier {
             JsmnSolLib.Token memory keyToken = tokens[i];
             JsmnSolLib.Token memory valueToken = tokens[i+1];
             
-            if(StringUtils.equal(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end), _fieldName)) {
+            if(keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end))) == keccak256(abi.encodePacked(_fieldName))) {
                 return JsmnSolLib.getBytes(json, valueToken.start, valueToken.end);
             }
         }
@@ -201,7 +200,8 @@ library ClaimVerifier {
             JsmnSolLib.Token memory keyToken = tokens[i];
             JsmnSolLib.Token memory valueToken = tokens[i+1];
 
-            if(StringUtils.equal(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end), _fieldName) && StringUtils.equal(JsmnSolLib.getBytes(json, valueToken.start, valueToken.end), _fieldContent)) {
+            if((keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end))) == keccak256(abi.encodePacked(_fieldName))) &&
+            (keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, valueToken.start, valueToken.end))) == keccak256(abi.encodePacked(_fieldContent)))) {
                 return true;
             }
         }

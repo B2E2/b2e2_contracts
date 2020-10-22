@@ -17,14 +17,14 @@ contract IdentityContractFactory {
         identityContracts[address(marketAuthority)] = true;
     }
     
-    function createIdentityContract() public {
+    function createIdentityContract() external {
         IdentityContract idc = new IdentityContract(marketAuthority, 0, msg.sender);
 
         identityContracts[address(idc)] = true;
         emit IdentityContractCreation(address(idc), msg.sender);
     }
     
-    function isRegisteredIdentityContract(address _address) public view returns (bool) {
+    function isRegisteredIdentityContract(address _address) external view returns (bool) {
         return identityContracts[_address];
     }
 }

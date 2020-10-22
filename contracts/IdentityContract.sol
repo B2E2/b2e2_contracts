@@ -86,7 +86,7 @@ contract IdentityContract is IERC725, IERC735 {
     }
     
     // Functions ERC-735
-    function getClaim(uint256 _claimId) public view returns(uint256 __topic, uint256 __scheme, address __issuer, bytes memory __signature, bytes memory __data, string memory __uri) {
+    function getClaim(uint256 _claimId) external view returns(uint256 __topic, uint256 __scheme, address __issuer, bytes memory __signature, bytes memory __data, string memory __uri) {
         __topic = claims[_claimId].topic;
         __scheme = claims[_claimId].scheme;
         __issuer = claims[_claimId].issuer;
@@ -137,7 +137,7 @@ contract IdentityContract is IERC725, IERC735 {
     function approveBatchSender(address _energyToken, address _sender, uint64 _expiryDate, uint256[] calldata _values, uint256[] calldata _ids) external onlyOwner {
         require(_values.length < 4294967295, "_values array is too long.");
         
-        for(uint32 i; i < _values.length; i++) {
+        for(uint32 i=0; i < _values.length; i++) {
             receptionApproval[_energyToken][_ids[i]][_sender] = IdentityContractLib.PerishableValue(_values[i], _expiryDate);
             emit RequestTransfer(address(this), _sender, _values[i], _expiryDate, _ids[i]);
         }
