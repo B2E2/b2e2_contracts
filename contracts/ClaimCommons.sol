@@ -7,7 +7,7 @@ pragma solidity ^0.5.0;
 library ClaimCommons {
     enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, MaxPowerGenerationClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorClaim }
 
-    function claimType2Topic(ClaimType _claimType) public pure returns (uint256 __topic) {
+    function claimType2Topic(ClaimType _claimType) external pure returns (uint256 __topic) {
         if(_claimType == ClaimType.IsBalanceAuthority) {
             return 10010;
         }
@@ -51,7 +51,7 @@ library ClaimCommons {
         require(false, "_claimType unknown.");
     }
     
-    function topic2ClaimType(uint256 _topic) public pure returns (ClaimType __claimType) {
+    function topic2ClaimType(uint256 _topic) external pure returns (ClaimType __claimType) {
         if(_topic == 10010) {
             return ClaimType.IsBalanceAuthority;
         }
@@ -95,7 +95,7 @@ library ClaimCommons {
         require(false, "_topic unknown");
     }
     
-    function getHigherLevelClaim(ClaimType _claimType) public pure returns (ClaimType __higherLevelClaimType) {
+    function getHigherLevelClaim(ClaimType _claimType) external pure returns (ClaimType __higherLevelClaimType) {
         if(_claimType == ClaimType.MeteringClaim) {
             return ClaimType.IsMeteringAuthority;
         }

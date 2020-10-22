@@ -32,7 +32,6 @@ contract EnergyToken is ERC1155 {
     
     IdentityContract public marketAuthority;
 
-    mapping(address => bool) meteringAuthorityExistenceLookup;
     mapping(address => mapping(uint64 => EnergyDocumentation)) public energyDocumentations;
     mapping(uint64 => mapping(address => uint256)) public energyConsumedRelevantForGenerationPlant;
     mapping(uint64 => mapping(address => address[])) relevantGenerationPlantsForConsumptionPlant;
@@ -68,7 +67,7 @@ contract EnergyToken is ERC1155 {
         marketAuthority = _marketAuthority;
     }
     
-    function decimals() public pure returns (uint8) {
+    function decimals() external pure returns (uint8) {
         return 18;
     }
     

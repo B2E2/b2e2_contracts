@@ -86,7 +86,7 @@ contract IdentityContract is IERC725, IERC735 {
     }
     
     // Functions ERC-735
-    function getClaim(uint256 _claimId) public view returns(uint256 __topic, uint256 __scheme, address __issuer, bytes memory __signature, bytes memory __data, string memory __uri) {
+    function getClaim(uint256 _claimId) external view returns(uint256 __topic, uint256 __scheme, address __issuer, bytes memory __signature, bytes memory __data, string memory __uri) {
         __topic = claims[_claimId].topic;
         __scheme = claims[_claimId].scheme;
         __issuer = claims[_claimId].issuer;
