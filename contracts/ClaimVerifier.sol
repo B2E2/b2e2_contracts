@@ -5,7 +5,6 @@ import "./IdentityContract.sol";
 import "./IdentityContractLib.sol";
 import "./ClaimCommons.sol";
 import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
-import "./../dependencies/dapp-bin/library/stringUtils.sol";
 import "./../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 library ClaimVerifier {
@@ -75,8 +74,8 @@ library ClaimVerifier {
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
+            // Checking the claim's type is important because a malicious IDC can return claims of a different topic via getClaimIdsByTopic().
             (uint256 cTopic, , , , ,) = IdentityContract(_subject).getClaim(claimIds[i]);
-            
             if(cTopic != topic)
                 continue;
             
@@ -159,7 +158,7 @@ library ClaimVerifier {
             JsmnSolLib.Token memory keyToken = tokens[i];
             JsmnSolLib.Token memory valueToken = tokens[i+1];
             
-            if(StringUtils.equal(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end), _fieldName)) {
+            if(keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end))) == keccak256(abi.encodePacked(_fieldName))) {
                 return JsmnSolLib.getBytes(json, valueToken.start, valueToken.end);
             }
         }
@@ -201,7 +200,8 @@ library ClaimVerifier {
             JsmnSolLib.Token memory keyToken = tokens[i];
             JsmnSolLib.Token memory valueToken = tokens[i+1];
 
-            if(StringUtils.equal(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end), _fieldName) && StringUtils.equal(JsmnSolLib.getBytes(json, valueToken.start, valueToken.end), _fieldContent)) {
+            if((keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end))) == keccak256(abi.encodePacked(_fieldName))) &&
+            (keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, valueToken.start, valueToken.end))) == keccak256(abi.encodePacked(_fieldContent)))) {
                 return true;
             }
         }
