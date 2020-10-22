@@ -137,7 +137,7 @@ contract IdentityContract is IERC725, IERC735 {
     function approveBatchSender(address _energyToken, address _sender, uint64 _expiryDate, uint256[] calldata _values, uint256[] calldata _ids) external onlyOwner {
         require(_values.length < 4294967295, "_values array is too long.");
         
-        for(uint32 i; i < _values.length; i++) {
+        for(uint32 i=0; i < _values.length; i++) {
             receptionApproval[_energyToken][_ids[i]][_sender] = IdentityContractLib.PerishableValue(_values[i], _expiryDate);
             emit RequestTransfer(address(this), _sender, _values[i], _expiryDate, _ids[i]);
         }
