@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.7.0;
 
 import "./IdentityContractLib.sol";
 import "./IERC725.sol";
@@ -39,7 +39,7 @@ contract IdentityContract is IERC725, IERC735 {
      * Market Authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
      * Other IdentityContracts need to specify the Market Authority's address as _marketAuthority. Their specification of _balancePeriodLength will be ignored.
      */
-    constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength, address _owner) public {
+    constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength, address _owner) {
         if(_marketAuthority == IdentityContract(0)) {
             require(3600 % _balancePeriodLength == 0, "Balance period length must be a unit fraction of an hour.");
             
@@ -64,16 +64,16 @@ contract IdentityContract is IERC725, IERC735 {
         owner = _owner;
     }
     
-    function getData(bytes32 _key) external view returns (bytes memory _value) {
+    function getData(bytes32 _key) override external view returns (bytes memory _value) {
         return data[_key];
     }
     
-    function setData(bytes32 _key, bytes calldata _value) external onlyOwner {
+    function setData(bytes32 _key, bytes calldata _value) override external onlyOwner {
         data[_key] = _value;
         emit DataChanged(_key, _value);
     }
     
-    function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) external onlyOwner {
+    function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) override external onlyOwner {
         IdentityContractLib.execute(_operationType, _to, _value, _data);
     }
     
@@ -86,7 +86,7 @@ contract IdentityContract is IERC725, IERC735 {
     }
     
     // Functions ERC-735
-    function getClaim(uint256 _claimId) external view returns(uint256 __topic, uint256 __scheme, address __issuer, bytes memory __signature, bytes memory __data, string memory __uri) {
+    function getClaim(uint256 _claimId) override external view returns(uint256 __topic, uint256 __scheme, address __issuer, bytes memory __signature, bytes memory __data, string memory __uri) {
         __topic = claims[_claimId].topic;
         __scheme = claims[_claimId].scheme;
         __issuer = claims[_claimId].issuer;
@@ -95,15 +95,15 @@ contract IdentityContract is IERC725, IERC735 {
         __uri = claims[_claimId].uri;
     }
     
-    function getClaimIdsByTopic(uint256 _topic) external view returns(uint256[] memory claimIds) {
+    function getClaimIdsByTopic(uint256 _topic) override external view returns(uint256[] memory claimIds) {
         return topics2ClaimIds[_topic];
     }
     
-    function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
+    function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) override public returns (uint256 claimRequestId) {
         return IdentityContractLib.addClaim(claims, topics2ClaimIds, burnedClaimIds, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
-    function removeClaim(uint256 _claimId) external returns (bool success) {
+    function removeClaim(uint256 _claimId) override external returns (bool success) {
         return IdentityContractLib.removeClaim(owner, claims, topics2ClaimIds, burnedClaimIds, _claimId);
     }
 

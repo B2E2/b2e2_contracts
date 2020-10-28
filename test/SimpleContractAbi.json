@@ -1,12 +1,10 @@
 [
 	{
 		"inputs": [],
-		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "constructor"
 	},
 	{
-		"constant": true,
 		"inputs": [],
 		"name": "field",
 		"outputs": [
@@ -16,12 +14,10 @@
 				"type": "uint256"
 			}
 		],
-		"payable": false,
 		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"constant": false,
 		"inputs": [
 			{
 				"internalType": "uint256",
@@ -31,7 +27,6 @@
 		],
 		"name": "setField",
 		"outputs": [],
-		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "function"
 	}

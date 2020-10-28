@@ -1,11 +1,14 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.7.0;
 
+import "./IERC725.sol";
+import "./IERC735.sol";
+import "./../dependencies/erc-1155/contracts/SafeMath.sol";
+import "./../dependencies/openzeppelin-contracts/contracts/cryptography/ECDSA.sol";
+import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
 import "./Commons.sol";
 import "./IdentityContract.sol";
 import "./IdentityContractLib.sol";
 import "./ClaimCommons.sol";
-import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
-import "./../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 library ClaimVerifier {
     // Constants ERC-735
@@ -36,7 +39,7 @@ library ClaimVerifier {
     }
     
     function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
-        return verifyClaim(marketAuthority, _subject, _claimId, uint64(now), false);
+        return verifyClaim(marketAuthority, _subject, _claimId, uint64(block.timestamp), false);
     }
     
     /**
@@ -62,6 +65,7 @@ library ClaimVerifier {
         }
         
         require(false, "Claim validation failed because the claim type was not recognized.");
+        return false; // Just to silence a warning about the return value being unassigned.
     }
     
     /**
@@ -89,7 +93,7 @@ library ClaimVerifier {
     }
     
     function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType) public view returns (uint256 __claimId) {
-        return getClaimOfType(marketAuthority, _subject, _claimType, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
+        return getClaimOfType(marketAuthority, _subject, _claimType, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
     }
     
     function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
@@ -108,7 +112,7 @@ library ClaimVerifier {
     }
     
     function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer) external view returns (uint256 __claimId) {
-        return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
+        return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
     }
     
     function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, string calldata _fieldName, string calldata _fieldContent, uint64 _requiredValidAt) external view returns (uint256 __claimId) {
@@ -164,6 +168,7 @@ library ClaimVerifier {
         }
         
         require(false, "_fieldName not found.");
+        return ""; // Just to silence a warning about the return value being unassigned.
     }
     
     function getExpiryDate(bytes memory _data) public pure returns(uint64) {

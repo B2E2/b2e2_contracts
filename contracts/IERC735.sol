@@ -1,5 +1,5 @@
 // https://github.com/ethereum/eips/issues/735
-pragma solidity ^0.5.0;
+pragma solidity ^0.7.0;
 
 interface IERC735 {
 

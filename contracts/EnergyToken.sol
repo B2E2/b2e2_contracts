@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.7.0;
 
 import "./Commons.sol";
 import "./IdentityContractFactory.sol";
@@ -63,7 +63,7 @@ contract EnergyToken is ERC1155 {
         _;
     }
 
-    constructor(IdentityContract _marketAuthority) public {
+    constructor(IdentityContract _marketAuthority) {
         marketAuthority = _marketAuthority;
     }
     
@@ -80,7 +80,7 @@ contract EnergyToken is ERC1155 {
         require(msg.sender == generationPlant, "msg.sender needs to be allowed to mint.");
         
         // Forwards can only be minted prior to their balance period.
-        require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), "Forwards can only be minted prior to their balance period.");
+        require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp), "Forwards can only be minted prior to their balance period.");
         
         // Forwards must have been created.
         require(id2Distributor[_id] != Distributor(0), "Forwards must have been created.");
@@ -122,7 +122,7 @@ contract EnergyToken is ERC1155 {
     // A reentrancy lock is not needed for this function because it does not call a different contract. The recipient always is msg.sender. Therefore, _doSafeTransferAcceptanceCheck() is not called.
     function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) external onlyGenerationPlants(msg.sender, _balancePeriod) {
         require(_tokenKind != TokenKind.Certificate, "_tokenKind cannot be Certificate.");
-        require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now));
+        require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
         uint256 id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
         
         setId2Distributor(id, _distributor);
@@ -156,7 +156,7 @@ contract EnergyToken is ERC1155 {
         energyDocumentations[_plant][_balancePeriod] = EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, false, true);
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now)) noReentrancy {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) noReentrancy {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -202,10 +202,10 @@ contract EnergyToken is ERC1155 {
     // ########################
     // # Overridden ERC-1155 functions
     // ########################
-    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external noReentrancy {
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) override external noReentrancy {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
          if(tokenKind != TokenKind.Certificate)
-            require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now), "balancePeriod must be in the future.");
+            require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp), "balancePeriod must be in the future.");
         
         if(tokenKind == TokenKind.ConsumptionBasedForward)
             addPlantRelationship(generationPlant, _to, balancePeriod);
@@ -236,8 +236,8 @@ contract EnergyToken is ERC1155 {
         }
     }
     
-    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) external noReentrancy {
-        uint64 currentBalancePeriod = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), now);
+    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) override external noReentrancy {
+        uint64 currentBalancePeriod = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp);
         
         for (uint256 i = 0; i < _ids.length; ++i) {
             (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);

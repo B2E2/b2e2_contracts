@@ -116,12 +116,8 @@ contract('IdentityContract', function(accounts) {
 	let scheme = 1;
 	let issuer = accounts[9];
 	let data = web3.utils.toHex(message);
-
 	let hash = web3.utils.soliditySha3(subject, topic, data);
-	console.log('Hash');
-	console.log(hash);
 
-//	let signature = await web3.eth.sign(hash, issuer); // Somehow v is 1
 	let signature3 = await eutil.ecsign(new Buffer(hash.slice(2), "hex"), new Buffer(account9Sk.slice(2), "hex"));
 	let signature4 = '0x' + signature3.r.toString('hex') + signature3.s.toString('hex') + signature3.v.toString(16);
 
@@ -153,18 +149,17 @@ contract('IdentityContract', function(accounts) {
 	// For this, account 6 needs to tell IDC 1 to tell IDC 0 to change its owner.
 	
 	// Prepare function call.
-	let data = web3Idc.methods.changeOwner(accounts[2]).encodeABI();
-	let gasPrice = 100E9;
-	let gasLimit = 300E3;
+    const idc = new web3.eth.Contract(IdentityContractFromJson.abi, idcs[1].address);
+	let data = idc.methods.changeOwner(accounts[2]).encodeABI();
 	
 	assert.equal(await idcs[0].owner(), idcs[1].address);
-	await idcs[1].execute(0, idcs[0].address, 0, data, {from: accounts[6]});
+    await idc.methods.execute(0, idcs[0].address, 0, data).send({from: accounts[6]});
 	assert.equal(await idcs[0].owner(), accounts[2]);
   });
 
   it("can create contracts via the execute function.", async function() {
 	let abi = JSON.parse(fs.readFileSync('./test/SimpleContractAbi.json', 'utf8'));
-	let bytecode = "0x608060405234801561001057600080fd5b50600560008190555060c3806100276000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80634f28bf0e146037578063827d09bb146053575b600080fd5b603d607e565b6040518082815260200191505060405180910390f35b607c60048036036020811015606757600080fd5b81019080803590602001909291905050506084565b005b60005481565b806000819055505056fea265627a7a72315820b4c08f9732318db3a55882fdf6d4dc75565d9e29e5df176d5c89c9f205b08ba064736f6c634300050c0032";
+	let bytecode = "0x608060405234801561001057600080fd5b50600560008190555060c4806100276000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80634f28bf0e146037578063827d09bb146053575b600080fd5b603d607e565b6040518082815260200191505060405180910390f35b607c60048036036020811015606757600080fd5b81019080803590602001909291905050506084565b005b60005481565b806000819055505056fea2646970667358221220cc660561f0fb2fdb793736073e36c8454fd528fce41b78fb47115d3c50b33e1364736f6c63430007000033";
 	let deploymentResult = await idcs[1].execute(1, idcs[0].address, 0, bytecode, {from: accounts[6]});
 
 	// Make sure that the contract creation event has been emitted.
