@@ -7,3 +7,6 @@
 [submodule "contracts/dapp-bin"]
 	path = dependencies/dapp-bin
 	url = https://github.com/BlockInfinity/dapp-bin.git
+[submodule "dependencies/openzeppelin-contracts"]
+	path = dependencies/openzeppelin-contracts
+	url = git@github.com:OpenZeppelin/openzeppelin-contracts.git

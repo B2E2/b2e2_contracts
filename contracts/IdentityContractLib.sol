@@ -1,7 +1,7 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.7.0;
 
-import "./../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 import "./../dependencies/erc-1155/contracts/SafeMath.sol";
+import "./../dependencies/openzeppelin-contracts/contracts/cryptography/ECDSA.sol";
 import "./Commons.sol";
 import "./ClaimCommons.sol";
 import "./ClaimVerifier.sol";
@@ -35,8 +35,8 @@ library IdentityContractLib {
     }
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes memory _data) public {
-      if(_operationType == 0) {
-            (bool success, bytes memory returnData) = _to.call.value(_value)(_data);
+        if(_operationType == 0) {
+            (bool success, bytes memory returnData) = _to.call{value: _value}(_data);
             if(!success)
                 require(false, string(formatRevertMessage(returnData)));
             return;
@@ -82,8 +82,7 @@ library IdentityContractLib {
         if(keccak256(claims[claimRequestId].signature) != keccak256(new bytes(32))) { // Claim existence check since signature cannot be 0.
             emit ClaimAdded(claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
             
-            topics2ClaimIds[_topic].length++;
-            topics2ClaimIds[_topic][topics2ClaimIds[_topic].length - 1] = claimRequestId;
+            topics2ClaimIds[_topic].push(claimRequestId);
         } else {
             // Make sure that only issuer or holder can change claims
             require(msg.sender == address(this) || msg.sender == _issuer, "Only issuer or holder can change claims.");
@@ -115,7 +114,7 @@ library IdentityContractLib {
         topics2ClaimIds[claim.topic][positionInArray] = topics2ClaimIds[claim.topic][topics2ClaimIds[claim.topic].length - 1];
         
         // Delete the (now duplicated) last entry by shrinking the array.
-        topics2ClaimIds[claim.topic].length--;
+        topics2ClaimIds[claim.topic].pop();
         
         // Delete the actual directory entry.
         claim.topic = 0;
@@ -145,7 +144,7 @@ library IdentityContractLib {
             return;
         
         address energyToken = msg.sender;
-        require(receptionApproval[energyToken][_id][_from].expiryDate >= Commons.getBalancePeriod(balancePeriodLength, now), "Approval for token reception is expired.");
+        require(receptionApproval[energyToken][_id][_from].expiryDate >= Commons.getBalancePeriod(balancePeriodLength, block.timestamp), "Approval for token reception is expired.");
         require(receptionApproval[energyToken][_id][_from].value >= _value, "Approval for token value is too little.");
         
         receptionApproval[energyToken][_id][_from].value = receptionApproval[energyToken][_id][_from].value.sub(_value);

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.7.0;
 
 import "./IdentityContract.sol";
 import "./ClaimCommons.sol";
@@ -10,7 +10,7 @@ contract IdentityContractFactory {
 
     IdentityContract marketAuthority;
     
-    constructor(IdentityContract _marketAuthority) public {
+    constructor(IdentityContract _marketAuthority) {
         marketAuthority = _marketAuthority;
         
         // The market authority needs to be registered too.

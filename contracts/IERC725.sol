@@ -1,6 +1,6 @@
 // https://github.com/ERC725Alliance/erc725/blob/master/docs/ERC-725.md
 // SPDX-License-Identifier: CC0-1.0
-pragma solidity >=0.5.0 <0.7.0;
+pragma solidity ^0.7.0;
 
 interface IERC725 /* is IERC725X, IERC725Y */ {
     event ContractCreated(address indexed contractAddress);
