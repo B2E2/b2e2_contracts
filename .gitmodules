@@ -4,9 +4,6 @@
 [submodule "contracts/jsmnSol"]
 	path = dependencies/jsmnSol
 	url = https://github.com/BlockInfinity/jsmnSol.git
-[submodule "contracts/dapp-bin"]
-	path = dependencies/dapp-bin
-	url = https://github.com/BlockInfinity/dapp-bin.git
 [submodule "dependencies/openzeppelin-contracts"]
 	path = dependencies/openzeppelin-contracts
 	url = git@github.com:OpenZeppelin/openzeppelin-contracts.git
