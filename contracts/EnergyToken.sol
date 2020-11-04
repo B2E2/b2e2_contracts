@@ -11,7 +11,9 @@ contract EnergyToken is ERC1155 {
     using Address for address;
     
     enum TokenKind {AbsoluteForward, GenerationBasedForward, ConsumptionBasedForward, Certificate}
-    
+    enum PlantType {Generation, Consumption}
+
+    event EnergyDocumented(PlantType plantType, uint256 value, address indexed plant, bool corrected, uint64 indexed balancePeriod, address indexed meteringAuthority);
     event ForwardsCreated(TokenKind tokenKind, uint64 balancePeriod, Distributor distributor, uint256 id);
     
     // id => whetherCreated
@@ -152,6 +154,7 @@ contract EnergyToken is ERC1155 {
         }
 
         energyDocumentations[_plant][_balancePeriod] = EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, false, true);
+        emit EnergyDocumented(PlantType.Consumption, _value, _plant, corrected, _balancePeriod, msg.sender);
     }
     
     function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) noReentrancy {
@@ -189,6 +192,7 @@ contract EnergyToken is ERC1155 {
             emit TransferSingle(msg.sender, address(0x0), certificateReceiver, certificateId, _value);
             _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, certificateReceiver, certificateId, _value, '');
         }
+        emit EnergyDocumented(PlantType.Generation, _value, _plant, corrected, _balancePeriod, msg.sender);        
     }
     
     function addMeasuredEnergyGeneration_capabilityCheck(address _plant, uint256 _value) internal view {
