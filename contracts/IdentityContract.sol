@@ -57,10 +57,10 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
         emit IdentityContractCreation(_marketAuthority, this);
     }
     
-    // IERC165 Interface signature = '0x01ffc9a7'   
-    // IERC725 Interface signature = '0x6f15538d'
-    // IERC735 Interface signature = '0x848a042c'    
-    // IIdentityContract Interface signature = '0x1fd50459'
+    // IERC165 interface signature = '0x01ffc9a7'   
+    // IERC725 interface signature = '0x6f15538d'
+    // IERC735 interface signature = '0x848a042c'    
+    // IIdentityContract interface signature = '0x1fd50459'
     function supportsInterface(bytes4 interfaceID) override(IERC165) external view returns (bool) {
         return
             interfaceID == IERC165.supportsInterface.selector ||
