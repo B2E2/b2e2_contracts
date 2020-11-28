@@ -2,15 +2,15 @@ pragma solidity ^0.7.0;
 
 import "./Commons.sol";
 import "./IdentityContractFactory.sol";
-import "./Distributor.sol";
 import "./ClaimVerifier.sol";
+import "./IEnergyToken.sol";
 import "./../dependencies/erc-1155/contracts/ERC1155.sol";
+import "./IERC165.sol";
 
-contract EnergyToken is ERC1155 {
+contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     using SafeMath for uint256;
     using Address for address;
-    
-    enum TokenKind {AbsoluteForward, GenerationBasedForward, ConsumptionBasedForward, Certificate}
+
     enum PlantType {Generation, Consumption}
 
     event EnergyDocumented(PlantType plantType, uint256 value, address indexed plant, bool corrected, uint64 indexed balancePeriod, address indexed meteringAuthority);
@@ -67,11 +67,21 @@ contract EnergyToken is ERC1155 {
         marketAuthority = _marketAuthority;
     }
     
-    function decimals() external pure returns (uint8) {
+    // IERC165 Interface Signature = '0x01ffc9a7'
+    // IERC1155 Interface Signature = '0xd9b67a26'
+    // IEnergyToken Interface signature = '0x32d9bb6a'
+    function supportsInterface(bytes4 interfaceID) override(IERC165, ERC1155) external view returns (bool) {
+        return
+            interfaceID == IERC165.supportsInterface.selector ||
+            interfaceID == ERC1155.safeTransferFrom.selector ^ ERC1155.safeBatchTransferFrom.selector ^ ERC1155.balanceOf.selector ^ ERC1155.balanceOfBatch.selector ^ ERC1155.setApprovalForAll.selector ^ ERC1155.isApprovedForAll.selector ||
+            interfaceID == IEnergyToken.decimals.selector ^ IEnergyToken.mint.selector ^ IEnergyToken.createForwards.selector ^ IEnergyToken.addMeasuredEnergyConsumption.selector ^ IEnergyToken.addMeasuredEnergyGeneration.selector ^ IEnergyToken.safeTransferFrom.selector ^ IEnergyToken.safeBatchTransferFrom.selector ^ IEnergyToken.getTokenId.selector ^ IEnergyToken.getTokenIdConstituents.selector ^ IEnergyToken.tokenKind2Number.selector ^ IEnergyToken.number2TokenKind.selector;
+    }
+    
+    function decimals() external override(IEnergyToken) pure returns (uint8) {
         return 18;
     }
     
-    function mint(uint256 _id, address[] calldata _to, uint256[] calldata _quantities) external noReentrancy {
+    function mint(uint256 _id, address[] calldata _to, uint256[] calldata _quantities) external override(IEnergyToken) noReentrancy {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
         require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward, "tokenKind must be AbsoluteForward or ConsumptionBasedForward.");
@@ -120,7 +130,7 @@ contract EnergyToken is ERC1155 {
     }
     
     // A reentrancy lock is not needed for this function because it does not call a different contract. The recipient always is msg.sender. Therefore, _doSafeTransferAcceptanceCheck() is not called.
-    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) external onlyGenerationPlants(msg.sender, _balancePeriod) {
+    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) external override(IEnergyToken) onlyGenerationPlants(msg.sender, _balancePeriod) {
         require(_tokenKind != TokenKind.Certificate, "_tokenKind cannot be Certificate.");
         require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
         uint256 id = getTokenId(_tokenKind, _balancePeriod, msg.sender);
@@ -140,7 +150,7 @@ contract EnergyToken is ERC1155 {
         }
     }
 
-    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) external onlyMeteringAuthorities {
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -157,7 +167,7 @@ contract EnergyToken is ERC1155 {
         emit EnergyDocumented(PlantType.Consumption, _value, _plant, corrected, _balancePeriod, msg.sender);
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) noReentrancy {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) noReentrancy {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -204,7 +214,7 @@ contract EnergyToken is ERC1155 {
     // ########################
     // # Overridden ERC-1155 functions
     // ########################
-    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) override external noReentrancy {
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
          if(tokenKind != TokenKind.Certificate)
             require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp), "balancePeriod must be in the future.");
@@ -238,7 +248,7 @@ contract EnergyToken is ERC1155 {
         }
     }
     
-    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) override external noReentrancy {
+    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
         uint64 currentBalancePeriod = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp);
         
         for (uint256 i = 0; i < _ids.length; ++i) {
@@ -294,7 +304,7 @@ contract EnergyToken is ERC1155 {
     /**
      * tokenId: zeros (24 bit) || tokenKind number (8 bit) || balancePeriod (64 bit) || address of IdentityContract (160 bit)
      */
-    function getTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _identityContractAddress) public pure returns (uint256 __tokenId) {
+    function getTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _identityContractAddress) public pure override(IEnergyToken) returns (uint256 __tokenId) {
         __tokenId = 0;
         
         __tokenId += tokenKind2Number(_tokenKind);
@@ -304,7 +314,7 @@ contract EnergyToken is ERC1155 {
         __tokenId += uint256(_identityContractAddress);
     }
     
-    function getTokenIdConstituents(uint256 _tokenId) public pure returns(TokenKind __tokenKind, uint64 __balancePeriod, address __identityContractAddress) {
+    function getTokenIdConstituents(uint256 _tokenId) public pure override(IEnergyToken) returns(TokenKind __tokenKind, uint64 __balancePeriod, address __identityContractAddress) {
         __identityContractAddress = address(uint160(_tokenId));
         __balancePeriod = uint64(_tokenId >> 160);
         __tokenKind = number2TokenKind(uint8(_tokenId >> (160 + 64)));
@@ -328,7 +338,7 @@ contract EnergyToken is ERC1155 {
      * 
      * Bits are zero unless specified otherwise.
      */
-    function tokenKind2Number(TokenKind _tokenKind) public pure returns (uint8 __number) {
+    function tokenKind2Number(TokenKind _tokenKind) public pure override(IEnergyToken) returns (uint8 __number) {
         if(_tokenKind == TokenKind.AbsoluteForward) {
             return 0;
         }
@@ -346,7 +356,7 @@ contract EnergyToken is ERC1155 {
         require(false, "Invalid TokenKind.");
     }
     
-    function number2TokenKind(uint8 _number) public pure returns (TokenKind __tokenKind) {
+    function number2TokenKind(uint8 _number) public pure override(IEnergyToken) returns (TokenKind __tokenKind) {
         if(_number == 0) {
             return TokenKind.AbsoluteForward;
         }
