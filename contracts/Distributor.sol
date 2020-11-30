@@ -1,6 +1,7 @@
 pragma solidity ^0.7.0;
 import "./IdentityContract.sol";
 import "./EnergyToken.sol";
+import "./IEnergyToken.sol";
 
 contract Distributor is IdentityContract {
     using SafeMath for uint256;
@@ -28,12 +29,12 @@ contract Distributor is IdentityContract {
         require(testing || !completedDistributions[_tokenId][_consumptionPlantAddress], "_consumptionPlantAddress can only call distribute() once.");
         completedDistributions[_tokenId][_consumptionPlantAddress] = true;
         
-        (EnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
+        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
         
         // Time period check
         require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, block.timestamp), "balancePeriod has not yet ended.");
         
-        uint256 certificateTokenId = energyToken.getTokenId(EnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress);
+        uint256 certificateTokenId = energyToken.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress);
 
         // Claim check
         require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.BalanceClaim) != 0, "Claim check for BalanceClaim failed.");
@@ -41,7 +42,7 @@ contract Distributor is IdentityContract {
         require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.MeteringClaim) != 0, "Claim check for MeteringClaim failed.");
         
         // Distribution
-        if(tokenKind == EnergyToken.TokenKind.AbsoluteForward) {
+        if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward) {
             uint256 totalForwards = energyToken.totalSupply(_tokenId);
             uint256 absoluteForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
@@ -51,7 +52,7 @@ contract Distributor is IdentityContract {
             return;
         }
         
-        if(tokenKind == EnergyToken.TokenKind.GenerationBasedForward) {
+        if(tokenKind == IEnergyToken.TokenKind.GenerationBasedForward) {
             uint256 generationBasedForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
@@ -60,7 +61,7 @@ contract Distributor is IdentityContract {
             return;
         }
         
-        if(tokenKind == EnergyToken.TokenKind.ConsumptionBasedForward) {
+        if(tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
             uint256 consumptionBasedForwards = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
             (uint256 generatedEnergy, uint256 consumedEnergy) = distribute_getGeneratedAndConsumedEnergy(generationPlantAddress, _consumptionPlantAddress, balancePeriod);
             uint256 totalConsumedEnergy = energyToken.energyConsumedRelevantForGenerationPlant(balancePeriod, generationPlantAddress);
@@ -96,7 +97,7 @@ contract Distributor is IdentityContract {
      * Surplus certificates due to rounding errors are neglected. For surplus due to unsold forwards, the reglur distribute() functions has to be called.
      */
     function withdrawSurplusCertificates(uint256 _tokenId) external {
-        (EnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
+        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
         
         // Distributor applicability check
         require(energyToken.id2Distributor(_tokenId) == this, "Distributor contract does not belong to this _tokenId");
@@ -108,10 +109,10 @@ contract Distributor is IdentityContract {
         // Time period check
         require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, block.timestamp), "balancePeriod has not yet ended.");
         
-        uint256 certificateTokenId = energyToken.getTokenId(EnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress);
+        uint256 certificateTokenId = energyToken.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress);
         
         // Surplus Distribution
-        if(tokenKind == EnergyToken.TokenKind.AbsoluteForward) {
+        if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward) {
             uint256 totalForwards = energyToken.totalSupply(_tokenId);
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
@@ -121,7 +122,7 @@ contract Distributor is IdentityContract {
             return;
         }
         
-        if(tokenKind == EnergyToken.TokenKind.ConsumptionBasedForward) {
+        if(tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
             // Only allow transfer of undistributable certificates if all consumption plants have gotten their certificates because otherwise it's not possible to figure out how many certificates are undistributable.
             require(energyToken.numberOfRelevantConsumptionPlantsForGenerationPlant(balancePeriod, generationPlantAddress) == numberOfCompletedConsumptionBasedDistributions[balancePeriod][generationPlantAddress], "Transfer of undistributable certificates is only allowed after all consumption plants have received their certificates.");
             uint256 distributorCertificatesBalance = energyToken.balanceOf(address(this), certificateTokenId);
