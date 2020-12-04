@@ -113,7 +113,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             // Grant the items to the caller.
             mint(to, _id, quantity);
             // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
-            require(supply[_id] * 3600 <= getPlantGenerationCapability(generationPlant) * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of minting absolute forwards above plant's capability.");
+            require(supply[_id] * (1000 * 3600) <= getPlantGenerationCapability(generationPlant) * marketAuthority.balancePeriodLength() * 10**18, "Attempt of minting absolute forwards above plant's capability.");
 
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
@@ -206,8 +206,12 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     }
     
     function addMeasuredEnergyGeneration_capabilityCheck(address _plant, uint256 _value) internal view {
+        // [maxGen] = W
+        // [_value] = kWh / 1e18 = 1000 * 3600 / 1e18 * W * s
+        // [balancePeriodLength] = s
+        
         uint256 maxGen = getPlantGenerationCapability(_plant);
-        require(_value * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 1000 * 10**18, "Attempt of documenting a value above plant's capability.");
+        require(_value * 1000 * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 10**18, "Attempt of documenting a value above plant's capability.");
     }
     
     

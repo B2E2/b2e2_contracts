@@ -140,7 +140,7 @@ contract('EnergyToken', function(accounts) {
 	const data = web3.utils.toHex(json);
     const jsonExistenceGeneration = '{ "type": "generation", "expiryDate": "1895220001", "startDate": "1" }';
 	const dataExistenceGeneration = web3.utils.toHex(jsonExistenceGeneration);
-    const jsonMaxGen = '{ "maxGen": "300", "expiryDate": "1895220001", "startDate": "1"}';
+    const jsonMaxGen = '{ "maxGen": "300000000", "expiryDate": "1895220001", "startDate": "1"}';
     const dataMaxGen = web3.utils.toHex(jsonMaxGen);
 	await addClaim(idcs[0], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, dataExistenceGeneration, "", account8Sk);
