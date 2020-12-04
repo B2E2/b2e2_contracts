@@ -33,6 +33,9 @@ Then (in a different terminal instance) compile the contracts and deploy them:
     truffle deploy
 
 ## Testing
+
+### Alternative 1
+
 Launch Ganache:
 
     ganache-cli -l 1000000000 -m "bread leave edge glide soda seat trim armed canyon rural cross scheme"
@@ -45,3 +48,10 @@ Run the tests (in a different terminal instance):
 
     truffle deploy # required for tests to run successfully
     truffle test
+
+### Alternative 2
+
+```
+    npm run build
+    npm run tests
+```

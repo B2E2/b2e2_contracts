@@ -6,12 +6,18 @@
   "dependencies": {
     "ethereumjs-util": "^6.2.0",
     "remixd": "^0.2.0-alpha.5",
+    "truffle": "^5.1.52",
     "truffle-assertions": "^0.9.2",
     "truffle-hdwallet-provider": "^1.0.17"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "child_process": "^1.0.2",
+    "gulp": "^4.0.2"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prebuild": "npm i",
+    "build": "gulp build",
+    "tests": "gulp tests"
   },
   "author": "B2E2 Community <b2e2@enbw.com>",
   "license": "MIT"

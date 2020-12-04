@@ -60,7 +60,7 @@ library IdentityContractLib {
     function execute(address owner, uint256 executionNonce, uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
         // address(this) needs to be part of the struct so that the tx cannot be replayed to a different IDC owned by the same EOA.
         address signer = ECDSA.recover(keccak256(abi.encodePacked(_operationType, _to, _value, _data, address(this), executionNonce)), _signature);
-        require(signer == owner, "signer must be equal to owner.");
+        require(signer == owner, "invalid signature / wrong signer / outdated nonce.");
         
         execute(_operationType, _to, _value, _data);
     }
