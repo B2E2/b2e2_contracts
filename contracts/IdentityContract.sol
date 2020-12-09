@@ -91,11 +91,14 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
         IdentityContractLib.execute(_operationType, _to, _value, _data);
     }
     
-    function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
-        // Increment the execution nonce first, then send its value minus one to the lib function.
+    function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data, uint256 _executionNonce, bytes calldata _signature) external {
+        // Limit the number of execution nonces that can be skipped to avoid overflows.
+        require(_executionNonce >= executionNonce && _executionNonce <= executionNonce + 1e9);
+        
+        // Increment the stored execution nonce first.
         // This prevents attacks where a contract that is called later (e.g. because it receives money) replays the call to the execution function.
-        executionNonce++;
-        IdentityContractLib.execute(owner, executionNonce-1, _operationType, _to, _value, _data, _signature);
+        executionNonce = _executionNonce + 1;
+        IdentityContractLib.execute(owner, _executionNonce, _operationType, _to, _value, _data, _signature);
     }
     
     // Functions ERC-735
