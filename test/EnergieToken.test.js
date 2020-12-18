@@ -223,7 +223,7 @@ contract('EnergyToken', function(accounts) {
 	let id = "0x" + receivedTokenIdPadded;
 
 	// Grant reception approval for sending 12 tokens from IDC 2 to IDC 1.
-	let abiApproveSenderCall = idcs[1].methods.approveSender(energyToken.address, idcs[2].options.address, "1895220001", "12000000000000000000", id).encodeABI();
+	let abiApproveSenderCall = idcs[1].methods.approveSender(energyToken.address, idcs[2].options.address, "1895220001", "5000000000000000000", id).encodeABI();
 	await idcs[1].methods.execute(0, idcs[1].options.address, 0, abiApproveSenderCall).send({from: accounts[6], gas: 7000000});
 
 	// Before the transfer can happen, some claims need to be issued and published.
@@ -249,31 +249,28 @@ contract('EnergyToken', function(accounts) {
 	let abiTransfer = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "5000000000000000000", "0x00").encodeABI();
 	await idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[7], gas: 7000000});
 
-	// Partial transfers are permitted. So the the same transfer again has to work too.
-	await idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[7], gas: 7000000});
-
-	// 3*5 > 12. So the third transfer needs to fail.
+	// Repeated transfers are prohibited. So the the same transfer again has to fail.
 	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[7], gas: 7000000}));
 
 	// Make sure that the balances are correct.
 	let balance1 = await energyToken.balanceOf(idcs[1].options.address, id);
 	let balance2 = await energyToken.balanceOf(idcs[2].options.address, id);
-	assert.equal(balance1, 10E18);
-	assert.equal(balance2, 7E18);
+	assert.equal(balance1, 5E18);
+	assert.equal(balance2, 12E18);
 
 	// Upper edge case.
 	let abiTransferUpper = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "2000000000000000001", "0x00").encodeABI();
 	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferUpper).send({from: accounts[7], gas: 7000000}));
 
 	// Lower edge case.
-	let abiTransferLower = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "2000000000000000000", "0x00").encodeABI();
-	await idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferLower).send({from: accounts[7], gas: 7000000});
+	let abiTransferLower = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "1999999999999999999", "0x00").encodeABI();
+	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferLower).send({from: accounts[7], gas: 7000000}));
 
-	// Check updated balances.
+	// Verify that the balanced remained the same.
 	balance1 = await energyToken.balanceOf(idcs[1].options.address, id);
 	balance2 = await energyToken.balanceOf(idcs[2].options.address, id);
-	assert.equal(balance1, 12E18);
-	assert.equal(balance2, 5E18);
+	assert.equal(balance1, 5E18);
+	assert.equal(balance2, 12E18);
 
 	// Self-transfers are not allowed without reception approval.
 	let abiTransferSelf1 = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[2].options.address, id, "5000000000000000000", "0x00").encodeABI();
