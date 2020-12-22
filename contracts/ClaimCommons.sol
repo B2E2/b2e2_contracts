@@ -5,7 +5,7 @@ pragma solidity ^0.7.0;
 * So all contracts which need to access these enums and methods instead are subcontracts of this contract.
 */
 library ClaimCommons {
-    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, MaxPowerGenerationClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorClaim }
+    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, MaxPowerGenerationClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorClaim, RealWorldPlantIdClaim }
 
     function claimType2Topic(ClaimType _claimType) external pure returns (uint256 __topic) {
         if(_claimType == ClaimType.IsBalanceAuthority) {
@@ -46,6 +46,9 @@ library ClaimCommons {
         }
         if(_claimType == ClaimType.AcceptedDistributorClaim) {
             return 10120;
+        }
+        if(_claimType == ClaimType.RealWorldPlantIdClaim) {
+            return 10130;
         }
 
         require(false, "_claimType unknown.");
@@ -90,6 +93,9 @@ library ClaimCommons {
         }
         if(_topic == 10120) {
             return ClaimType.AcceptedDistributorClaim;
+        }
+        if(_topic == 10130) {
+            return ClaimType.RealWorldPlantIdClaim;
         }
 
         require(false, "_topic unknown");
