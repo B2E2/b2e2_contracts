@@ -4,7 +4,10 @@ interface IIdentityContract {
 
     function selfdestructIdc() external;
 
-    // Functions ERC-725
+    // ########################
+    // # Functions ERC-725
+    // ########################
+    
     function changeOwner(address _owner) external;
 
     function getData(bytes32 _key) external view returns (bytes memory _value);
@@ -13,7 +16,10 @@ interface IIdentityContract {
 
     function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data) external;
 
-    // Functions ERC-735
+    // ########################
+    // # Functions ERC-735 and related
+    // ########################
+    
     function getClaim(uint256 _claimId) external view returns(uint256 __topic, uint256 __scheme, address __issuer, bytes memory __signature, bytes memory __data, string memory __uri);
 
     function getClaimIdsByTopic(uint256 _topic) external view returns(uint256[] memory claimIds);
@@ -26,7 +32,10 @@ interface IIdentityContract {
 
     function reinstateClaimId(uint256 _topic) external;
 
-    // Funtions ERC-1155 and related
+    // ########################
+    // # Funtions ERC-1155 and related
+    // ########################
+     
     function onERC1155Received(address /*_operator*/, address _from, uint256 _id, uint256 _value, bytes calldata /*_data*/) external returns(bytes4);
 
     function onERC1155BatchReceived(address /*_operator*/, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata /*_data*/) external returns(bytes4);
