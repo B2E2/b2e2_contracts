@@ -37,8 +37,14 @@ library IdentityContractLib {
     function execute(uint256 _operationType, address _to, uint256 _value, bytes memory _data) public {
         if(_operationType == 0) {
             (bool success, bytes memory returnData) = _to.call{value: _value}(_data);
-            if(!success)
-                require(false, string(formatRevertMessage(returnData)));
+            if (success == false) {
+                assembly {
+                    let ptr := mload(0x40)
+                    let size := returndatasize()
+                    returndatacopy(ptr, 0, size)
+                    revert(ptr, size)
+                }
+            }
             return;
         }
         
@@ -163,21 +169,5 @@ library IdentityContractLib {
     
     function isCertificate(uint256 _id) internal pure returns (bool) {
         return (_id & 0x000000ff00000000000000000000000000000000000000000000000000000000) == 0x0000000400000000000000000000000000000000000000000000000000000000;
-    }
-
-    function formatRevertMessage(bytes memory text) internal pure returns (bytes memory){
-        // slice text
-        uint startAt = 5;
-        bytes memory res = new bytes(text.length-startAt+1);
-        for(uint i=0;i<=text.length-startAt;i++){
-            res[i] = text[i+startAt-1];
-        }
-        // only allow the following ASCII encoded symbols that conform to the following regex (A-Z|a-z|\.| )*
-        for(uint i=0;i<res.length;i++){
-            if (!((uint8(res[i]) >= 65 && uint8(res[i]) <= 90) || (uint8(res[i]) >= 97 && uint8(res[i]) <= 122) || uint8(res[i]) == 32 || uint8(res[i]) == 44 || uint8(res[i]) == 46 ))  {
-                res[i] = "";
-            }
-        }
-        return res;
     }
 }
