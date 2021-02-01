@@ -145,6 +145,8 @@ contract('EnergyToken', function(accounts) {
 	const dataExistenceGeneration = web3.utils.toHex(jsonExistenceGeneration);
     const jsonMaxGen = '{ "maxGen": "300000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
     const dataMaxGen = web3.utils.toHex(jsonMaxGen);
+    const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+    const dataMaxCon = web3.utils.toHex(jsonMaxCon);
 
     await addClaim(idcs[0], 10130, idcs[0].options.address, data, "", account5Sk);
 	await addClaim(idcs[0], 10050, balanceAuthority.options.address, data, "", account8Sk);
@@ -160,6 +162,7 @@ contract('EnergyToken', function(accounts) {
 	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, dataExistenceGeneration, "", account8Sk);
 	await addClaim(idcs[2], 10065, physicalAssetAuthority.options.address, dataMaxGen, "", account8Sk);
+	await addClaim(idcs[2], 10140, physicalAssetAuthority.options.address, dataMaxCon, "", account8Sk);
 
 	// Get token ID.
 	let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address);
@@ -230,12 +233,15 @@ contract('EnergyToken', function(accounts) {
 	// Claims necessary for sending.
 	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
 	let data = web3.utils.toHex(json);
+    const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+    const dataMaxCon = web3.utils.toHex(jsonMaxCon);	
     await addClaim(idcs[1], 10130, idcs[1].options.address, data, "", account6Sk);
 	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[1], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[1], 10070, physicalAssetAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[1], 10080, physicalAssetAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[1], 10040, meteringAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[1], 10140, physicalAssetAuthority.options.address, dataMaxCon, "", account8Sk);
 
 	// Claims necessary for receiving.
 	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
