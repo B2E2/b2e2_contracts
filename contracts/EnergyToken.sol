@@ -475,6 +475,9 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             require(balanceClaimId != 0, "No valid claim of type BalanceClaim found.");
             require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0,"No valid claim of type ExistenceClaim found." );
             require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0,"No valid claim of type MeteringClaim found.");
+            if (tokenKind == TokenKind.ConsumptionBasedForward) {
+                require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim) != 0, "Invalid  MaxPowerConsumptionClaim.");
+            }
 
             (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             Distributor distributor = id2Distributor[_id];
