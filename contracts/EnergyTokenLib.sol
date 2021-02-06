@@ -153,7 +153,17 @@ library EnergyTokenLib {
         (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerGenerationClaimId);
         __maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
     }
-    
+
+    function getPlantConsumptionCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId) internal view returns (uint256 __maxCon) {
+        uint256 maxPowerConsumptionClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim);
+
+        if (maxPowerConsumptionClaimId == 0)
+            return 0;
+
+        (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerConsumptionClaimId);
+        __maxCon = ClaimVerifier.getUint256Field("maxCon", claimData);
+    }
+
     function setId2Distributor(mapping(uint256 => Distributor) storage id2Distributor, uint256 _id, Distributor _distributor) public {
         if(id2Distributor[_id] == _distributor)
             return;

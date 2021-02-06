@@ -349,7 +349,7 @@ contract('EnergyToken', function(accounts) {
 	assert.equal(balance22, 3E18);
   });
 
-  it("rejects too big energy documentations", async function() {
+  it("rejects too big generation energy documentations", async function() {
     let balancePeriod = 1737524701;
 
     // Forwards must be created first so distributor is set.
@@ -369,7 +369,23 @@ contract('EnergyToken', function(accounts) {
 	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000}));
   });
 
-  it("distributes tokens correctly.", async function() {
+  it("rejects too big consumption energy documentations", async function() {
+    let balancePeriod = 1737524701;
+
+    // Zero must work.
+    let abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[2].options.address, 0, balancePeriod).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
+
+    // Must work right up to the maximum.
+    abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[2].options.address, "37500000000000000000000", balancePeriod).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
+
+    // Must not work for 1 above the maximum.
+    abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[2].options.address, "37500000000000000000001", balancePeriod).encodeABI();
+	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000}));
+  });
+
+  it.skip("distributes tokens correctly.", async function() {
 	// Make the distributor an accepted distributor.
 	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + distributorWeb3.options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);

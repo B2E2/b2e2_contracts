@@ -164,6 +164,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             }
         }
 
+        addMeasuredEnergyConsumption_capabilityCheck(_plant, _value);
+
         energyDocumentations[_plant][_balancePeriod] = EnergyTokenLib.EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, false, true);
         emit EnergyDocumented(PlantType.Consumption, _value, _plant, corrected, _balancePeriod, msg.sender);
     }
@@ -205,6 +207,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         }
         emit EnergyDocumented(PlantType.Generation, _value, _plant, corrected, _balancePeriod, msg.sender);        
     }
+
     function addMeasuredEnergyGeneration_capabilityCheck(address _plant, uint256 _value) internal view {
         // [maxGen] = W
         // [_value] = kWh / 1e18 = 1000 * 3600 / 1e18 * W * s
@@ -214,7 +217,18 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         uint256 maxGen = EnergyTokenLib.getPlantGenerationCapability(marketAuthority, _plant, realWorldPlantId);
         require(_value * 1000 * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
     }
-    
+
+    function addMeasuredEnergyConsumption_capabilityCheck(address _plant, uint256 _value) internal view {
+        // [maxCon] = W
+        // [_value] = kWh / 1e18 = 1000 * 3600 / 1e18 * W * s
+        // [balancePeriodLength] = s
+        
+        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant); 
+        uint256 maxCon = EnergyTokenLib.getPlantConsumptionCapability(marketAuthority, _plant, realWorldPlantId);
+        // Only check if max consumption capability is known
+        if (maxCon != 0)
+            require(_value * 1000 * 3600 <= maxCon * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
+    }        
     
     // ########################
     // # Overridden ERC-1155 functions
