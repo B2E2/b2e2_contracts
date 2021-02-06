@@ -385,7 +385,7 @@ contract('EnergyToken', function(accounts) {
 	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000}));
   });
 
-  it.skip("distributes tokens correctly.", async function() {
+  it("distributes tokens correctly.", async function() {
 	// Make the distributor an accepted distributor.
 	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + distributorWeb3.options.address.slice(2).toLowerCase() + '" }';
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
