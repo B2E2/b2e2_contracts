@@ -1,6 +1,7 @@
 pragma solidity ^0.7.0;
 import "./IdentityContract.sol";
 import "./EnergyToken.sol";
+import "./EnergyTokenLib.sol";
 import "./IEnergyToken.sol";
 
 contract Distributor is IdentityContract {
@@ -29,18 +30,18 @@ contract Distributor is IdentityContract {
         require(testing || !completedDistributions[_tokenId][_consumptionPlantAddress], "_consumptionPlantAddress can only call distribute() once.");
         completedDistributions[_tokenId][_consumptionPlantAddress] = true;
         
-        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
+        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = EnergyTokenLib.getTokenIdConstituents(_tokenId);
         
         // Time period check
         require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, block.timestamp), "balancePeriod has not yet ended.");
         
-        uint256 certificateTokenId = energyToken.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress);
+        uint256 certificateTokenId = EnergyTokenLib.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress);
 
         // Claim check
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.BalanceClaim) != 0, "Claim check for BalanceClaim failed.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Claim check for ExistenceClaim failed.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, ClaimCommons.ClaimType.MeteringClaim) != 0, "Claim check for MeteringClaim failed.");
-        
+        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _consumptionPlantAddress);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim) != 0, "Claim check for BalanceClaim failed.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Claim check for ExistenceClaim failed.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Claim check for MeteringClaim failed.");
         // Distribution
         if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward) {
             uint256 totalForwards = energyToken.totalSupply(_tokenId);
@@ -97,7 +98,7 @@ contract Distributor is IdentityContract {
      * Surplus certificates due to rounding errors are neglected. For surplus due to unsold forwards, the reglur distribute() functions has to be called.
      */
     function withdrawSurplusCertificates(uint256 _tokenId) external {
-        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
+        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = EnergyTokenLib.getTokenIdConstituents(_tokenId);
         
         // Distributor applicability check
         require(energyToken.id2Distributor(_tokenId) == this, "Distributor contract does not belong to this _tokenId");
@@ -109,7 +110,7 @@ contract Distributor is IdentityContract {
         // Time period check
         require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, block.timestamp), "balancePeriod has not yet ended.");
         
-        uint256 certificateTokenId = energyToken.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress);
+        uint256 certificateTokenId = EnergyTokenLib.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress);
         
         // Surplus Distribution
         if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward) {

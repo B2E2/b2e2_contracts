@@ -27,12 +27,12 @@ library ClaimVerifier {
                 return false;
         }
         
-        if(claimType == ClaimCommons.ClaimType.IsBalanceAuthority || claimType == ClaimCommons.ClaimType.IsMeteringAuthority || claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || claimType == ClaimCommons.ClaimType.MarketRulesClaim) {
+        if(claimType == ClaimCommons.ClaimType.IsBalanceAuthority || claimType == ClaimCommons.ClaimType.IsMeteringAuthority || claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || claimType == ClaimCommons.ClaimType.MarketRulesClaim || claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
             return verifySignature(_subject, topic, scheme, issuer, signature, data);
         }
         
-        if(claimType == ClaimCommons.ClaimType.MeteringClaim || claimType == ClaimCommons.ClaimType.BalanceClaim || claimType == ClaimCommons.ClaimType.ExistenceClaim || claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || claimType == ClaimCommons.ClaimType.GenerationTypeClaim || claimType == ClaimCommons.ClaimType.LocationClaim || claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
-            return verifySignature(_subject, topic, scheme, issuer, signature, data) && (getClaimOfType(marketAuthority, address(uint160(issuer)), ClaimCommons.getHigherLevelClaim(claimType), _requiredValidAt) != 0);
+        if(claimType == ClaimCommons.ClaimType.MeteringClaim || claimType == ClaimCommons.ClaimType.BalanceClaim || claimType == ClaimCommons.ClaimType.ExistenceClaim || claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim || claimType == ClaimCommons.ClaimType.GenerationTypeClaim || claimType == ClaimCommons.ClaimType.LocationClaim || claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
+            return verifySignature(_subject, topic, scheme, issuer, signature, data) && (getClaimOfType(marketAuthority, address(uint160(issuer)), "", ClaimCommons.getHigherLevelClaim(claimType), _requiredValidAt) != 0);
         }
         
         require(false, "Claim verification failed because the claim type was not recognized.");
@@ -51,17 +51,22 @@ library ClaimVerifier {
         if(ClaimCommons.claimType2Topic(_claimType) != _topic)
             return false;
        
-        if(_claimType == ClaimCommons.ClaimType.IsBalanceAuthority || _claimType == ClaimCommons.ClaimType.IsMeteringAuthority || _claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || _claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || _claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || _claimType == ClaimCommons.ClaimType.MarketRulesClaim) {
-            if(_issuer != address(marketAuthority))
-                return false;
+        if(_claimType == ClaimCommons.ClaimType.IsBalanceAuthority || _claimType == ClaimCommons.ClaimType.IsMeteringAuthority || _claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || _claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || _claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || _claimType == ClaimCommons.ClaimType.MarketRulesClaim || _claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
+            if(_claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
+                if(_issuer != _subject)
+                    return false;
+            } else {
+                if(_issuer != address(marketAuthority))
+                    return false;
+            }
             
             bool correct = verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
             return correct;
         }
         
-        if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
+        if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || _claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
             bool correctAccordingToSecondLevelAuthority = verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
-            return correctAccordingToSecondLevelAuthority && (getClaimOfType(marketAuthority, address(uint160(_issuer)), ClaimCommons.getHigherLevelClaim(_claimType)) != 0);
+            return correctAccordingToSecondLevelAuthority && (getClaimOfType(marketAuthority, address(uint160(_issuer)), "", ClaimCommons.getHigherLevelClaim(_claimType)) != 0);
         }
         
         require(false, "Claim validation failed because the claim type was not recognized.");
@@ -73,15 +78,20 @@ library ClaimVerifier {
      * 
      * Iff _requiredValidAt is not zero, only claims that are not expired at that time and are already valid at that time are considered. If it is set to zero, no expiration or startig date check is performed.
      */
-    function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
+    function getClaimOfType(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
         for(uint64 i = 0; i < claimIds.length; i++) {
             // Checking the claim's type is important because a malicious IDC can return claims of a different topic via getClaimIdsByTopic().
-            (uint256 cTopic, , , , ,) = IdentityContract(_subject).getClaim(claimIds[i]);
+            (uint256 cTopic, , , , bytes memory data,) = IdentityContract(_subject).getClaim(claimIds[i]);
             if(cTopic != topic)
                 continue;
+            
+            if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || _claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
+                if(keccak256(abi.encodePacked(getRealWorldPlantId(data))) != keccak256(abi.encodePacked(_realWorldPlantId)))
+                    continue;
+            }
             
             if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt, false))
                 continue;
@@ -92,8 +102,8 @@ library ClaimVerifier {
         return 0;
     }
     
-    function getClaimOfType(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType) public view returns (uint256 __claimId) {
-        return getClaimOfType(marketAuthority, _subject, _claimType, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
+    function getClaimOfType(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType) public view returns (uint256 __claimId) {
+        return getClaimOfType(marketAuthority, _subject, _realWorldPlantId, _claimType, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
     }
     
     function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
@@ -111,21 +121,26 @@ library ClaimVerifier {
         return claimId;
     }
     
-    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer) external view returns (uint256 __claimId) {
+    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer) public view returns (uint256 __claimId) {
         return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
     }
     
-    function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, string calldata _fieldName, string calldata _fieldContent, uint64 _requiredValidAt) external view returns (uint256 __claimId) {
+    function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType, string calldata _fieldName, string calldata _fieldContent, uint64 _requiredValidAt) external view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
-        
+
         for(uint64 i = 0; i < claimIds.length; i++) {
             (uint256 cTopic, , , , bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;
             
-            if((_requiredValidAt > 0) && getExpiryDate(cData) < Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), _requiredValidAt))
+            if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
+                if(keccak256(abi.encodePacked(getRealWorldPlantId(cData))) != keccak256(abi.encodePacked(_realWorldPlantId)))
+                    continue;
+            }
+            
+            if(getClaimOfTypeWithMatchingField_temporalValidityCheck(marketAuthority, _requiredValidAt, cData))
                 continue;
             
             if(!verifyClaim(marketAuthority, _subject, claimIds[i]))
@@ -138,6 +153,9 @@ library ClaimVerifier {
         }
         
         return 0;
+    }
+    function getClaimOfTypeWithMatchingField_temporalValidityCheck(IdentityContract marketAuthority, uint64 _requiredValidAt, bytes memory cData) internal view returns(bool) {
+        return (_requiredValidAt > 0 && getExpiryDate(cData) < Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), _requiredValidAt));
     }
     
     function getUint64Field(string memory _fieldName, bytes memory _data) public pure returns(uint64) {
@@ -174,6 +192,17 @@ library ClaimVerifier {
     function getExpiryDate(bytes memory _data) public pure returns(uint64) {
         return getUint64Field("expiryDate", _data);
     }
+    
+    function getRealWorldPlantId(bytes memory _data) public pure returns(string memory) {
+        return getStringField("realWorldPlantId", _data);
+    }
+    
+    function getRealWorldPlantId(IdentityContract _marketAuthority, address _plant) public view returns(string memory) {
+        uint256 claimId = getClaimOfTypeByIssuer(_marketAuthority, _plant, ClaimCommons.ClaimType.RealWorldPlantIdClaim, _plant);
+        (, , , , bytes memory data,) = IdentityContract(_plant).getClaim(claimId);
+        return getRealWorldPlantId(data);
+    }
+
     
     function getStartDate(bytes memory _data) public pure returns(uint64) {
         return getUint64Field("startDate", _data);

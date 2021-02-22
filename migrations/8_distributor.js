@@ -2,6 +2,7 @@ const Commons = artifacts.require("Commons");
 const ClaimCommons = artifacts.require("ClaimCommons");
 const ClaimVerifier = artifacts.require("ClaimVerifier");
 const IdentityContractLib = artifacts.require("IdentityContractLib");
+const EnergyTokenLib = artifacts.require("EnergyTokenLib");
 
 const marketAuthority = artifacts.require("IdentityContract");
 const EnergyToken = artifacts.require("EnergyToken");
@@ -12,6 +13,7 @@ module.exports = function(deployer, network, accounts) {
   deployer.link(Commons, Distributor);
   deployer.link(ClaimVerifier, Distributor);
   deployer.link(IdentityContractLib, Distributor);
+  deployer.link(EnergyTokenLib, Distributor);
   deployer.deploy(Distributor, EnergyToken.address, true, accounts[0]);
 };
 

@@ -5,7 +5,7 @@ pragma solidity ^0.7.0;
 * So all contracts which need to access these enums and methods instead are subcontracts of this contract.
 */
 library ClaimCommons {
-    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, MaxPowerGenerationClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorClaim }
+    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, MaxPowerGenerationClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorClaim, RealWorldPlantIdClaim, MaxPowerConsumptionClaim }
 
     function claimType2Topic(ClaimType _claimType) external pure returns (uint256 __topic) {
         if(_claimType == ClaimType.IsBalanceAuthority) {
@@ -47,6 +47,12 @@ library ClaimCommons {
         if(_claimType == ClaimType.AcceptedDistributorClaim) {
             return 10120;
         }
+        if(_claimType == ClaimType.RealWorldPlantIdClaim) {
+            return 10130;
+        }
+        if(_claimType == ClaimType.MaxPowerConsumptionClaim) {
+            return 10140;
+        }        
 
         require(false, "_claimType unknown.");
     }
@@ -91,6 +97,12 @@ library ClaimCommons {
         if(_topic == 10120) {
             return ClaimType.AcceptedDistributorClaim;
         }
+        if(_topic == 10130) {
+            return ClaimType.RealWorldPlantIdClaim;
+        }
+        if(_topic == 10140) {
+            return ClaimType.MaxPowerConsumptionClaim;
+        }        
 
         require(false, "_topic unknown");
     }
@@ -114,6 +126,9 @@ library ClaimCommons {
         if(_claimType == ClaimType.MaxPowerGenerationClaim) {
             return ClaimType.IsPhysicalAssetAuthority;
         }
+        if(_claimType == ClaimType.MaxPowerConsumptionClaim) {
+            return ClaimType.IsPhysicalAssetAuthority;
+        }        
         if(_claimType == ClaimType.AcceptedDistributorClaim) {
             return ClaimType.IsBalanceAuthority;
         }

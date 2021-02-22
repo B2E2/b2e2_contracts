@@ -37,8 +37,14 @@ library IdentityContractLib {
     function execute(uint256 _operationType, address _to, uint256 _value, bytes memory _data) public {
         if(_operationType == 0) {
             (bool success, bytes memory returnData) = _to.call{value: _value}(_data);
-            if(!success)
-                require(false, string(formatRevertMessage(returnData)));
+            if (success == false) {
+                assembly {
+                    let ptr := mload(0x40)
+                    let size := returndatasize()
+                    returndatacopy(ptr, 0, size)
+                    revert(ptr, size)
+                }
+            }
             return;
         }
         
@@ -57,10 +63,10 @@ library IdentityContractLib {
         require(false, "Unknown _operationType.");
     }
     
-    function execute(address owner, uint256 executionNonce, uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
+    function execute(address owner, uint256 _executionNonce, uint256 _operationType, address _to, uint256 _value, bytes calldata _data, bytes calldata _signature) external {
         // address(this) needs to be part of the struct so that the tx cannot be replayed to a different IDC owned by the same EOA.
-        address signer = ECDSA.recover(keccak256(abi.encodePacked(_operationType, _to, _value, _data, address(this), executionNonce)), _signature);
-        require(signer == owner, "invalid signature / wrong signer / outdated nonce.");
+        address signer = ECDSA.recover(keccak256(abi.encodePacked(_operationType, _to, _value, _data, address(this), _executionNonce)), _signature);
+        require(signer == owner, "invalid signature / wrong signer / wrong nonce.");
         
         execute(_operationType, _to, _value, _data);
     }
@@ -136,7 +142,7 @@ library IdentityContractLib {
     }
     
     /**
-     * Only consumes reception approval when handling forwards. Fails iff granted reception approval is insufficient.
+     * Only consumes reception approval when handling forwards. Fails iff granted reception approval does not match.
      */
     function consumeReceptionApproval(mapping (address => mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue))) storage receptionApproval, uint32 balancePeriodLength, uint256 _id, address _from, uint256 _value) public {
         // Accept all certificate ERC-1155 transfers.
@@ -145,9 +151,9 @@ library IdentityContractLib {
         
         address energyToken = msg.sender;
         require(receptionApproval[energyToken][_id][_from].expiryDate >= Commons.getBalancePeriod(balancePeriodLength, block.timestamp), "Approval for token reception is expired.");
-        require(receptionApproval[energyToken][_id][_from].value >= _value, "Approval for token value is too little.");
+        require(receptionApproval[energyToken][_id][_from].value == _value, "Approval for token value does not match.");
         
-        receptionApproval[energyToken][_id][_from].value = receptionApproval[energyToken][_id][_from].value.sub(_value);
+        receptionApproval[energyToken][_id][_from].value = 0;
     }
     
     
@@ -163,21 +169,5 @@ library IdentityContractLib {
     
     function isCertificate(uint256 _id) internal pure returns (bool) {
         return (_id & 0x000000ff00000000000000000000000000000000000000000000000000000000) == 0x0000000400000000000000000000000000000000000000000000000000000000;
-    }
-
-    function formatRevertMessage(bytes memory text) internal pure returns (bytes memory){
-        // slice text
-        uint startAt = 5;
-        bytes memory res = new bytes(text.length-startAt+1);
-        for(uint i=0;i<=text.length-startAt;i++){
-            res[i] = text[i+startAt-1];
-        }
-        // only allow the following ASCII encoded symbols that conform to the following regex (A-Z|a-z|\.| )*
-        for(uint i=0;i<res.length;i++){
-            if (!((uint8(res[i]) >= 65 && uint8(res[i]) <= 90) || (uint8(res[i]) >= 97 && uint8(res[i]) <= 122) || uint8(res[i]) == 32 || uint8(res[i]) == 44 || uint8(res[i]) == 46 ))  {
-                res[i] = "";
-            }
-        }
-        return res;
     }
 }

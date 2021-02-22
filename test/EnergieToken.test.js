@@ -3,6 +3,9 @@
 const truffleAssert = require('truffle-assertions');
 const eutil = require('ethereumjs-util');
 
+const account5Sk = "0x533a905ac396ca2857e36fcb29a6361e86a3d131fd126b179a230a457c1abdd1";
+const account6Sk = "0x294dcf7158a75155458ab3cc50d044d498f07d0a0e5ae6d140addb5e5f4e9360";
+const account7Sk = "0x547fa26372d75d470a292c0a3e77f576bfb17a7bebd0fb686bea5700c476c5f8";
 const account8Sk = "0x56f01dc407e7462c8a47d048c35cd61794f2893696ec4aaafcc46cd33a22cd58";
 const account9Sk = "0x5b1b39d1cf63bdef178e6ad182b1ae852ac6b26a802121ab2c4df936665731d8";
 
@@ -136,12 +139,16 @@ contract('EnergyToken', function(accounts) {
 	await addClaim(distributor, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk);
 
 	// Give claims to IDC 0.
-	const json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
+	const json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
 	const data = web3.utils.toHex(json);
-    const jsonExistenceGeneration = '{ "type": "generation", "expiryDate": "1895220001", "startDate": "1" }';
+    const jsonExistenceGeneration = '{ "type": "generation", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
 	const dataExistenceGeneration = web3.utils.toHex(jsonExistenceGeneration);
-    const jsonMaxGen = '{ "maxGen": "300000000", "expiryDate": "1895220001", "startDate": "1"}';
+    const jsonMaxGen = '{ "maxGen": "300000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
     const dataMaxGen = web3.utils.toHex(jsonMaxGen);
+    const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+    const dataMaxCon = web3.utils.toHex(jsonMaxCon);
+
+    await addClaim(idcs[0], 10130, idcs[0].options.address, data, "", account5Sk);
 	await addClaim(idcs[0], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, dataExistenceGeneration, "", account8Sk);
 	await addClaim(idcs[0], 10070, physicalAssetAuthority.options.address, data, "", account8Sk);
@@ -150,10 +157,12 @@ contract('EnergyToken', function(accounts) {
 	await addClaim(idcs[0], 10065, physicalAssetAuthority.options.address, dataMaxGen, "", account8Sk);
 
 	// Give claims to IDC 2.
+    await addClaim(idcs[2], 10130, idcs[2].options.address, data, "", account7Sk);
 	await addClaim(idcs[2], 10040, meteringAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, dataExistenceGeneration, "", account8Sk);
 	await addClaim(idcs[2], 10065, physicalAssetAuthority.options.address, dataMaxGen, "", account8Sk);
+	await addClaim(idcs[2], 10140, physicalAssetAuthority.options.address, dataMaxCon, "", account8Sk);
 
 	// Get token ID.
 	let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address);
@@ -217,18 +226,22 @@ contract('EnergyToken', function(accounts) {
 	let id = "0x" + receivedTokenIdPadded;
 
 	// Grant reception approval for sending 12 tokens from IDC 2 to IDC 1.
-	let abiApproveSenderCall = idcs[1].methods.approveSender(energyToken.address, idcs[2].options.address, "1895220001", "12000000000000000000", id).encodeABI();
+	let abiApproveSenderCall = idcs[1].methods.approveSender(energyToken.address, idcs[2].options.address, "1895220001", "5000000000000000000", id).encodeABI();
 	await idcs[1].methods.execute(0, idcs[1].options.address, 0, abiApproveSenderCall).send({from: accounts[6], gas: 7000000});
 
 	// Before the transfer can happen, some claims need to be issued and published.
 	// Claims necessary for sending.
-	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
 	let data = web3.utils.toHex(json);
+    const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+    const dataMaxCon = web3.utils.toHex(jsonMaxCon);	
+    await addClaim(idcs[1], 10130, idcs[1].options.address, data, "", account6Sk);
 	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[1], 10060, physicalAssetAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[1], 10070, physicalAssetAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[1], 10080, physicalAssetAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[1], 10040, meteringAuthority.options.address, data, "", account8Sk);
+	await addClaim(idcs[1], 10140, physicalAssetAuthority.options.address, dataMaxCon, "", account8Sk);
 
 	// Claims necessary for receiving.
 	await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, "", account8Sk);
@@ -242,31 +255,28 @@ contract('EnergyToken', function(accounts) {
 	let abiTransfer = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "5000000000000000000", "0x00").encodeABI();
 	await idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[7], gas: 7000000});
 
-	// Partial transfers are permitted. So the the same transfer again has to work too.
-	await idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[7], gas: 7000000});
-
-	// 3*5 > 12. So the third transfer needs to fail.
+	// Repeated transfers are prohibited. So the the same transfer again has to fail.
 	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[7], gas: 7000000}));
 
 	// Make sure that the balances are correct.
 	let balance1 = await energyToken.balanceOf(idcs[1].options.address, id);
 	let balance2 = await energyToken.balanceOf(idcs[2].options.address, id);
-	assert.equal(balance1, 10E18);
-	assert.equal(balance2, 7E18);
+	assert.equal(balance1, 5E18);
+	assert.equal(balance2, 12E18);
 
 	// Upper edge case.
 	let abiTransferUpper = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "2000000000000000001", "0x00").encodeABI();
 	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferUpper).send({from: accounts[7], gas: 7000000}));
 
 	// Lower edge case.
-	let abiTransferLower = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "2000000000000000000", "0x00").encodeABI();
-	await idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferLower).send({from: accounts[7], gas: 7000000});
+	let abiTransferLower = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[1].options.address, id, "1999999999999999999", "0x00").encodeABI();
+	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferLower).send({from: accounts[7], gas: 7000000}));
 
-	// Check updated balances.
+	// Verify that the balanced remained the same.
 	balance1 = await energyToken.balanceOf(idcs[1].options.address, id);
 	balance2 = await energyToken.balanceOf(idcs[2].options.address, id);
-	assert.equal(balance1, 12E18);
-	assert.equal(balance2, 5E18);
+	assert.equal(balance1, 5E18);
+	assert.equal(balance2, 12E18);
 
 	// Self-transfers are not allowed without reception approval.
 	let abiTransferSelf1 = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, idcs[2].options.address, id, "5000000000000000000", "0x00").encodeABI();
@@ -326,7 +336,7 @@ contract('EnergyToken', function(accounts) {
 
 	// Transfer.
 	let abiBatchTransfer = energyTokenWeb3.methods.safeBatchTransferFrom(idcs[1].options.address, idcs[2].options.address, [id1, id2], ["1000000000000000000", "3000000000000000000"], "0x00").encodeABI();
-	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiBatchTransfer).send({from: accounts[6], gas: 7000000});
+	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiBatchTransfer).send({from: accounts[6], gas: 9000000});
 
 	// Check updated balances.
 	let balance11 = await energyToken.balanceOf(idcs[1].options.address, id1);
@@ -339,7 +349,7 @@ contract('EnergyToken', function(accounts) {
 	assert.equal(balance22, 3E18);
   });
 
-  it("rejects too big energy documentations", async function() {
+  it("rejects too big generation energy documentations", async function() {
     let balancePeriod = 1737524701;
 
     // Forwards must be created first so distributor is set.
@@ -356,6 +366,22 @@ contract('EnergyToken', function(accounts) {
 
     // Must not work for 1 above the maximum.
     abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, "75000000000000000000001", balancePeriod).encodeABI();
+	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000}));
+  });
+
+  it("rejects too big consumption energy documentations", async function() {
+    let balancePeriod = 1737524701;
+
+    // Zero must work.
+    let abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[2].options.address, 0, balancePeriod).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
+
+    // Must work right up to the maximum.
+    abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[2].options.address, "37500000000000000000000", balancePeriod).encodeABI();
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
+
+    // Must not work for 1 above the maximum.
+    abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[2].options.address, "37500000000000000000001", balancePeriod).encodeABI();
 	await truffleAssert.reverts(meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000}));
   });
 
@@ -587,9 +613,9 @@ contract('EnergyToken', function(accounts) {
   });
 
   it("keeps track of energy data.", async function() {
-	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
+	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
 	let data = web3.utils.toHex(json);
-    const jsonExistenceGeneration = '{ "type": "generation", "expiryDate": "1895220001", "startDate": "1" }';
+    const jsonExistenceGeneration = '{ "type": "generation", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
 	const dataExistenceGeneration = web3.utils.toHex(jsonExistenceGeneration);
 	await addClaim(idcs[2], 10050, balanceAuthority.options.address, data, "", account8Sk);
 	await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, dataExistenceGeneration, "", account8Sk);

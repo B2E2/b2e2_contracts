@@ -15,7 +15,7 @@ exports.tests = series(start_test_chain, run_tests, kill_test_chain);
 function start_test_chain() {
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line max-len
-    const child = spawn(`npx ganache-cli -l 1000000000 -m "bread leave edge glide soda seat trim armed canyon rural cross scheme"`, [], {
+    const child = spawn(`npx ganache-cli --gasLimit 10000000 -m "bread leave edge glide soda seat trim armed canyon rural cross scheme"`, [], {
       shell: true,
     });
 
@@ -54,7 +54,7 @@ function kill_test_chain(cb) {
 // ########################################
 
 function run_tests(cb) {
-  const child = spawn(`npx truffle test`, [], {
+  const child = spawn(`npx truffle test --network development`, [], {
     shell: true
   });
 
