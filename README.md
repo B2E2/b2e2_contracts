@@ -11,7 +11,7 @@ The Blockchain identities are implemented with the [ERC725](https://github.com/e
 The latest version of the sequence and entity relationship diagrams from the whitepaper can be found in the directory './documentation'.  
 
 ## Cloning the repository
-    git clone --recursive <<todo: official github repo URL>>
+    git clone --recursive https://github.com/B2E2/b2e2_contracts.git
 
 ## Installing Dependencies
     sudo npm install -g truffle ganache ganache-cli
