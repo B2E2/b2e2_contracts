@@ -23,14 +23,14 @@ The latest version of the sequence and entity relationship diagrams from the whi
 ## Building & Deployment
 Launch Ganache:
 
-    ganache-cli -l 1000000000
+    npx ganache-cli -l 1000000000
 
 Choose a sender address from the list that's printed and replace the address in the line containing `from:` in `truffle-config.js` by it.
 
 Then (in a different terminal instance) compile the contracts and deploy them:
 
-    truffle compile
-    truffle deploy
+    npx truffle compile
+    npx truffle deploy
 
 ## Testing
 
@@ -38,7 +38,7 @@ Then (in a different terminal instance) compile the contracts and deploy them:
 
 Launch Ganache:
 
-    ganache-cli -l 1000000000 -m "bread leave edge glide soda seat trim armed canyon rural cross scheme"
+    npx ganache-cli -l 1000000000 -m "bread leave edge glide soda seat trim armed canyon rural cross scheme"
 
 Copy sender address 0 from the list that's printed and replace the address in the line containing `from:` in `truffle-config.js` by it.
 
@@ -46,8 +46,8 @@ Copy private key 9 and change the definition of `account9Sk` at the top of `test
 
 Run the tests (in a different terminal instance):
 
-    truffle deploy # required for tests to run successfully
-    truffle test
+    npx truffle deploy # required for tests to run successfully
+    npx truffle test
 
 ### Alternative 2
 
