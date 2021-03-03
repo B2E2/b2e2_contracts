@@ -512,10 +512,6 @@ contract('EnergyToken', function(accounts) {
 	await distributeCall(2);
 	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateIds[2]), "1360000000000000000");
 
-	// Send certificates back for another test.
-	abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateIds[2], "1360000000000000000", "0x00").encodeABI();
-	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsBack).send({from: accounts[6], gas: 7000000});
-
 	// Increase consumed energy beyond generated energy.
     // Does not currently work because updatey values don't affect distribution anymore.
     /*
@@ -530,6 +526,28 @@ contract('EnergyToken', function(accounts) {
 	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsBack).send({from: accounts[6], gas: 7000000});
     */
   });
+
+  it("allows for transfer of certificates to the 0 address.", async function() {
+	// Choose the same balance period as was used in the previous tests so the certificates can be re-used.
+	let balancePeriod = 1737549001;
+	let certificateIds = [];
+	
+	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
+	  // Get certificate ID.
+	  let receivedCertificateId = await energyToken.getTokenId(3, balancePeriod + 9000*forwardKind, idcs[0].options.address);
+
+	  // Pad token ID to full length.
+	  let receivedCertificateIdPadded = receivedCertificateId.toString('hex');
+	  while(receivedCertificateIdPadded.length < 64) {
+		receivedCertificateIdPadded = "0" + receivedCertificateIdPadded;
+	  }
+	  certificateIds[forwardKind] = "0x" + receivedCertificateIdPadded;
+	}
+
+	// Make sure that certificates can be sent to the 0 address.
+	let abiTransferCertsTo0Address = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, '0x0000000000000000000000000000000000000000', certificateIds[2], "1360000000000000000", "0x00").encodeABI();
+	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsTo0Address).send({from: accounts[6], gas: 7000000});
+  })
 
   it("distributes surplus certificates correctly.", async function() {
     let balancePeriod = 1737560701;
