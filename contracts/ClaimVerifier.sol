@@ -2,7 +2,6 @@ pragma solidity ^0.8.1;
 
 import "./IERC725.sol";
 import "./IERC735.sol";
-import "./../dependencies/erc-1155/contracts/SafeMath.sol";
 import "./../dependencies/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
 import "./Commons.sol";

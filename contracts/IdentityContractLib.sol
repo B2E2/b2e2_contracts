@@ -1,6 +1,5 @@
 pragma solidity ^0.8.1;
 
-import "./../dependencies/erc-1155/contracts/SafeMath.sol";
 import "./../dependencies/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "./Commons.sol";
 import "./ClaimCommons.sol";
@@ -8,8 +7,6 @@ import "./ClaimVerifier.sol";
 import "./IdentityContract.sol";
 
 library IdentityContractLib {
-    using SafeMath for uint256;
-    
     // Events ERC-725 (partially)
     event ContractCreated(address indexed contractAddress);
     

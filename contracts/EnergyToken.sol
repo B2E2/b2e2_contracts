@@ -9,7 +9,6 @@ import "./../dependencies/erc-1155/contracts/ERC1155.sol";
 import "./IERC165.sol";
 
 contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
-    using SafeMath for uint256;
     using Address for address;
 
     enum PlantType {Generation, Consumption}
@@ -159,8 +158,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         } else {
         address[] storage affectedGenerationPlants = relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_plant];
             for(uint32 i = 0; i < affectedGenerationPlants.length; i++) {
-                energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] = energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]].add(_value);
-                numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] = numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]].sub(1);
+                energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] += _value;
+                numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]]--;
             }
         }
 
@@ -250,8 +249,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 
         // SafeMath will throw with insuficient funds _from
         // or if _id is not valid (balance will be 0)
-        balances[_id][_from] = balances[_id][_from].sub(_value);
-        balances[_id][_to]   = _value.add(balances[_id][_to]);
+        balances[_id][_from] -= _value;
+        balances[_id][_to]   += _value;
 
         // MUST emit event
         emit TransferSingle(msg.sender, _from, _to, _id, _value);
@@ -291,8 +290,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 
             // SafeMath will throw with insuficient funds _from
             // or if _id is not valid (balance will be 0)
-            balances[id][_from] = balances[id][_from].sub(value);
-            balances[id][_to]   = value.add(balances[id][_to]);
+            balances[id][_from] -= value;
+            balances[id][_to]   += value;
         }
 
         // Note: instead of the below batch versions of event and acceptance check you MAY have emitted a TransferSingle
