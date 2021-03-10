@@ -1,4 +1,4 @@
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.1;
 
 import "./IdentityContractLib.sol";
 import "./IIdentityContract.sol";
@@ -42,7 +42,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
      * Other IdentityContracts need to specify the Market Authority's address as _marketAuthority. Their specification of _balancePeriodLength will be ignored.
      */
     constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength, address _owner) {
-        if(_marketAuthority == IdentityContract(0)) {
+        if(_marketAuthority == IdentityContract(address(0))) {
             require(3600 % _balancePeriodLength == 0, "Balance period length must be a unit fraction of an hour.");
             
             marketAuthority = this;
@@ -70,7 +70,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     }
   
     function selfdestructIdc() override(IIdentityContract) external onlyOwner {
-        selfdestruct(address(uint160(owner)));
+        selfdestruct(payable(owner));
     }
     
     // Functions ERC-725

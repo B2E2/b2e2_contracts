@@ -1,9 +1,9 @@
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.1;
 
 import "./IERC725.sol";
 import "./IERC735.sol";
 import "./../dependencies/erc-1155/contracts/SafeMath.sol";
-import "./../dependencies/openzeppelin-contracts/contracts/cryptography/ECDSA.sol";
+import "./../dependencies/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "./../dependencies/jsmnSol/contracts/JsmnSolLib.sol";
 import "./Commons.sol";
 import "./IdentityContract.sol";
@@ -79,6 +79,7 @@ library ClaimVerifier {
      * Iff _requiredValidAt is not zero, only claims that are not expired at that time and are already valid at that time are considered. If it is set to zero, no expiration or startig date check is performed.
      */
     function getClaimOfType(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
+        //return 1; // TODO: REMOVE
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
@@ -162,7 +163,7 @@ library ClaimVerifier {
         int fieldAsInt = JsmnSolLib.parseInt(getStringField(_fieldName, _data));
         require(fieldAsInt >= 0, "fieldAsInt must be greater than or equal to 0.");
         require(fieldAsInt < 0x10000000000000000, "fieldAsInt must be less than 0x10000000000000000.");
-        return uint64(fieldAsInt);
+        return uint64(uint256(fieldAsInt));
     }
     
     function getUint256Field(string calldata _fieldName, bytes calldata _data) external pure returns(uint256) {

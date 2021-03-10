@@ -1,7 +1,7 @@
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.1;
 
 import "./../dependencies/erc-1155/contracts/SafeMath.sol";
-import "./../dependencies/openzeppelin-contracts/contracts/cryptography/ECDSA.sol";
+import "./../dependencies/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "./Commons.sol";
 import "./ClaimCommons.sol";
 import "./ClaimVerifier.sol";
