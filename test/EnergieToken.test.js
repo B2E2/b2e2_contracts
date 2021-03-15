@@ -3,11 +3,11 @@
 const truffleAssert = require('truffle-assertions');
 const eutil = require('ethereumjs-util');
 
-const account5Sk = "0x533a905ac396ca2857e36fcb29a6361e86a3d131fd126b179a230a457c1abdd1";
-const account6Sk = "0x294dcf7158a75155458ab3cc50d044d498f07d0a0e5ae6d140addb5e5f4e9360";
-const account7Sk = "0x547fa26372d75d470a292c0a3e77f576bfb17a7bebd0fb686bea5700c476c5f8";
-const account8Sk = "0x56f01dc407e7462c8a47d048c35cd61794f2893696ec4aaafcc46cd33a22cd58";
-const account9Sk = "0x5b1b39d1cf63bdef178e6ad182b1ae852ac6b26a802121ab2c4df936665731d8";
+const account5Sk = "0x59f30428e71675b8e8cfb7dea06434b8b95f802cbf2b9bc80d7d0b05807843d2";
+const account6Sk = "0xa78a0c60210d7ffa2fa3f75de66c16807c9a21879b543aa1e9d17c9065460c83";
+const account7Sk = "0x0e450bf6e5846262f6a6069f60392af206ba927be42f8726de3ae160d34616fb";
+const account8Sk = "0x468b0e172ee343ccf12e5ab0a75bf82c3b794e310ff588fbf4234a19a3fe9a31";
+const account9Sk = "0x3b9722b917db24a24b3783595f2d30441ca044a1fa6d8dba5c8be7743387a6f3";
 
 let accounts;
 
