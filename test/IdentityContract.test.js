@@ -6,7 +6,7 @@ const fs = require('fs');
 const IdentityContractFromJson = JSON.parse(fs.readFileSync('./build/contracts/IdentityContract.json', 'utf8'));
 let web3Idc = new web3.eth.Contract(IdentityContractFromJson.abi);
 
-const account9Sk = "0x5b1b39d1cf63bdef178e6ad182b1ae852ac6b26a802121ab2c4df936665731d8";
+const account9Sk = "0x3b9722b917db24a24b3783595f2d30441ca044a1fa6d8dba5c8be7743387a6f3";
 
 let accounts;
 
