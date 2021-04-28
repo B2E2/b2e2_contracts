@@ -1,4 +1,4 @@
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.1;
 
 import "./Commons.sol";
 import "./IdentityContractFactory.sol";
@@ -9,7 +9,6 @@ import "./../dependencies/erc-1155/contracts/ERC1155.sol";
 import "./IERC165.sol";
 
 contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
-    using SafeMath for uint256;
     using Address for address;
 
     enum PlantType {Generation, Consumption}
@@ -78,7 +77,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         { // Block for avoiding stack too deep error.
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = EnergyTokenLib.getTokenIdConstituents(_id);
-        generationPlantP = address(uint160(generationPlant));
+        generationPlantP = payable(generationPlant);
         require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward, "tokenKind cannot be minted.");
         
         // msg.sender needs to be allowed to mint.
@@ -88,8 +87,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp), "Wrong balance period.");
         
         // Forwards must have been created.
-        require(id2Distributor[_id] != Distributor(0), "Forwards not created.");
-        
+        require(id2Distributor[_id] != Distributor(address(0)), "Forwards not created.");
         
         realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, generationPlantP);
         require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) != 0, "Invalid  ExistenceClaim.");
@@ -104,11 +102,12 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             require(to != address(0x0), "_to must be non-zero.");
 
             if(to != msg.sender) {
-                EnergyTokenLib.checkClaimsForTransferReception(marketAuthority, id2Distributor, address(uint160(to)), ClaimVerifier.getRealWorldPlantId(marketAuthority, to), _id);
+                EnergyTokenLib.checkClaimsForTransferReception(marketAuthority, id2Distributor, payable(to), ClaimVerifier.getRealWorldPlantId(marketAuthority, to), _id);
             }
 
             // Grant the items to the caller.
             mint(to, _id, quantity);
+
             // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
             require(supply[_id] * (1000 * 3600) <= EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId) * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
 
@@ -159,8 +158,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         } else {
         address[] storage affectedGenerationPlants = relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_plant];
             for(uint32 i = 0; i < affectedGenerationPlants.length; i++) {
-                energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] = energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]].add(_value);
-                numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] = numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]].sub(1);
+                energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] += _value;
+                numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]]--;
             }
         }
 
@@ -246,13 +245,12 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // ########################
         // ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
         // ########################
-        require(_to != address(0x0), "_to must be non-zero.");
         require(_from == msg.sender || operatorApproval[_from][msg.sender] == true, "Need operator approval.");
 
         // SafeMath will throw with insuficient funds _from
         // or if _id is not valid (balance will be 0)
-        balances[_id][_from] = balances[_id][_from].sub(_value);
-        balances[_id][_to]   = _value.add(balances[_id][_to]);
+        balances[_id][_from] -= _value;
+        balances[_id][_to]   += _value;
 
         // MUST emit event
         emit TransferSingle(msg.sender, _from, _to, _id, _value);
@@ -283,7 +281,6 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
         // ########################
         // MUST Throw on errors
-        require(_to != address(0x0), "destination address must be non-zero.");
         require(_ids.length == _values.length, "_ids and _values array lenght must match.");
         require(_from == msg.sender || operatorApproval[_from][msg.sender] == true, "Need operator approval for 3rd party transfers.");
 
@@ -293,8 +290,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 
             // SafeMath will throw with insuficient funds _from
             // or if _id is not valid (balance will be 0)
-            balances[id][_from] = balances[id][_from].sub(value);
-            balances[id][_to]   = value.add(balances[id][_to]);
+            balances[id][_from] -= value;
+            balances[id][_to]   += value;
         }
 
         // Note: instead of the below batch versions of event and acceptance check you MAY have emitted a TransferSingle
@@ -323,8 +320,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         
         string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
         string memory realWorldPlantIdTo = ClaimVerifier.getRealWorldPlantId(marketAuthority, _to);
-        EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, address(uint160(_from)), realWorldPlantIdFrom, _id);
-        EnergyTokenLib.checkClaimsForTransferReception(marketAuthority, id2Distributor, address(uint160(_to)), realWorldPlantIdTo, _id);
+        EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, payable(_from), realWorldPlantIdFrom, _id);
+        EnergyTokenLib.checkClaimsForTransferReception(marketAuthority, id2Distributor, payable(_to), realWorldPlantIdTo, _id);
     }
     
     // ########################

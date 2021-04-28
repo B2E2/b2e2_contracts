@@ -15,7 +15,7 @@ exports.tests = series(start_test_chain, run_tests, kill_test_chain);
 function start_test_chain() {
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line max-len
-    const child = spawn(`npx ganache-cli --gasLimit 10000000 -m "bread leave edge glide soda seat trim armed canyon rural cross scheme"`, [], {
+    const child = spawn(`npx ganache-cli --gasLimit 10000000 -m "hire fancy burst fresh gadget theme cloud broom insane screen foster where"`, [], {
       shell: true,
     });
 

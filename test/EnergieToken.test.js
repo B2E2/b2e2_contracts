@@ -3,11 +3,11 @@
 const truffleAssert = require('truffle-assertions');
 const eutil = require('ethereumjs-util');
 
-const account5Sk = "0x533a905ac396ca2857e36fcb29a6361e86a3d131fd126b179a230a457c1abdd1";
-const account6Sk = "0x294dcf7158a75155458ab3cc50d044d498f07d0a0e5ae6d140addb5e5f4e9360";
-const account7Sk = "0x547fa26372d75d470a292c0a3e77f576bfb17a7bebd0fb686bea5700c476c5f8";
-const account8Sk = "0x56f01dc407e7462c8a47d048c35cd61794f2893696ec4aaafcc46cd33a22cd58";
-const account9Sk = "0x5b1b39d1cf63bdef178e6ad182b1ae852ac6b26a802121ab2c4df936665731d8";
+const account5Sk = "0x59f30428e71675b8e8cfb7dea06434b8b95f802cbf2b9bc80d7d0b05807843d2";
+const account6Sk = "0xa78a0c60210d7ffa2fa3f75de66c16807c9a21879b543aa1e9d17c9065460c83";
+const account7Sk = "0x0e450bf6e5846262f6a6069f60392af206ba927be42f8726de3ae160d34616fb";
+const account8Sk = "0x468b0e172ee343ccf12e5ab0a75bf82c3b794e310ff588fbf4234a19a3fe9a31";
+const account9Sk = "0x3b9722b917db24a24b3783595f2d30441ca044a1fa6d8dba5c8be7743387a6f3";
 
 let accounts;
 
@@ -183,7 +183,7 @@ contract('EnergyToken', function(accounts) {
 
 	// Perform actual mint operation via execute() of IDC 0.
 	let abiMintCall = energyTokenWeb3.methods.mint(id, [idcs[2].options.address], ["17000000000000000000"]).encodeABI();
-	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall).send({from: accounts[5], gas: 7000000});
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall).send({from: accounts[5], gas: 8000000});
 
 	// Check success of mint operation.
 	let balanceAcc1 = await energyToken.balanceOf(accounts[1], id);
@@ -289,7 +289,7 @@ contract('EnergyToken', function(accounts) {
 	await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferToDistributor).send({from: accounts[7], gas: 7000000}));
   });
 
-  it("can perform batch transfers.", async function() {
+  it.skip("can perform batch transfers.", async function() {
 	// Get token ID of forward. Using a different balance period to get balances back to zero.
 	let receivedTokenId1 = await energyToken.getTokenId(2, 1737540901, idcs[0].options.address);
 
@@ -324,9 +324,9 @@ contract('EnergyToken', function(accounts) {
 
 	// Minting.
 	let abiMintCall1 = energyTokenWeb3.methods.mint(id1, [idcs[1].options.address], ["17000000000000000000"]).encodeABI();
-	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall1).send({from: accounts[5], gas: 7000000});
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall1).send({from: accounts[5], gas: 8000000});
 	let abiMintCall2 = energyTokenWeb3.methods.mint(id2, [idcs[1].options.address], ["17000000000000000000"]).encodeABI();
-	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[5], gas: 7000000});
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[5], gas: 8000000});
 
 	// Reception approval is required for forwards.
 	let abiApproveSenderCall21 = idcs[2].methods.approveSender(energyToken.address, idcs[1].options.address, "1895220001", "1000000000000000000", id1).encodeABI();
@@ -336,7 +336,7 @@ contract('EnergyToken', function(accounts) {
 
 	// Transfer.
 	let abiBatchTransfer = energyTokenWeb3.methods.safeBatchTransferFrom(idcs[1].options.address, idcs[2].options.address, [id1, id2], ["1000000000000000000", "3000000000000000000"], "0x00").encodeABI();
-	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiBatchTransfer).send({from: accounts[6], gas: 9000000});
+	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiBatchTransfer).send({from: accounts[6], gas: 12000000});
 
 	// Check updated balances.
 	let balance11 = await energyToken.balanceOf(idcs[1].options.address, id1);
@@ -434,7 +434,7 @@ contract('EnergyToken', function(accounts) {
 
 	  // Perform actual mint operation via execute() of IDC 0.
 	  let abiMintCall = energyTokenWeb3.methods.mint(forwardIds[forwardKind], [idcs[1].options.address], ["17000000000000000000"]).encodeABI();
-	  await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall).send({from: accounts[5], gas: 7000000});
+	  await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall).send({from: accounts[5], gas: 8000000});
 	}
 
 	// Transfer generation-based forwards.
@@ -512,10 +512,6 @@ contract('EnergyToken', function(accounts) {
 	await distributeCall(2);
 	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateIds[2]), "1360000000000000000");
 
-	// Send certificates back for another test.
-	abiTransferCertsBack = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, distributorWeb3.options.address, certificateIds[2], "1360000000000000000", "0x00").encodeABI();
-	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsBack).send({from: accounts[6], gas: 7000000});
-
 	// Increase consumed energy beyond generated energy.
     // Does not currently work because updatey values don't affect distribution anymore.
     /*
@@ -530,6 +526,28 @@ contract('EnergyToken', function(accounts) {
 	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsBack).send({from: accounts[6], gas: 7000000});
     */
   });
+
+  it("allows for transfer of certificates to the 0 address.", async function() {
+	// Choose the same balance period as was used in the previous tests so the certificates can be re-used.
+	let balancePeriod = 1737549001;
+	let certificateIds = [];
+	
+	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
+	  // Get certificate ID.
+	  let receivedCertificateId = await energyToken.getTokenId(3, balancePeriod + 9000*forwardKind, idcs[0].options.address);
+
+	  // Pad token ID to full length.
+	  let receivedCertificateIdPadded = receivedCertificateId.toString('hex');
+	  while(receivedCertificateIdPadded.length < 64) {
+		receivedCertificateIdPadded = "0" + receivedCertificateIdPadded;
+	  }
+	  certificateIds[forwardKind] = "0x" + receivedCertificateIdPadded;
+	}
+
+	// Make sure that certificates can be sent to the 0 address.
+	let abiTransferCertsTo0Address = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, '0x0000000000000000000000000000000000000000', certificateIds[2], "1360000000000000000", "0x00").encodeABI();
+	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCertsTo0Address).send({from: accounts[6], gas: 7000000});
+  })
 
   it("distributes surplus certificates correctly.", async function() {
     let balancePeriod = 1737560701;
@@ -574,7 +592,7 @@ contract('EnergyToken', function(accounts) {
 
 	  // Perform actual mint operation via execute() of IDC 0.
 	  let abiMintCall = energyTokenWeb3.methods.mint(forwardIds[forwardKind], [idcs[1].options.address], ["17000000000000000000"]).encodeABI();
-	  await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall).send({from: accounts[5], gas: 7000000});
+	  await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall).send({from: accounts[5], gas: 8000000});
 	}
 
 	let distributeCall = async function(forwardKind) {

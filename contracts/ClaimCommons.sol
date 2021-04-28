@@ -1,4 +1,4 @@
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.1;
 
 /*
 * Everything in this contract actually shouldn't be its own contract but static members of IdentityContractFactory. However, Solidity seems to be lacking this feature.

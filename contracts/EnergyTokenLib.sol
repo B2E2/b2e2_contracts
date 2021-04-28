@@ -1,4 +1,4 @@
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.1;
 
 import "./IEnergyToken.sol";
 import "./ClaimVerifier.sol";
@@ -30,7 +30,7 @@ library EnergyTokenLib {
         __tokenId = __tokenId << 64;
         __tokenId += _balancePeriod;
         __tokenId = __tokenId << 160;
-        __tokenId += uint256(_identityContractAddress);
+        __tokenId += uint256(uint160(_identityContractAddress));
     }
     
         /**
@@ -168,7 +168,7 @@ library EnergyTokenLib {
         if(id2Distributor[_id] == _distributor)
             return;
         
-        if(id2Distributor[_id] != Distributor(0))
+        if(id2Distributor[_id] != Distributor(address(0)))
             require(false, "Distributor _id already used.");
         
         id2Distributor[_id] = _distributor;

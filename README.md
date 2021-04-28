@@ -38,7 +38,7 @@ Then (in a different terminal instance) compile the contracts and deploy them:
 
 Launch Ganache:
 
-    npx ganache-cli -l 1000000000 -m "bread leave edge glide soda seat trim armed canyon rural cross scheme"
+    npx ganache-cli -l 1000000000 -m "hire fancy burst fresh gadget theme cloud broom insane screen foster where"
 
 Copy sender address 0 from the list that's printed and replace the address in the line containing `from:` in `truffle-config.js` by it.
 

@@ -1,12 +1,10 @@
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.1;
 import "./IdentityContract.sol";
 import "./EnergyToken.sol";
 import "./EnergyTokenLib.sol";
 import "./IEnergyToken.sol";
 
 contract Distributor is IdentityContract {
-    using SafeMath for uint256;
-    
     EnergyToken public energyToken;
     
     // token ID => consumption plant address => bool
@@ -23,7 +21,9 @@ contract Distributor is IdentityContract {
     }
     
     function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) external {
-        // Distributor applicability check
+        // Distributor applicability check. Required because this contract holding the necessary certificates to pay the consumption plant
+        // is not sufficient grouns to assume that this is the correct distributor as soon as several forwards may cause payout of the
+        // same certificates.
         require(energyToken.id2Distributor(_tokenId) == this, "Distributor contract does not belong to this _tokenId");
         
         // Single execution check
@@ -49,7 +49,7 @@ contract Distributor is IdentityContract {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, absoluteForwardsOfConsumer.mul(generatedEnergy).div(totalForwards)), new bytes(0));
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer * generatedEnergy) / totalForwards), new bytes(0));
             return;
         }
         
@@ -58,7 +58,7 @@ contract Distributor is IdentityContract {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, generationBasedForwardsOfConsumer.mul(generatedEnergy).div(100E18), new bytes(0));
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, (generationBasedForwardsOfConsumer * generatedEnergy) / 100E18, new bytes(0));
             return;
         }
         
@@ -67,10 +67,10 @@ contract Distributor is IdentityContract {
             (uint256 generatedEnergy, uint256 consumedEnergy) = distribute_getGeneratedAndConsumedEnergy(generationPlantAddress, _consumptionPlantAddress, balancePeriod);
             uint256 totalConsumedEnergy = energyToken.energyConsumedRelevantForGenerationPlant(balancePeriod, generationPlantAddress);
 
-            uint256 option1 = (consumptionBasedForwards.mul(consumedEnergy)).div(100E18);
+            uint256 option1 = (consumptionBasedForwards * consumedEnergy) / 100E18;
             uint256 option2;
             if(totalConsumedEnergy > 0) {
-                option2 = ((consumptionBasedForwards.mul(consumedEnergy)).mul(generatedEnergy)).div(100E18).div(totalConsumedEnergy);
+                option2 = (consumptionBasedForwards * consumedEnergy * generatedEnergy) / (100E18 * totalConsumedEnergy);
             } else {
                 option2 = option1;
             }
@@ -100,7 +100,9 @@ contract Distributor is IdentityContract {
     function withdrawSurplusCertificates(uint256 _tokenId) external {
         (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = EnergyTokenLib.getTokenIdConstituents(_tokenId);
         
-        // Distributor applicability check
+        // Distributor applicability check. Required because this contract holding the necessary certificates to pay the consumption plant
+        // is not sufficient grouns to assume that this is the correct distributor as soon as several forwards may cause payout of the
+        // same certificates.
         require(energyToken.id2Distributor(_tokenId) == this, "Distributor contract does not belong to this _tokenId");
         
         // Single execution check
@@ -118,7 +120,7 @@ contract Distributor is IdentityContract {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
             if(generatedEnergy > totalForwards) {
-                energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, generatedEnergy.sub(totalForwards), new bytes(0));
+                energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, generatedEnergy - totalForwards, new bytes(0));
             }
             return;
         }

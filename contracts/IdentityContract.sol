@@ -1,4 +1,4 @@
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.1;
 
 import "./IdentityContractLib.sol";
 import "./IIdentityContract.sol";
@@ -42,7 +42,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
      * Other IdentityContracts need to specify the Market Authority's address as _marketAuthority. Their specification of _balancePeriodLength will be ignored.
      */
     constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength, address _owner) {
-        if(_marketAuthority == IdentityContract(0)) {
+        if(_marketAuthority == IdentityContract(address(0))) {
             require(3600 % _balancePeriodLength == 0, "Balance period length must be a unit fraction of an hour.");
             
             marketAuthority = this;
@@ -70,7 +70,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     }
   
     function selfdestructIdc() override(IIdentityContract) external onlyOwner {
-        selfdestruct(address(uint160(owner)));
+        selfdestruct(payable(owner));
     }
     
     // Functions ERC-725
@@ -93,7 +93,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes calldata _data, uint256 _executionNonce, bytes calldata _signature) external {
         // Limit the number of execution nonces that can be skipped to avoid overflows.
-        require(_executionNonce >= executionNonce && _executionNonce <= executionNonce + 1e9);
+        require(_executionNonce >= executionNonce && _executionNonce <= executionNonce + 1e18);
         
         // Increment the stored execution nonce first.
         // This prevents attacks where a contract that is called later (e.g. because it receives money) replays the call to the execution function.
