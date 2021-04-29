@@ -109,7 +109,9 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             mint(to, _id, quantity);
 
             // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
-            require(supply[_id] * (1000 * 3600) <= EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId) * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
+            (TokenKind tokenKind, ,) = EnergyTokenLib.getTokenIdConstituents(_id);
+            if(tokenKind == TokenKind.AbsoluteForward)
+                require(supply[_id] * (1000 * 3600) <= EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId) * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
 
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
