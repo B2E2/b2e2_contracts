@@ -15,6 +15,8 @@ interface IEnergyToken {
     function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) external;
 
     function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external;
+    
+    function createTokenFamily(uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase) external;
 
     // ########################
     // # ERC-1155 functions
@@ -28,9 +30,9 @@ interface IEnergyToken {
     // # Public support functions
     // ########################
 
-    function getTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _identityContractAddress) external pure returns (uint256 __tokenId);
+    function getTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _identityContractAddress, uint248 _previousTokenFamilyBase) external pure returns (uint256 __tokenId);
 
-    function getTokenIdConstituents(uint256 _tokenId) external pure returns(TokenKind __tokenKind, uint64 __balancePeriod, address __identityContractAddress);
+    function getTokenIdConstituents(uint256 _tokenId) external view returns(TokenKind __tokenKind, uint64 __balancePeriod, address __identityContractAddress);
 
     function tokenKind2Number(TokenKind _tokenKind) external pure returns (uint8 __number);
 

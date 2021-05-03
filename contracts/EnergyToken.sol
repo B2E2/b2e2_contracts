@@ -28,6 +28,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsForGenerationPlant;
     mapping(uint256 => Distributor) public id2Distributor;
     mapping(uint64 => mapping(address => EnergyTokenLib.ForwardKindOfGenerationPlant)) forwardKindOfGenerationPlant;
+    mapping(uint248 => EnergyTokenLib.TokenFamilyProperties) public tokenFamilyProperties;
     
     bool reentrancyLock;
     modifier noReentrancy {
@@ -64,7 +65,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         return
             interfaceID == IERC165.supportsInterface.selector ||
             interfaceID == ERC1155.safeTransferFrom.selector ^ ERC1155.safeBatchTransferFrom.selector ^ ERC1155.balanceOf.selector ^ ERC1155.balanceOfBatch.selector ^ ERC1155.setApprovalForAll.selector ^ ERC1155.isApprovedForAll.selector ||
-            interfaceID == IEnergyToken.decimals.selector ^ IEnergyToken.mint.selector ^ IEnergyToken.createForwards.selector ^ IEnergyToken.addMeasuredEnergyConsumption.selector ^ IEnergyToken.addMeasuredEnergyGeneration.selector ^ IEnergyToken.safeTransferFrom.selector ^ IEnergyToken.safeBatchTransferFrom.selector ^ IEnergyToken.getTokenId.selector ^ IEnergyToken.getTokenIdConstituents.selector ^ IEnergyToken.tokenKind2Number.selector ^ IEnergyToken.number2TokenKind.selector;
+            interfaceID == IEnergyToken.decimals.selector ^ IEnergyToken.mint.selector ^ IEnergyToken.createForwards.selector ^ IEnergyToken.addMeasuredEnergyConsumption.selector ^ IEnergyToken.addMeasuredEnergyGeneration.selector ^ IEnergyToken.createTokenFamily.selector ^ IEnergyToken.safeTransferFrom.selector ^ IEnergyToken.safeBatchTransferFrom.selector ^ IEnergyToken.getTokenId.selector ^ IEnergyToken.getTokenIdConstituents.selector ^ IEnergyToken.tokenKind2Number.selector ^ IEnergyToken.number2TokenKind.selector;
     }
     
     function decimals() external override(IEnergyToken) pure returns (uint8) {
@@ -76,9 +77,12 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         string memory realWorldPlantId;
         { // Block for avoiding stack too deep error.
         // Token needs to be mintable.
-        (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = EnergyTokenLib.getTokenIdConstituents(_id);
+        (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
         generationPlantP = payable(generationPlant);
         require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward, "tokenKind cannot be minted.");
+        
+        // Just required for nicer error messages.
+        require(generationPlant != address(0), "Token family needs to be created first.");
         
         // msg.sender needs to be allowed to mint.
         require(msg.sender == generationPlant, "msg.sender needs to be allowed to mint.");
@@ -109,7 +113,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             mint(to, _id, quantity);
 
             // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
-            (TokenKind tokenKind, ,) = EnergyTokenLib.getTokenIdConstituents(_id);
+            TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
             if(tokenKind == TokenKind.AbsoluteForward)
                 require(supply[_id] * (1000 * 3600) <= EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId) * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
 
@@ -123,7 +127,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             }
             
             { // Block for avoiding stack too deep error.
-            (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = EnergyTokenLib.getTokenIdConstituents(_id);
+            (, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
             if(tokenKind == TokenKind.ConsumptionBasedForward)
                 addPlantRelationship(generationPlant, _to[i], balancePeriod);
             }
@@ -135,7 +139,10 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) external override(IEnergyToken) onlyGenerationPlants(msg.sender, _balancePeriod) {
         require(_tokenKind != TokenKind.Certificate, "_tokenKind cannot be Certificate.");
         require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
-        uint256 id = EnergyTokenLib.getTokenId(_tokenKind, _balancePeriod, msg.sender);
+        
+        createTokenFamily(_balancePeriod, msg.sender, 0);
+        
+        uint256 id = getTokenId(_tokenKind, _balancePeriod, msg.sender, 0);
         
         EnergyTokenLib.setId2Distributor(id2Distributor, id, _distributor);
         EnergyTokenLib.setForwardKindOfGenerationPlant(forwardKindOfGenerationPlant, _balancePeriod, msg.sender, _tokenKind);
@@ -143,7 +150,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         emit ForwardsCreated(_tokenKind, _balancePeriod, _distributor, id);
         
         if(_tokenKind == TokenKind.GenerationBasedForward) {
-            require(!createdGenerationBasedForwards[id], "Forwards already been created.");
+            require(!createdGenerationBasedForwards[id], "Forwards have already been created.");
             createdGenerationBasedForwards[id] = true;
             
             uint256 value = 100E18;
@@ -187,14 +194,14 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // Mint certificates unless correcting.
         if(!corrected) {
             EnergyTokenLib.ForwardKindOfGenerationPlant memory forwardKind = forwardKindOfGenerationPlant[_balancePeriod][_plant];
-            uint256 certificateId = EnergyTokenLib.getTokenId(TokenKind.Certificate, _balancePeriod, _plant);
+            uint256 certificateId = getTokenId(TokenKind.Certificate, _balancePeriod, _plant, 0);
 
 			// If the forwards were not created, send the certificates to the generation plant. Otherwise, send them to the distributor of the forwards.
 			address certificateReceiver;
 			if(!forwardKind.set) {
 				certificateReceiver = _plant;
 			} else {
-				uint256 forwardId = EnergyTokenLib.getTokenId(forwardKind.forwardKind, _balancePeriod, _plant);
+				uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant, 0);
 				Distributor distributor = id2Distributor[forwardId];
 				certificateReceiver = address(distributor);
 			}
@@ -229,13 +236,19 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // Only check if max consumption capability is known
         if (maxCon != 0)
             require(_value * 1000 * 3600 <= maxCon * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
-    }        
+    }
+    
+    function createTokenFamily(uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase) override(IEnergyToken) public {
+        uint248 tokenFamilyBase = uint248(uint256(keccak256(abi.encodePacked(_balancePeriod, _generationPlant, _previousTokenFamilyBase))));
+        tokenFamilyProperties[tokenFamilyBase] = EnergyTokenLib.TokenFamilyProperties(_balancePeriod, _generationPlant, _previousTokenFamilyBase);
+        emit DebugOutput(tokenFamilyBase);
+    }
     
     // ########################
     // # Overridden ERC-1155 functions
     // ########################
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
-        (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = EnergyTokenLib.getTokenIdConstituents(_id);
+        (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
          if(tokenKind != TokenKind.Certificate)
             require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp), "balancePeriod must be in the future.");
         
@@ -268,7 +281,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         uint64 currentBalancePeriod = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp);
         
         for (uint256 i = 0; i < _ids.length; ++i) {
-            (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = EnergyTokenLib.getTokenIdConstituents(_ids[i]);
+            (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);
             if(tokenKind != TokenKind.Certificate) {
                 require(balancePeriod > currentBalancePeriod, "balancePeriod must be in the future.");
             }
@@ -315,7 +328,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // This needs to be checked here because otherwise distributors would need real world plant IDs
         // as without them, getting the real world plant ID to pass on to checkClaimsForTransferSending
         // and checkClaimsForTransferReception would cause a revert.
-        (TokenKind tokenKind, ,) = EnergyTokenLib.getTokenIdConstituents(_id);
+        TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
         if(tokenKind == TokenKind.Certificate) {
             return;
         }
@@ -326,15 +339,17 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         EnergyTokenLib.checkClaimsForTransferReception(marketAuthority, id2Distributor, payable(_to), realWorldPlantIdTo, _id);
     }
     
+    event DebugOutput(uint256);
+    
+    
     // ########################
     // # Public support functions
     // ########################
-    function getTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _identityContractAddress) public pure override(IEnergyToken) returns (uint256 __tokenId) {
-        __tokenId = EnergyTokenLib.getTokenId(_tokenKind, _balancePeriod, _identityContractAddress);
-    }
-    
-    function getTokenIdConstituents(uint256 _tokenId) public pure override(IEnergyToken) returns(TokenKind __tokenKind, uint64 __balancePeriod, address __identityContractAddress) {
-        (__tokenKind, __balancePeriod, __identityContractAddress) = EnergyTokenLib.getTokenIdConstituents(_tokenId);
+
+    function getTokenIdConstituents(uint256 _tokenId) public view override(IEnergyToken) returns(TokenKind __tokenKind, uint64 __balancePeriod, address __identityContractAddress) {
+        __identityContractAddress = tokenFamilyProperties[uint248(_tokenId)].generationPlant;
+        __balancePeriod = tokenFamilyProperties[uint248(_tokenId)].balancePeriod;
+        __tokenKind = number2TokenKind(uint8(_tokenId >> 248));
     }
     
     function tokenKind2Number(TokenKind _tokenKind) public pure override(IEnergyToken) returns (uint8 __number) {
@@ -343,6 +358,15 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     
     function number2TokenKind(uint8 _number) public pure override(IEnergyToken) returns (TokenKind __tokenKind) {
         __tokenKind = EnergyTokenLib.number2TokenKind(_number);
+    }
+    
+    /**
+     * tokenId: tokenKind number (8 bit) || hash (248 bit)
+     */
+    function getTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase) public pure override(IEnergyToken) returns (uint256 __tokenId) {
+        __tokenId = uint256(keccak256(abi.encodePacked(_balancePeriod, _generationPlant, _previousTokenFamilyBase)));
+        __tokenId = __tokenId & 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff; // Set the most significant byte to 0x00.
+        __tokenId = __tokenId + (uint256(tokenKind2Number(_tokenKind)) << 248); // Place the token kind in the left-most byte for easy readability.
     }
     
     // ########################

@@ -17,23 +17,17 @@ library EnergyTokenLib {
         bool set;
     }
     
+    struct TokenFamilyProperties {
+        uint64 balancePeriod;
+        address generationPlant;
+        uint248 previousToken;
+    }
+    
     // ########################
     // # Public support functions
     // ########################
+
     /**
-     * tokenId: zeros (24 bit) || tokenKind number (8 bit) || balancePeriod (64 bit) || address of IdentityContract (160 bit)
-     */
-    function getTokenId(IEnergyToken.TokenKind _tokenKind, uint64 _balancePeriod, address _identityContractAddress) public pure returns (uint256 __tokenId) {
-        __tokenId = 0;
-        
-        __tokenId += tokenKind2Number(_tokenKind);
-        __tokenId = __tokenId << 64;
-        __tokenId += _balancePeriod;
-        __tokenId = __tokenId << 160;
-        __tokenId += uint256(uint160(_identityContractAddress));
-    }
-    
-        /**
      * | Bit (rtl) | Meaning                                         |
      * |-----------+-------------------------------------------------|
      * |         0 | Genus (Generation-based 0; Consumption-based 1) |
@@ -83,21 +77,15 @@ library EnergyTokenLib {
         require(false, "Invalid number.");
     }
     
-    function getTokenIdConstituents(uint256 _tokenId) public pure returns(IEnergyToken.TokenKind __tokenKind, uint64 __balancePeriod, address __identityContractAddress) {
-        __identityContractAddress = address(uint160(_tokenId));
-        __balancePeriod = uint64(_tokenId >> 160);
-        __tokenKind = number2TokenKind(uint8(_tokenId >> (160 + 64)));
-        
-        // Make sure that the tokenId can actually be derived via getTokenId().
-        // Without this check, it would be possible to create a second but different tokenId with the same constituents as not all bits are used.
-        require(getTokenId(__tokenKind, __balancePeriod, __identityContractAddress) == _tokenId, "tokenId cannot be derived via getTokenId method.");
+    function tokenKindFromTokenId(uint256 _id) public pure returns(IEnergyToken.TokenKind __tokenKind) {
+        __tokenKind = number2TokenKind(uint8(_id >> 248));
     }
     
-        /**
+    /**
      * Checks all claims required for the particular given transfer regarding the sending side.
      */
     function checkClaimsForTransferSending(IdentityContract marketAuthority, mapping(uint256 => Distributor) storage id2Distributor, address payable _from, string memory _realWorldPlantId, uint256 _id) public view {
-        (IEnergyToken.TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
+        IEnergyToken.TokenKind tokenKind = tokenKindFromTokenId(_id);
         if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward || tokenKind == IEnergyToken.TokenKind.GenerationBasedForward || tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
             uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
             require(balanceClaimId != 0, "Invalid  BalanceClaim.");
@@ -121,7 +109,7 @@ library EnergyTokenLib {
      * Checks all claims required for the particular given transfer regarding the reception side.
      */
     function checkClaimsForTransferReception(IdentityContract marketAuthority, mapping(uint256 => Distributor) storage id2Distributor, address payable _to, string memory _realWorldPlantId, uint256 _id) public view {
-        (IEnergyToken.TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
+        IEnergyToken.TokenKind tokenKind = tokenKindFromTokenId(_id);
         if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward || tokenKind == IEnergyToken.TokenKind.GenerationBasedForward || tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
             uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
             require(balanceClaimId != 0, "Invalid  BalanceClaim.");

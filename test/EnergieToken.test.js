@@ -104,20 +104,22 @@ contract('EnergyToken', function(accounts) {
 
   it("determines token IDs correctly.", async function() {
 	// Get token ID.
-	let receivedTokenId = await energyToken.getTokenId(2, 1579860001, "0x7f10C80B27f9D4E8524748f2b31cAc86069f6C49");
+	const receivedTokenId = await energyToken.getTokenId(2, 1579860001, "0x7f10C80B27f9D4E8524748f2b31cAc86069f6C49", 0)
 
 	// Pad token ID to full length.
-	let receivedTokenIdPadded = receivedTokenId.toString('hex');
+	let receivedTokenIdPadded = receivedTokenId.toString('hex')
 	while(receivedTokenIdPadded.length < 64) {
-	  receivedTokenIdPadded = "0" + receivedTokenIdPadded;
+	  receivedTokenIdPadded = "0" + receivedTokenIdPadded
 	}
 	
 	// Determine expected token ID.
-	let zeros = "000000";
-	let tokenKind = "03"; // A consumption-based forward is stated as a 2 when calling functions (position in the enum listing) but it is rerpesented as "03" (last 2 bits set (relative, consumption-based)).
-	let balancePeriod = "000000005e2ac021";
-	let addressOfIdc = "7f10C80B27f9D4E8524748f2b31cAc86069f6C49".toLowerCase();
-    let expectedTokenId = zeros + tokenKind + balancePeriod + addressOfIdc;
+	const tokenKind = "03" // A consumption-based forward is stated as a 2 when calling functions (position in the enum listing) but it is rerpesented as "03" (last 2 bits set (relative, consumption-based)).
+	const balancePeriod = 1579860001
+	const addressOfIdc = "0x7f10C80B27f9D4E8524748f2b31cAc86069f6C49"
+    const expectedTokenId = tokenKind + web3.utils.soliditySha3({type: 'uint64', value: balancePeriod},
+                                                                {type: 'address', value: addressOfIdc},
+                                                                {type: 'uint248', value: 0}).slice(4)
+                                                    
 	assert.equal(receivedTokenIdPadded, expectedTokenId);
   });
 
@@ -165,7 +167,8 @@ contract('EnergyToken', function(accounts) {
 	await addClaim(idcs[2], 10140, physicalAssetAuthority.options.address, dataMaxCon, "", account8Sk);
 
 	// Get token ID.
-	let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address);
+    //await energyToken.createTokenFamily(1737540001, idcs[0].options.address, 0)
+	let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address, 0)
 
 	// Pad token ID to full length.
 	let receivedTokenIdPadded = receivedTokenId.toString('hex');
@@ -206,7 +209,7 @@ contract('EnergyToken', function(accounts) {
 	await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateTokensCall).send({from: accounts[5], gas: 7000000}));
 
 	// I can't get the return value because this is run via execute. It also wouldn't work anyway because web3 is stupid. Furthermore, I wasn't able to figure out how to get the event from web3. It doesn't work the way events can be retrieved using truffle contract objects and everything I've tried yielded null, undefined, an empty array, or other thing that just didn't make any sense. So I need to either compute the token ID here or get it via another function call.
-	let id = await energyToken.getTokenId(1, balancePeriod, idcs[0].options.address);
+	let id = await energyToken.getTokenId(1, balancePeriod, idcs[0].options.address, 0)
 
 	assert.equal(await energyToken.balanceOf(idcs[0].options.address, id), 100E18);
 	assert.equal(await energyToken.balanceOf(idcs[1].options.address, id), 0);
@@ -216,7 +219,7 @@ contract('EnergyToken', function(accounts) {
 	// IDC 2 has 17 tokens (17E18 elementary units) from the mint operation.
 
 	// Get token ID.
-	let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address);
+	let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address, 0)
 
 	// Pad token ID to full length.
 	let receivedTokenIdPadded = receivedTokenId.toString('hex');
@@ -291,7 +294,7 @@ contract('EnergyToken', function(accounts) {
 
   it.skip("can perform batch transfers.", async function() {
 	// Get token ID of forward. Using a different balance period to get balances back to zero.
-	let receivedTokenId1 = await energyToken.getTokenId(2, 1737540901, idcs[0].options.address);
+	let receivedTokenId1 = await energyToken.getTokenId(2, 1737540901, idcs[0].options.address, 0)
 
 	// Pad token ID to full length.
 	let receivedTokenId1Padded = receivedTokenId1.toString('hex');
@@ -301,7 +304,7 @@ contract('EnergyToken', function(accounts) {
 	let id1 = "0x" + receivedTokenId1Padded;
 
 	// Get token ID of another forward.
-	let receivedTokenId2 = await energyToken.getTokenId(2, 1737549901, idcs[0].options.address);
+	let receivedTokenId2 = await energyToken.getTokenId(2, 1737549901, idcs[0].options.address, 0)
 
 	// Pad token ID to full length.
 	let receivedTokenId2Padded = receivedTokenId2.toString('hex');
@@ -397,7 +400,7 @@ contract('EnergyToken', function(accounts) {
 	
 	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
 	  // Get certificate ID.
-	  let receivedCertificateId = await energyToken.getTokenId(3, balancePeriod + 9000*forwardKind, idcs[0].options.address);
+	  let receivedCertificateId = await energyToken.getTokenId(3, balancePeriod + 9000*forwardKind, idcs[0].options.address, 0)
 
 	  // Pad token ID to full length.
 	  let receivedCertificateIdPadded = receivedCertificateId.toString('hex');
@@ -411,7 +414,7 @@ contract('EnergyToken', function(accounts) {
 	let forwardIds = [];
 	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
 	  // Get forward ID.
-	  let receivedForwardId = await energyToken.getTokenId(forwardKind, balancePeriod + 9000*forwardKind, idcs[0].options.address);
+	  let receivedForwardId = await energyToken.getTokenId(forwardKind, balancePeriod + 9000*forwardKind, idcs[0].options.address, 0)
 
 	  // Pad token ID to full length.
 	  let receivedForwardIdPadded = receivedForwardId.toString('hex');
@@ -534,7 +537,7 @@ contract('EnergyToken', function(accounts) {
 	
 	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
 	  // Get certificate ID.
-	  let receivedCertificateId = await energyToken.getTokenId(3, balancePeriod + 9000*forwardKind, idcs[0].options.address);
+	  let receivedCertificateId = await energyToken.getTokenId(3, balancePeriod + 9000*forwardKind, idcs[0].options.address, 0)
 
 	  // Pad token ID to full length.
 	  let receivedCertificateIdPadded = receivedCertificateId.toString('hex');
@@ -555,7 +558,7 @@ contract('EnergyToken', function(accounts) {
 	
 	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
 	  // Get certificate ID.
-	  let receivedCertificateId = await energyToken.getTokenId(3, balancePeriod + 9000*forwardKind, idcs[0].options.address);
+	  let receivedCertificateId = await energyToken.getTokenId(3, balancePeriod + 9000*forwardKind, idcs[0].options.address, 0)
 
 	  // Pad token ID to full length.
 	  let receivedCertificateIdPadded = receivedCertificateId.toString('hex');
@@ -569,7 +572,7 @@ contract('EnergyToken', function(accounts) {
 	let forwardIds = [];
 	for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
 	  // Get forward ID.
-	  let receivedForwardId = await energyToken.getTokenId(forwardKind, balancePeriod + 9000*forwardKind, idcs[0].options.address);
+	  let receivedForwardId = await energyToken.getTokenId(forwardKind, balancePeriod + 9000*forwardKind, idcs[0].options.address, 0)
 
 	  // Pad token ID to full length.
 	  let receivedForwardIdPadded = receivedForwardId.toString('hex');
