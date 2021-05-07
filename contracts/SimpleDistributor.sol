@@ -1,10 +1,10 @@
 pragma solidity ^0.8.1;
-import "./IdentityContract.sol";
+import "./AbstractDistributor.sol";
 import "./EnergyToken.sol";
 import "./EnergyTokenLib.sol";
 import "./IEnergyToken.sol";
 
-contract Distributor is IdentityContract {
+contract SimpleDistributor is AbstractDistributor {
     EnergyToken public energyToken;
     
     // token ID => consumption plant address => bool
@@ -14,13 +14,18 @@ contract Distributor is IdentityContract {
     mapping(uint64 => mapping(address => uint256)) numberOfCompletedConsumptionBasedDistributions;
     
     bool testing;
+    
+    modifier onlyEnergyToken() {
+        require(msg.sender == address(energyToken), "only the energy token contract may invoke this function");
+        _;
+    }
 
     constructor(EnergyToken _energyToken, bool _testing, address _owner) IdentityContract(_energyToken.marketAuthority(), 0, _owner) {
         energyToken = _energyToken;
         testing = _testing;
     }
     
-    function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) external {
+    function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) external onlyConsumptionPlants(_consumptionPlantAddress) {
         // Distributor applicability check. Required because this contract holding the necessary certificates to pay the consumption plant
         // is not sufficient grouns to assume that this is the correct distributor as soon as several forwards may cause payout of the
         // same certificates.
@@ -37,11 +42,6 @@ contract Distributor is IdentityContract {
         
         uint256 certificateTokenId = energyToken.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress, 0);
 
-        // Claim check
-        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _consumptionPlantAddress);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim) != 0, "Claim check for BalanceClaim failed.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Claim check for ExistenceClaim failed.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _consumptionPlantAddress, realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Claim check for MeteringClaim failed.");
         // Distribution
         if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward) {
             uint256 totalForwards = energyToken.totalSupply(_tokenId);

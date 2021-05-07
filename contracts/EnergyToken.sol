@@ -14,10 +14,10 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     enum PlantType {Generation, Consumption}
 
     event EnergyDocumented(PlantType plantType, uint256 value, address indexed plant, bool corrected, uint64 indexed balancePeriod, address indexed meteringAuthority);
-    event ForwardsCreated(TokenKind tokenKind, uint64 balancePeriod, Distributor distributor, uint256 id);
+    event ForwardsCreated(TokenKind tokenKind, uint64 balancePeriod, AbstractDistributor distributor, uint256 id);
     
     // id => whetherCreated
-    mapping (uint256 => bool) createdGenerationBasedForwards;
+    mapping (uint256 => bool) createdForwards;
     
     IdentityContract public marketAuthority;
 
@@ -26,7 +26,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     mapping(uint64 => mapping(address => address[])) relevantGenerationPlantsForConsumptionPlant;
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant;
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsForGenerationPlant;
-    mapping(uint256 => Distributor) public id2Distributor;
+    mapping(uint256 => AbstractDistributor) public id2Distributor;
     mapping(uint64 => mapping(address => EnergyTokenLib.ForwardKindOfGenerationPlant)) forwardKindOfGenerationPlant;
     mapping(uint248 => EnergyTokenLib.TokenFamilyProperties) public tokenFamilyProperties;
     
@@ -53,6 +53,17 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         
         _;
     }
+    
+    modifier onlyStoragePlants(address _plant, uint64 _balancePeriod) {
+        // TODO
+        _;
+    }
+    
+    modifier onlyDistributors(address _distributor, uint64 _balancePeriod) {
+        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _distributor);
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _distributor, realWorldPlantId, ClaimCommons.ClaimType.AcceptedDistributorClaim, _balancePeriod) != 0, "Invalid AcceptedDistributorClaim.");
+        _;
+    }
 
     constructor(IdentityContract _marketAuthority) {
         marketAuthority = _marketAuthority;
@@ -65,7 +76,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         return
             interfaceID == IERC165.supportsInterface.selector ||
             interfaceID == ERC1155.safeTransferFrom.selector ^ ERC1155.safeBatchTransferFrom.selector ^ ERC1155.balanceOf.selector ^ ERC1155.balanceOfBatch.selector ^ ERC1155.setApprovalForAll.selector ^ ERC1155.isApprovedForAll.selector ||
-            interfaceID == IEnergyToken.decimals.selector ^ IEnergyToken.mint.selector ^ IEnergyToken.createForwards.selector ^ IEnergyToken.addMeasuredEnergyConsumption.selector ^ IEnergyToken.addMeasuredEnergyGeneration.selector ^ IEnergyToken.createTokenFamily.selector ^ IEnergyToken.safeTransferFrom.selector ^ IEnergyToken.safeBatchTransferFrom.selector ^ IEnergyToken.getTokenId.selector ^ IEnergyToken.getTokenIdConstituents.selector ^ IEnergyToken.tokenKind2Number.selector ^ IEnergyToken.number2TokenKind.selector;
+            interfaceID == IEnergyToken.decimals.selector ^ IEnergyToken.mint.selector ^ IEnergyToken.createForwards.selector ^ IEnergyToken.createPropertyForwards.selector ^ IEnergyToken.addMeasuredEnergyConsumption.selector ^ IEnergyToken.addMeasuredEnergyGeneration.selector ^ IEnergyToken.createTokenFamily.selector ^ IEnergyToken.safeTransferFrom.selector ^ IEnergyToken.safeBatchTransferFrom.selector ^ IEnergyToken.getTokenId.selector ^ IEnergyToken.getPropertyTokenId.selector ^ IEnergyToken.getCriteriaHash.selector ^ IEnergyToken.getTokenIdConstituents.selector ^ IEnergyToken.tokenKind2Number.selector ^ IEnergyToken.number2TokenKind.selector;
     }
     
     function decimals() external override(IEnergyToken) pure returns (uint8) {
@@ -91,7 +102,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp), "Wrong balance period.");
         
         // Forwards must have been created.
-        require(id2Distributor[_id] != Distributor(address(0)), "Forwards not created.");
+        require(id2Distributor[_id] != AbstractDistributor(address(0)), "Forwards not created.");
         
         realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, generationPlantP);
         require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) != 0, "Invalid  ExistenceClaim.");
@@ -136,13 +147,15 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     
     // A reentrancy lock is not needed for this function because it does not call a different contract.
     // The recipient always is msg.sender. Therefore, _doSafeTransferAcceptanceCheck() is not called.
-    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, Distributor _distributor) external override(IEnergyToken) onlyGenerationPlants(msg.sender, _balancePeriod) {
-        require(_tokenKind != TokenKind.Certificate, "_tokenKind cannot be Certificate.");
+    function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, SimpleDistributor _distributor) external override(IEnergyToken) onlyGenerationPlants(msg.sender, _balancePeriod) onlyDistributors(address(_distributor), _balancePeriod) {
+        require(_tokenKind != TokenKind.Certificate && _tokenKind != TokenKind.PropertyForward, "_tokenKind cannot be Certificate or PropertyForward.");
         require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
         
         createTokenFamily(_balancePeriod, msg.sender, 0);
         
         uint256 id = getTokenId(_tokenKind, _balancePeriod, msg.sender, 0);
+        require(!createdForwards[id], "Forwards have already been created.");
+        createdForwards[id] = true;
         
         EnergyTokenLib.setId2Distributor(id2Distributor, id, _distributor);
         EnergyTokenLib.setForwardKindOfGenerationPlant(forwardKindOfGenerationPlant, _balancePeriod, msg.sender, _tokenKind);
@@ -150,13 +163,28 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         emit ForwardsCreated(_tokenKind, _balancePeriod, _distributor, id);
         
         if(_tokenKind == TokenKind.GenerationBasedForward) {
-            require(!createdGenerationBasedForwards[id], "Forwards have already been created.");
-            createdGenerationBasedForwards[id] = true;
-            
             uint256 value = 100E18;
             mint(msg.sender, id, value);
             emit TransferSingle(msg.sender, address(0x0), msg.sender, id, value);
         }
+    }
+    
+    function createPropertyForwards(uint64 _balancePeriod, ComplexDistributor _distributor, EnergyTokenLib.Criterion[] calldata _criteria) external override(IEnergyToken) onlyStoragePlants(msg.sender, _balancePeriod) onlyDistributors(address(_distributor), _balancePeriod) {
+        require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
+        
+        createTokenFamily(_balancePeriod, msg.sender, 0);
+        
+        uint256 id = getPropertyTokenId(TokenKind.PropertyForward, _balancePeriod, msg.sender, 0, keccak256(abi.encode(_criteria)));
+        require(!createdForwards[id], "Forwards have already been created.");
+        createdForwards[id] = true;
+        
+        EnergyTokenLib.setId2Distributor(id2Distributor, id, _distributor);
+        
+        // Do not set forward kind of generation plant because storage plants can have multiple forwards for the same balance period.
+        
+        emit ForwardsCreated(TokenKind.PropertyForward, _balancePeriod, _distributor, id);
+        
+        _distributor.setPropertyForwardsCriteria(id, _criteria);
     }
 
     function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities {
@@ -202,7 +230,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 				certificateReceiver = _plant;
 			} else {
 				uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant, 0);
-				Distributor distributor = id2Distributor[forwardId];
+				AbstractDistributor distributor = id2Distributor[forwardId];
 				certificateReceiver = address(distributor);
 			}
 
@@ -367,6 +395,16 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         __tokenId = uint256(keccak256(abi.encodePacked(_balancePeriod, _generationPlant, _previousTokenFamilyBase)));
         __tokenId = __tokenId & 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff; // Set the most significant byte to 0x00.
         __tokenId = __tokenId + (uint256(tokenKind2Number(_tokenKind)) << 248); // Place the token kind in the left-most byte for easy readability.
+    }
+    
+    function getPropertyTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase, bytes32 _criteriaHash) public pure override(IEnergyToken) returns (uint256 __tokenId) {
+        __tokenId = uint256(keccak256(abi.encodePacked(_balancePeriod, _generationPlant, _previousTokenFamilyBase, _criteriaHash)));
+        __tokenId = __tokenId & 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff; // Set the most significant byte to 0x00.
+        __tokenId = __tokenId + (uint256(tokenKind2Number(_tokenKind)) << 248); // Place the token kind in the left-most byte for easy readability.
+    }
+    
+    function getCriteriaHash(EnergyTokenLib.Criterion[] calldata _criteria) external pure override(IEnergyToken) returns(bytes32) {
+        return keccak256(abi.encode(_criteria));
     }
     
     // ########################
