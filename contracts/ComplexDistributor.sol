@@ -115,4 +115,12 @@ contract ComplexDistributor is AbstractDistributor {
         // Actual distribution.
         energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, _certificateId, _value, new bytes(0));
     }
+    
+    /**
+     * Must only be called by storage plants. Sends surplus certificates to the calling storage plant.
+     */
+    function withdrawSurplusCertificates(uint256 _forwardId, uint256 _certificateId, uint256 _value) external {
+        certificates[msg.sender][_forwardId][_certificateId] -= _value;
+        energyToken.safeTransferFrom(address(this), msg.sender, _certificateId, _value, new bytes(0));
+    }
 }
