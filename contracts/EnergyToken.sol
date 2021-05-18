@@ -27,7 +27,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant;
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsForGenerationPlant;
     mapping(uint256 => AbstractDistributor) public id2Distributor;
-    mapping(uint64 => mapping(address => EnergyTokenLib.ForwardKindOfGenerationPlant)) forwardKindOfGenerationPlant;
+    mapping(uint64 => mapping(address => EnergyTokenLib.ForwardKindOfGenerationPlant)) public forwardKindOfGenerationPlant;
     mapping(uint248 => EnergyTokenLib.TokenFamilyProperties) public tokenFamilyProperties;
     
     bool reentrancyLock;
