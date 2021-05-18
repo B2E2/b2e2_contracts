@@ -74,7 +74,7 @@ contract ComplexDistributor is AbstractDistributor {
         
         EnergyTokenLib.Criterion[] storage criteria = propertyForwardsCriteria[_forwardId];
         require(criteria.length > 0, "criteria length is zero");
-        // require(false, "check require 71");
+        
         for(uint32 i = 0; i < criteria.length; i++) {
             EnergyTokenLib.Criterion storage criterion = criteria[i];
             
