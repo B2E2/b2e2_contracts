@@ -20,6 +20,8 @@ interface IEnergyToken {
     function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external;
     
     function createTokenFamily(uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase) external;
+    
+    function temporallyTransportCertificates(uint256 _originalCertificateId, uint256 _targetForwardId, uint256 _value) external returns(uint256 __targetCertificateId);
 
     // ########################
     // # ERC-1155 functions
@@ -45,4 +47,5 @@ interface IEnergyToken {
 
     function number2TokenKind(uint8 _number) external pure returns (TokenKind __tokenKind);
 
+    function getInitialGenerationPlant(uint256 _tokenId) external view returns(address __initialGenerationPlant);
 }

@@ -73,12 +73,12 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     
     // IERC165 interface signature = '0x01ffc9a7'
     // IERC1155 interface signature = '0xd9b67a26'
-    // IEnergyToken interface signature = '0x60d248e0'
+    // IEnergyToken interface signature = '0x49cfca33'
     function supportsInterface(bytes4 interfaceID) override(IERC165, ERC1155) external view returns (bool) {
         return
             interfaceID == IERC165.supportsInterface.selector ||
             interfaceID == ERC1155.safeTransferFrom.selector ^ ERC1155.safeBatchTransferFrom.selector ^ ERC1155.balanceOf.selector ^ ERC1155.balanceOfBatch.selector ^ ERC1155.setApprovalForAll.selector ^ ERC1155.isApprovedForAll.selector ||
-            interfaceID == IEnergyToken.decimals.selector ^ IEnergyToken.mint.selector ^ IEnergyToken.createForwards.selector ^ IEnergyToken.createPropertyForwards.selector ^ IEnergyToken.addMeasuredEnergyConsumption.selector ^ IEnergyToken.addMeasuredEnergyGeneration.selector ^ IEnergyToken.createTokenFamily.selector ^ IEnergyToken.safeTransferFrom.selector ^ IEnergyToken.safeBatchTransferFrom.selector ^ IEnergyToken.getTokenId.selector ^ IEnergyToken.getPropertyTokenId.selector ^ IEnergyToken.getCriteriaHash.selector ^ IEnergyToken.getTokenIdConstituents.selector ^ IEnergyToken.tokenKind2Number.selector ^ IEnergyToken.number2TokenKind.selector;
+            interfaceID == IEnergyToken.decimals.selector ^ IEnergyToken.mint.selector ^ IEnergyToken.createForwards.selector ^ IEnergyToken.createPropertyForwards.selector ^ IEnergyToken.addMeasuredEnergyConsumption.selector ^ IEnergyToken.addMeasuredEnergyGeneration.selector ^ IEnergyToken.createTokenFamily.selector ^ IEnergyToken.temporallyTransportCertificates.selector ^ IEnergyToken.safeTransferFrom.selector ^ IEnergyToken.safeBatchTransferFrom.selector ^ IEnergyToken.getTokenId.selector ^ IEnergyToken.getPropertyTokenId.selector ^ IEnergyToken.getCriteriaHash.selector ^ IEnergyToken.getTokenIdConstituents.selector ^ IEnergyToken.tokenKind2Number.selector ^ IEnergyToken.number2TokenKind.selector ^ IEnergyToken.getInitialGenerationPlant.selector;
     }
     
     function decimals() external override(IEnergyToken) pure returns (uint8) {
@@ -274,7 +274,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         emit TokenFamilyCreation(tokenFamilyBase);
     }
     
-    function temporallyTransportCertificates(uint256 _originalCertificateId, uint256 _targetForwardId, uint256 _value) external onlyDistributors(msg.sender, uint64(block.timestamp)) returns(uint256 __targetCertificateId) {
+    function temporallyTransportCertificates(uint256 _originalCertificateId, uint256 _targetForwardId, uint256 _value) external
+      onlyDistributors(msg.sender, uint64(block.timestamp)) override(IEnergyToken) returns(uint256 __targetCertificateId) {
         // Prepare variables.
         uint64 balancePeriod = tokenFamilyProperties[uint248(_targetForwardId)].balancePeriod;
         address storagePlant = tokenFamilyProperties[uint248(_targetForwardId)].generationPlant;
