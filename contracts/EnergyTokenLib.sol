@@ -21,7 +21,7 @@ library EnergyTokenLib {
     struct TokenFamilyProperties {
         uint64 balancePeriod;
         address generationPlant;
-        uint248 previousToken;
+        uint248 previousTokenFamilyBase;
     }
     
     // When stating criteria, make sure to set the value field correctly.

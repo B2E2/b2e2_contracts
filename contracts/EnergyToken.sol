@@ -428,6 +428,13 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         return keccak256(abi.encode(_criteria));
     }
     
+    function getInitialGenerationPlant(uint256 _tokenId) external view override(IEnergyToken) returns(address __initialGenerationPlant) {
+        while(tokenFamilyProperties[uint248(_tokenId)].previousTokenFamilyBase != 0)
+            _tokenId = tokenFamilyProperties[uint248(_tokenId)].previousTokenFamilyBase;
+        
+        __initialGenerationPlant = tokenFamilyProperties[uint248(_tokenId)].generationPlant;
+    }
+    
     // ########################
     // # Internal functions
     // ########################
