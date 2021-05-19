@@ -1,4 +1,5 @@
 pragma solidity ^0.8.1;
+
 import "./AbstractDistributor.sol";
 import "./EnergyToken.sol";
 import "./EnergyTokenLib.sol";
@@ -112,8 +113,11 @@ contract ComplexDistributor is AbstractDistributor {
         // Reduction of debtor balance (reverts on overflow).
         certificates[debtorAddress][_forwardId][_certificateId] -= _value;
         
+        // Convertion to new balance period.
+        uint256 newCertificateId = energyToken.temporallyTransportCertificates(_certificateId, _forwardId, _value);
+        
         // Actual distribution.
-        energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, _certificateId, _value, new bytes(0));
+        energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, newCertificateId, _value, new bytes(0));
     }
     
     /**

@@ -1,4 +1,5 @@
 pragma solidity ^0.8.1;
+
 import "./AbstractDistributor.sol";
 import "./EnergyToken.sol";
 import "./EnergyTokenLib.sol";

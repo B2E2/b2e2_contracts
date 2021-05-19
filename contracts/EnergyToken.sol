@@ -15,6 +15,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 
     event EnergyDocumented(PlantType plantType, uint256 value, address indexed plant, bool corrected, uint64 indexed balancePeriod, address indexed meteringAuthority);
     event ForwardsCreated(TokenKind tokenKind, uint64 balancePeriod, AbstractDistributor distributor, uint256 id);
+    event TokenFamilyCreation(uint248);
     
     // id => whetherCreated
     mapping (uint256 => bool) createdForwards;
@@ -22,6 +23,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     IdentityContract public marketAuthority;
 
     mapping(address => mapping(uint64 => EnergyTokenLib.EnergyDocumentation)) public energyDocumentations;
+    mapping(address => mapping(uint64 => uint256)) storagePlantEnergyUsedForTemporalTransportation;
     mapping(uint64 => mapping(address => uint256)) public energyConsumedRelevantForGenerationPlant;
     mapping(uint64 => mapping(address => address[])) relevantGenerationPlantsForConsumptionPlant;
     mapping(uint64 => mapping(address => uint256)) public numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant;
@@ -269,7 +271,28 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     function createTokenFamily(uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase) override(IEnergyToken) public {
         uint248 tokenFamilyBase = uint248(uint256(keccak256(abi.encodePacked(_balancePeriod, _generationPlant, _previousTokenFamilyBase))));
         tokenFamilyProperties[tokenFamilyBase] = EnergyTokenLib.TokenFamilyProperties(_balancePeriod, _generationPlant, _previousTokenFamilyBase);
-        emit DebugOutput(tokenFamilyBase);
+        emit TokenFamilyCreation(tokenFamilyBase);
+    }
+    
+    function temporallyTransportCertificates(uint256 _originalCertificateId, uint256 _targetForwardId, uint256 _value) external onlyDistributors(msg.sender, uint64(block.timestamp)) returns(uint256 __targetCertificateId) {
+        // Prepare variables.
+        uint64 balancePeriod = tokenFamilyProperties[uint248(_targetForwardId)].balancePeriod;
+        address storagePlant = tokenFamilyProperties[uint248(_targetForwardId)].generationPlant;
+        
+        // Make sure that the storage plant has transported enough energy temporally.
+        // Note thay correcting documentations affect the behavior of this function.
+        EnergyTokenLib.EnergyDocumentation storage energyDocumentation = energyDocumentations[storagePlant][balancePeriod];
+        require(energyDocumentation.generated, "The storage plant has not generated any energy.");
+        storagePlantEnergyUsedForTemporalTransportation[storagePlant][balancePeriod] += _value;
+        require(storagePlantEnergyUsedForTemporalTransportation[storagePlant][balancePeriod] <= energyDocumentation.value, "The storage plant has not generated enough energy.");
+        
+        // Create the new token family (idempotent operation).
+        createTokenFamily(balancePeriod, storagePlant, uint248(_originalCertificateId));
+        __targetCertificateId = getTokenId(TokenKind.Certificate, balancePeriod, storagePlant, uint248(_originalCertificateId));
+        
+        // Perform the actual temporal transportation.
+        burn(msg.sender, _originalCertificateId, _value);
+        mint(msg.sender, __targetCertificateId, _value);
     }
     
     // ########################
@@ -366,8 +389,6 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, payable(_from), realWorldPlantIdFrom, _id);
         EnergyTokenLib.checkClaimsForTransferReception(marketAuthority, id2Distributor, payable(_to), realWorldPlantIdTo, _id);
     }
-    
-    event DebugOutput(uint256);
     
     
     // ########################
