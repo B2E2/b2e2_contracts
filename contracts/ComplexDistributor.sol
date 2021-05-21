@@ -82,7 +82,10 @@ contract ComplexDistributor is AbstractDistributor {
             ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(criterion.topicId);
 
             if(criterion.operator == EnergyTokenLib.Operator.eq) {
-                require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, certificateGenerationPlant, realWorldPlantId, claimType, criterion.fieldName, string(criterion.value), certificateBalancePeriod) != 0, "certificate ID not applicable");
+                if(criterion.value.length > 0)
+                    require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, certificateGenerationPlant, realWorldPlantId, claimType, criterion.fieldName, string(criterion.value), certificateBalancePeriod) != 0, "certificate ID not applicable");
+                else
+                    require(ClaimVerifier.getClaimOfType(marketAuthority, certificateGenerationPlant, realWorldPlantId, claimType, certificateBalancePeriod) != 0, "certificate ID not applicable");
             } else {
                 // TODO: implement
                 require(false, "not yet implemented");
