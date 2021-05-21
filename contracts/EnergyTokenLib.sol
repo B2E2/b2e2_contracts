@@ -35,7 +35,7 @@ library EnergyTokenLib {
         uint256 topicId;
         string fieldName;
         Operator operator;
-        bytes value;
+        bytes fieldValue;
     }
     
     // ########################
