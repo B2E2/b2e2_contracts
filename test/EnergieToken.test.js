@@ -752,12 +752,11 @@ contract('EnergyToken', function(accounts) {
     // does not work.
     const criteriaHash = await energyToken.getCriteriaHash(criteria)
 	let forwardId = (await energyToken.getPropertyTokenId(balancePeriod, idcs[0].options.address, 0, criteriaHash)).toString('hex')
-	console.log('Forward ID: ' + forwardId)
+
     // Pad forward ID to 32 Byte.
     while(forwardId.length < 64) {
 	  forwardId = '0' + forwardId
 	}
-	console.log(forwardId)
 
     const criteriaHashNotApplicable = await energyToken.getCriteriaHash(criteriaNotApplicable)
 	let forwardIdNotApplicable = (await energyToken.getPropertyTokenId(balancePeriod, idcs[0].options.address, 0, criteriaHashNotApplicable)).toString('hex')
