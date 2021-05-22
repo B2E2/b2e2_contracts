@@ -322,7 +322,9 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         require(_from == msg.sender || operatorApproval[_from][msg.sender] == true, "Need operator approval.");
 
         // SafeMath will throw with insuficient funds _from
-        // or if _id is not valid (balance will be 0)
+        // or if _id is not valid (balance will be 0).
+        // This require() is for better error messages.
+        require(balances[_id][_from] >= _value, "insuficient funds");
         balances[_id][_from] -= _value;
         balances[_id][_to]   += _value;
 
