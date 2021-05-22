@@ -21,6 +21,8 @@ interface IEnergyToken {
     
     function createTokenFamily(uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase) external;
     
+    function createPropertyTokenFamily(uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase, bytes32 _criteriaHash) external;
+    
     function temporallyTransportCertificates(uint256 _originalCertificateId, uint256 _targetForwardId, uint256 _value) external returns(uint256 __targetCertificateId);
 
     // ########################
@@ -37,7 +39,7 @@ interface IEnergyToken {
 
     function getTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _identityContractAddress, uint248 _previousTokenFamilyBase) external pure returns (uint256 __tokenId);
     
-    function getPropertyTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase, bytes32 _criteriaHash) external pure returns (uint256 __tokenId);
+    function getPropertyTokenId(uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase, bytes32 _criteriaHash) external pure returns (uint256 __tokenId);
     
     function getCriteriaHash(EnergyTokenLib.Criterion[] calldata _criteria) external pure returns(bytes32);
 

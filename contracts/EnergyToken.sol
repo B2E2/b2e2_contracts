@@ -92,7 +92,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // Token needs to be mintable.
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
         generationPlantP = payable(generationPlant);
-        require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward, "tokenKind cannot be minted.");
+        require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward || tokenKind == TokenKind.PropertyForward, "tokenKind cannot be minted.");
         
         // Just required for nicer error messages.
         require(generationPlant != address(0), "Token family needs to be created first.");
@@ -174,9 +174,10 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     function createPropertyForwards(uint64 _balancePeriod, ComplexDistributor _distributor, EnergyTokenLib.Criterion[] calldata _criteria) external override(IEnergyToken) onlyStoragePlants(msg.sender, _balancePeriod) onlyDistributors(address(_distributor), _balancePeriod) {
         require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
         
-        createTokenFamily(_balancePeriod, msg.sender, 0);
+        bytes32 criteriaHash = keccak256(abi.encode(_criteria));
+        createPropertyTokenFamily(_balancePeriod, msg.sender, 0, criteriaHash);
         
-        uint256 id = getPropertyTokenId(TokenKind.PropertyForward, _balancePeriod, msg.sender, 0, keccak256(abi.encode(_criteria)));
+        uint256 id = getPropertyTokenId(_balancePeriod, msg.sender, 0, criteriaHash);
         require(!createdForwards[id], "Forwards have already been created.");
         createdForwards[id] = true;
         
@@ -270,6 +271,12 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     
     function createTokenFamily(uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase) override(IEnergyToken) public {
         uint248 tokenFamilyBase = uint248(uint256(keccak256(abi.encodePacked(_balancePeriod, _generationPlant, _previousTokenFamilyBase))));
+        tokenFamilyProperties[tokenFamilyBase] = EnergyTokenLib.TokenFamilyProperties(_balancePeriod, _generationPlant, _previousTokenFamilyBase);
+        emit TokenFamilyCreation(tokenFamilyBase);
+    }
+    
+    function createPropertyTokenFamily(uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase, bytes32 _criteriaHash) override(IEnergyToken) public {
+        uint248 tokenFamilyBase = uint248(uint256(keccak256(abi.encodePacked(_balancePeriod, _generationPlant, _previousTokenFamilyBase, _criteriaHash))));
         tokenFamilyProperties[tokenFamilyBase] = EnergyTokenLib.TokenFamilyProperties(_balancePeriod, _generationPlant, _previousTokenFamilyBase);
         emit TokenFamilyCreation(tokenFamilyBase);
     }
@@ -419,10 +426,10 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         __tokenId = __tokenId + (uint256(tokenKind2Number(_tokenKind)) << 248); // Place the token kind in the left-most byte for easy readability.
     }
     
-    function getPropertyTokenId(TokenKind _tokenKind, uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase, bytes32 _criteriaHash) public pure override(IEnergyToken) returns (uint256 __tokenId) {
+    function getPropertyTokenId(uint64 _balancePeriod, address _generationPlant, uint248 _previousTokenFamilyBase, bytes32 _criteriaHash) public pure override(IEnergyToken) returns (uint256 __tokenId) {
         __tokenId = uint256(keccak256(abi.encodePacked(_balancePeriod, _generationPlant, _previousTokenFamilyBase, _criteriaHash)));
         __tokenId = __tokenId & 0x00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff; // Set the most significant byte to 0x00.
-        __tokenId = __tokenId + (uint256(tokenKind2Number(_tokenKind)) << 248); // Place the token kind in the left-most byte for easy readability.
+        __tokenId = __tokenId + (uint256(tokenKind2Number(TokenKind.PropertyForward)) << 248); // Place the token kind in the left-most byte for easy readability.
     }
     
     function getCriteriaHash(EnergyTokenLib.Criterion[] calldata _criteria) external pure override(IEnergyToken) returns(bytes32) {
