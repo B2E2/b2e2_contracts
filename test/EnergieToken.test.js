@@ -530,6 +530,10 @@ contract('EnergyToken', function(accounts) {
     // Store the certificate ID because these certificates are needed for the test of the complex distributor.
     complexDistributorCertificateId = certificateIds[2]
 
+	// Send the certificates to IDC 0 so it can use them in the complex distributor test.
+    const abiTransferToOtherTestCall = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, idcs[0].options.address, complexDistributorCertificateId, 1000, '0x00').encodeABI()
+    await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferToOtherTestCall).send({from: accounts[6], gas: 7000000})
+
 	// Increase consumed energy beyond generated energy.
     // Does not currently work because updatey values don't affect distribution anymore.
     /*
@@ -723,43 +727,78 @@ contract('EnergyToken', function(accounts) {
 	const balancePeriod = 1737549001
 
 	const abiCreateForwardsCall1 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 0, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]]).encodeABI()
-	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall1).send({from: accounts[6], gas: 7000000})
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall1).send({from: accounts[5], gas: 7000000})
 
 	// Make sure that repeated calls revert as forwards cannot be created more than once.
-	await truffleAssert.reverts(idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall1).send({from: accounts[6], gas: 7000000}))
+	await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall1).send({from: accounts[5], gas: 7000000}))
 
     // It needs to be possible to create more than one forward per storage plant and balance period.
 	const abiCreateForwardsCall2 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 0, '0x' + Buffer.from('300000001', 'utf8').toString('hex')]]).encodeABI()
-	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall2).send({from: accounts[6], gas: 7000000})
-
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall2).send({from: accounts[5], gas: 7000000})
   })
 
   it('distributes tokens correcty (complex distributor)', async function() {
+	// IDC 0: generation plant
+	// IDC 1: consumption plant
+
     const balancePeriod = 1737549001
+
+	// Define criteria.
+	const criteria = [[10065, 'maxGen', 0, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]]
+	const criteriaNotApplicable = [[10065, 'maxGen', 0, '0x' + Buffer.from('300000001', 'utf8').toString('hex')]]
 
     // Using a smart contract function for this because
     // web3.utils.soliditySha3({type: 'tuple(uint256,string,uint8,bytes)[]', value: [ [...] ]})
     // does not work.
-    const criteriaHash = await energyToken.getCriteriaHash([[10065, 'maxGen', 0, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]])
-	let forwardId = (await energyToken.getPropertyTokenId(4, balancePeriod, idcs[1].options.address, 0, criteriaHash)).toString('hex')
+    const criteriaHash = await energyToken.getCriteriaHash(criteria)
+	let forwardId = (await energyToken.getPropertyTokenId(balancePeriod, idcs[0].options.address, 0, criteriaHash)).toString('hex')
+	console.log('Forward ID: ' + forwardId)
     // Pad forward ID to 32 Byte.
     while(forwardId.length < 64) {
 	  forwardId = '0' + forwardId
 	}
+	console.log(forwardId)
 
-    const criteriaHashNotApplicable = await energyToken.getCriteriaHash([[10065, 'maxGen', 0, '0x' + Buffer.from('300000001', 'utf8').toString('hex')]])
-	let forwardIdNotApplicable = (await energyToken.getPropertyTokenId(4, balancePeriod, idcs[1].options.address, 0, criteriaHashNotApplicable)).toString('hex')
+    const criteriaHashNotApplicable = await energyToken.getCriteriaHash(criteriaNotApplicable)
+	let forwardIdNotApplicable = (await energyToken.getPropertyTokenId(balancePeriod, idcs[0].options.address, 0, criteriaHashNotApplicable)).toString('hex')
     // Pad forward ID to 32 Byte.
     while(forwardIdNotApplicable.length < 64) {
 	  forwardIdNotApplicable = '0' + forwardIdNotApplicable
 	}
 
     // The transfer needs to fail for a non-applicable forward ID.
-    const abiTransferCallNotApplicable = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, complexDistributor.address, complexDistributorCertificateId, 500, '0x' + forwardIdNotApplicable).encodeABI()
-    await truffleAssert.reverts(idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCallNotApplicable).send({from: accounts[6], gas: 7000000}))
- 
+    const abiTransferCallNotApplicable = energyTokenWeb3.methods.safeTransferFrom(idcs[0].options.address, complexDistributor.address, complexDistributorCertificateId, 500, '0x' + forwardIdNotApplicable).encodeABI()
+    await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCallNotApplicable).send({from: accounts[5], gas: 7000000}))
+
     // Transfer certificates to the distributor.
-    const abiTransferCall = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, complexDistributor.address, complexDistributorCertificateId, 500, '0x' + forwardId).encodeABI()
-    await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCall).send({from: accounts[6], gas: 7000000})
+    const abiTransferCall = energyTokenWeb3.methods.safeTransferFrom(idcs[0].options.address, complexDistributor.address, complexDistributorCertificateId, 500, '0x' + forwardId).encodeABI()
+    await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCall).send({from: accounts[5], gas: 7000000})
+
+	// Grant reception approval.
+	idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "150", '0x' + forwardId).send({from: accounts[6], gas: 7000000})
+	idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "150", '0x' + forwardIdNotApplicable).send({from: accounts[6], gas: 7000000})
+
+	// Perform mint operation via execute() of IDC 0.
+	let abiMintCall = energyTokenWeb3.methods.mint('0x' + forwardId, [idcs[1].options.address], ["150"]).encodeABI()
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall).send({from: accounts[5], gas: 8000000})
+
+	let abiMintCallNotApplicable = energyTokenWeb3.methods.mint('0x' + forwardIdNotApplicable, [idcs[1].options.address], ["150"]).encodeABI()
+	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCallNotApplicable).send({from: accounts[5], gas: 8000000})
+
+	const distributeCall = async function(forwardId, value) {
+	  await complexDistributorWeb3.methods.distribute(idcs[1].options.address, '0x' + forwardId, complexDistributorCertificateId, value).send({from: accounts[0], gas: 7000000})
+	}
+
+	// Distribution needs to fail when using the non-applicable token ID.
+	await truffleAssert.reverts(distributeCall(forwardIdNotApplicable, 100))
+
+	// Partial distribution needs to work.
+	await distributeCall(forwardId, 100)
+
+	// Distribution beyond the number of forwards owned needs to fail.
+	await truffleAssert.reverts(distributeCall(forwardId, 100))
+
+	// Remaining distribution needs to work.
+	await distributeCall(forwardId, 50)
   })
 })
