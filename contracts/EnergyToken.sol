@@ -73,7 +73,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     
     // IERC165 interface signature = '0x01ffc9a7'
     // IERC1155 interface signature = '0xd9b67a26'
-    // IEnergyToken interface signature = '0x49cfca33'
+    // IEnergyToken interface signature = '0x16c97c18'
     function supportsInterface(bytes4 interfaceID) override(IERC165, ERC1155) external view returns (bool) {
         return
             interfaceID == IERC165.supportsInterface.selector ||
