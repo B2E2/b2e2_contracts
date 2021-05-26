@@ -50,7 +50,7 @@ contract ComplexDistributor is AbstractDistributor {
         
         // Make sure that _from is a storage plant.
         (, uint64 certificateBalancePeriod, ) = energyToken.getTokenIdConstituents(_id);
-        f_onlyStoragePlants(_from, certificateBalancePeriod);
+        ClaimVerifier.f_onlyStoragePlants(marketAuthority, _from, certificateBalancePeriod);
         
         // Increment internally kept balance.
         certificates[_from][forwardId][_id] += _value;
