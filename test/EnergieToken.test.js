@@ -747,6 +747,15 @@ contract('EnergyToken', function(accounts) {
   it('can create property forwards.', async function() {
 	const balancePeriod = 1737549001
 
+    // Before property forwards can be created, IDC 0 (previously a generation plant) needs to become a storage plant.
+    const jsonExistenceStorage = '{ "type": "storage", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }'
+	const dataExistenceStorage = web3.utils.toHex(jsonExistenceStorage)
+    const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }'
+    const dataMaxCon = web3.utils.toHex(jsonMaxCon)
+
+    await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, dataExistenceStorage, "", account8Sk)
+    await addClaim(idcs[0], 10140, physicalAssetAuthority.options.address, dataMaxCon, "", account8Sk)
+
 	const abiCreateForwardsCall1 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 0, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]]).encodeABI()
 	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall1).send({from: accounts[5], gas: 7000000})
 
@@ -759,7 +768,7 @@ contract('EnergyToken', function(accounts) {
   })
 
   it('distributes tokens correcty (complex distributor)', async function() {
-	// IDC 0: generation plant
+	// IDC 0: storage plant
 	// IDC 1: consumption plant
 
     const balancePeriod = 1737549001
