@@ -225,11 +225,15 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // Mint certificates unless correcting.
         if(!corrected) {
             EnergyTokenLib.ForwardKindOfGenerationPlant memory forwardKind = forwardKindOfGenerationPlant[_balancePeriod][_plant];
-            uint256 certificateId = getTokenId(TokenKind.Certificate, _balancePeriod, _plant, 0);
 
 			// If the forwards were not created, send the certificates to the generation plant. Otherwise, send them to the distributor of the forwards.
 			address certificateReceiver;
 			if(!forwardKind.set) {
+			    // When sending certificates directly to the receiver, the token family needs to be created here.
+			    // This is because function createForwards() was never called, which is how token famalies are
+			    // created in the case of certificates with forwards associated with them.
+			    createTokenFamily(_balancePeriod, _plant, 0);
+			    
 				certificateReceiver = _plant;
 			} else {
 				uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant, 0);
@@ -237,6 +241,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 				certificateReceiver = address(distributor);
 			}
 
+            uint256 certificateId = getTokenId(TokenKind.Certificate, _balancePeriod, _plant, 0);
             mint(certificateReceiver, certificateId, _value);
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint

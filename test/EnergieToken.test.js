@@ -652,6 +652,27 @@ contract('EnergyToken', function(accounts) {
     await surplusWithdrawalCall(2);
   });
 
+  it("accepts documentations without forwards having been created.", async function() {
+    const balancePeriod = 1737743401
+    
+    const abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, '20000000000000000000', balancePeriod).encodeABI()
+	await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000})
+
+	// Determine certificate IDs.
+	let certificateId = await energyToken.getTokenId(3, balancePeriod, idcs[0].options.address, 0)
+
+	// Pad token ID to full length.
+	certificateId = certificateId.toString('hex')
+	while(certificateId.length < 64) {
+	  certificateId = '0' + certificateId
+	}
+	certificateId = '0x' + certificateId
+
+    // Check balance.
+    const balance = await energyToken.balanceOf(idcs[0].options.address, certificateId)
+    assert.equal(balance, '20000000000000000000')
+  })
+
   it("keeps track of energy data.", async function() {
 	let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
 	let data = web3.utils.toHex(json);
