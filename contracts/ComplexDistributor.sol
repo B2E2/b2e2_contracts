@@ -98,7 +98,7 @@ contract ComplexDistributor is AbstractDistributor {
         // Distributor applicability check. Required because this contract holding the necessary certificates to pay the consumption plant
         // is not sufficient grouns to assume that this is the correct distributor as soon as several forwards may cause payout of the
         // same certificates.
-        //require(energyToken.id2Distributor(_forwardId) == this, "Distributor contract does not belong to this _tokenId"); // TODO: COMMENT BACK IN WHEN USING SUFFCIENTLY GENERIC TYPES
+        require(energyToken.id2Distributor(_forwardId) == this, "Distributor contract does not belong to this _tokenId");
         
         // Check whether enough forwards are present.
         distributionValueUsedUp[_consumptionPlantAddress][_forwardId][_certificateId] += _value;
