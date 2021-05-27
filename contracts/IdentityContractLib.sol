@@ -34,7 +34,7 @@ library IdentityContractLib {
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes memory _data) public {
         if(_operationType == 0) {
-            (bool success, bytes memory returnData) = _to.call{value: _value}(_data);
+            (bool success, ) = _to.call{value: _value}(_data);
             if (success == false) {
                 assembly {
                     let ptr := mload(0x40)
