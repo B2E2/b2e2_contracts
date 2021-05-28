@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
 import "./Commons.sol";
@@ -46,18 +47,12 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     }
     
     modifier onlyGenerationPlants(address _plant, uint64 _balancePeriod) {
-        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant);
-        
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "Invalid  BalanceClaim.");
-        require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", _balancePeriod) != 0, "Invalid  ExistenceClaim.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim, _balancePeriod) != 0, "Invalid  MaxPowerGenerationClaim.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "Invalid  MeteringClaim.");
-        
+        ClaimVerifier.f_onlyGenerationPlants(marketAuthority, _plant, _balancePeriod);
         _;
     }
     
     modifier onlyStoragePlants(address _plant, uint64 _balancePeriod) {
-        // TODO
+        ClaimVerifier.f_onlyStoragePlants(marketAuthority, _plant, _balancePeriod);
         _;
     }
     
@@ -107,8 +102,9 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         require(id2Distributor[_id] != AbstractDistributor(address(0)), "Forwards not created.");
         
         realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, generationPlantP);
-        require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) != 0, "Invalid  ExistenceClaim.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim) != 0, "Invalid  MaxPowerGenerationClaim.");
+        require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) != 0 ||
+          ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "storage", Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) != 0, "Invalid ExistenceClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim) != 0, "Invalid MaxPowerGenerationClaim.");
         EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, generationPlantP, realWorldPlantId, _id);
         }
 
@@ -225,11 +221,15 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // Mint certificates unless correcting.
         if(!corrected) {
             EnergyTokenLib.ForwardKindOfGenerationPlant memory forwardKind = forwardKindOfGenerationPlant[_balancePeriod][_plant];
-            uint256 certificateId = getTokenId(TokenKind.Certificate, _balancePeriod, _plant, 0);
 
 			// If the forwards were not created, send the certificates to the generation plant. Otherwise, send them to the distributor of the forwards.
 			address certificateReceiver;
 			if(!forwardKind.set) {
+			    // When sending certificates directly to the receiver, the token family needs to be created here.
+			    // This is because function createForwards() was never called, which is how token famalies are
+			    // created in the case of certificates with forwards associated with them.
+			    createTokenFamily(_balancePeriod, _plant, 0);
+			    
 				certificateReceiver = _plant;
 			} else {
 				uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant, 0);
@@ -237,6 +237,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 				certificateReceiver = address(distributor);
 			}
 
+            uint256 certificateId = getTokenId(TokenKind.Certificate, _balancePeriod, _plant, 0);
             mint(certificateReceiver, certificateId, _value);
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint

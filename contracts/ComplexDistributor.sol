@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
 import "./AbstractDistributor.sol";
@@ -50,7 +51,7 @@ contract ComplexDistributor is AbstractDistributor {
         
         // Make sure that _from is a storage plant.
         (, uint64 certificateBalancePeriod, ) = energyToken.getTokenIdConstituents(_id);
-        f_onlyStoragePlants(_from, certificateBalancePeriod);
+        ClaimVerifier.f_onlyStoragePlants(marketAuthority, _from, certificateBalancePeriod);
         
         // Increment internally kept balance.
         certificates[_from][forwardId][_id] += _value;
@@ -97,7 +98,7 @@ contract ComplexDistributor is AbstractDistributor {
         // Distributor applicability check. Required because this contract holding the necessary certificates to pay the consumption plant
         // is not sufficient grouns to assume that this is the correct distributor as soon as several forwards may cause payout of the
         // same certificates.
-        //require(energyToken.id2Distributor(_forwardId) == this, "Distributor contract does not belong to this _tokenId"); // TODO: COMMENT BACK IN WHEN USING SUFFCIENTLY GENERIC TYPES
+        require(energyToken.id2Distributor(_forwardId) == this, "Distributor contract does not belong to this _tokenId");
         
         // Check whether enough forwards are present.
         distributionValueUsedUp[_consumptionPlantAddress][_forwardId][_certificateId] += _value;

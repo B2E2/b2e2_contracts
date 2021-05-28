@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
 import "./IdentityContract.sol";
 
 abstract contract AbstractDistributor is IdentityContract {
+    // Moving this modifier to the ClaimVerifier library does not affect the size of the
+    // complex distributor at all. But it does affect the size of the ClaimVerifier library.
     modifier onlyConsumptionPlants(address _consumptionPlantAddress) {
         { // Block for avoiding stack too deep error.
         string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _consumptionPlantAddress);
@@ -15,10 +18,7 @@ abstract contract AbstractDistributor is IdentityContract {
     }
     
     modifier onlyStoragePlants(address _plant, uint64 _balancePeriod) {
-        f_onlyStoragePlants(_plant, _balancePeriod);
+        ClaimVerifier.f_onlyStoragePlants(marketAuthority, _plant, _balancePeriod);
         _;
-    }
-    function f_onlyStoragePlants(address _plant, uint64 _balancePeriod) internal {
-        // TODO
     }
 }
