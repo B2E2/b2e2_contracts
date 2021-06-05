@@ -186,7 +186,7 @@ library ClaimVerifier {
             }
         }
         
-        require(false, "_fieldName not found.");
+        require(false, string(abi.encodePacked("_fieldName ", _fieldName, " not found.")));
         return ""; // Just to silence a warning about the return value being unassigned.
     }
     
