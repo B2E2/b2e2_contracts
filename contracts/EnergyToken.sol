@@ -57,8 +57,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     }
     
     modifier onlyDistributors(address _distributor, uint64 _balancePeriod) {
-        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _distributor);
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _distributor, realWorldPlantId, ClaimCommons.ClaimType.AcceptedDistributorClaim, _balancePeriod) != 0, "Invalid AcceptedDistributorClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _distributor, "", ClaimCommons.ClaimType.AcceptedDistributorClaim, _balancePeriod) != 0, "Invalid AcceptedDistributorClaim.");
         _;
     }
 

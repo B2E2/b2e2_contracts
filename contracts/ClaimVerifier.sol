@@ -89,7 +89,7 @@ library ClaimVerifier {
             if(cTopic != topic)
                 continue;
             
-            if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || _claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
+            if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || _claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim) {
                 if(keccak256(abi.encodePacked(getRealWorldPlantId(data))) != keccak256(abi.encodePacked(_realWorldPlantId)))
                     continue;
             }
