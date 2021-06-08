@@ -226,7 +226,16 @@ library ClaimVerifier {
     // ########################
     // # Modifier functions
     // ########################
-    function f_onlyStoragePlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
+    function f_onlyGenerationPlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
+        string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant);
+        
+        require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "Invalid BalanceClaim.");
+        require(getClaimOfTypeWithMatchingField(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", _balancePeriod) != 0, "Invalid ExistenceClaim.1");
+        require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim, _balancePeriod) != 0, "Invalid MaxPowerGenerationClaim.");
+        require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "Invalid MeteringClaim.");
+    }
+    
+        function f_onlyStoragePlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
         string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant);
         
         require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "Invalid BalanceClaim.");
@@ -237,11 +246,12 @@ library ClaimVerifier {
         
     }
     
-    function f_onlyGenerationPlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
+    function f_onlyGenerationOrStoragePlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
         string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant);
         
         require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "Invalid BalanceClaim.");
-        require(getClaimOfTypeWithMatchingField(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", _balancePeriod) != 0, "Invalid ExistenceClaim.");
+        require(getClaimOfTypeWithMatchingField(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", _balancePeriod) != 0
+          || getClaimOfTypeWithMatchingField(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "storage", _balancePeriod) != 0, "Invalid ExistenceClaim.");
         require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim, _balancePeriod) != 0, "Invalid MaxPowerGenerationClaim.");
         require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "Invalid MeteringClaim.");
     }

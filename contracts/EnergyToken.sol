@@ -56,6 +56,11 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         _;
     }
     
+    modifier onlyGenerationOrStoragePlants(address _plant, uint64 _balancePeriod) {
+        ClaimVerifier.f_onlyGenerationOrStoragePlants(marketAuthority, _plant, _balancePeriod);
+        _;
+    }
+    
     modifier onlyDistributors(address _distributor, uint64 _balancePeriod) {
         require(ClaimVerifier.getClaimOfType(marketAuthority, _distributor, "", ClaimCommons.ClaimType.AcceptedDistributorClaim, _balancePeriod) != 0, "Invalid AcceptedDistributorClaim.");
         _;
@@ -204,7 +209,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         emit EnergyDocumented(PlantType.Consumption, _value, _plant, corrected, _balancePeriod, msg.sender);
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities onlyGenerationPlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) noReentrancy {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities onlyGenerationOrStoragePlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) noReentrancy {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
