@@ -147,10 +147,8 @@ contract('EnergyToken', function(accounts) {
 	// IDC 2 is the token recipient.
 
 	// Claim necessary for receiving.
-	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '","realWorldPlantId": "bestDistributor" }'
+	let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }'
 	let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor)
-    await addClaim(simpleDistributor, 10130, simpleDistributor.address, dataAcceptedDistributor, "", account0Sk);
-    await addClaim(complexDistributor, 10130, complexDistributor.address, dataAcceptedDistributor, "", account0Sk);
 	await addClaim(simpleDistributor, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk)
 	await addClaim(complexDistributor, 10120, balanceAuthority.options.address, dataAcceptedDistributor, "", account8Sk)
 
