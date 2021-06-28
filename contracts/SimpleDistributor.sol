@@ -9,9 +9,9 @@ import "./IEnergyToken.sol";
 contract SimpleDistributor is AbstractDistributor {
     EnergyToken public energyToken;
     
-    // token ID => consumption plant address => bool
+    // Token ID => consumption plant address => bool
     mapping(uint256 => mapping(address => bool)) completedDistributions;
-    // token ID => generation plant address => bool
+    // Token ID => generation plant address => bool
     mapping(uint256 => mapping(address => bool)) completedSurplusDistributions;
     mapping(uint64 => mapping(address => uint256)) numberOfCompletedConsumptionBasedDistributions;
     
@@ -51,7 +51,8 @@ contract SimpleDistributor is AbstractDistributor {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer * generatedEnergy) / totalForwards), new bytes(0));
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId,
+              Commons.min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer * generatedEnergy) / totalForwards), new bytes(0));
             return;
         }
         
@@ -60,7 +61,8 @@ contract SimpleDistributor is AbstractDistributor {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, (generationBasedForwardsOfConsumer * generatedEnergy) / 100E18, new bytes(0));
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId,
+              (generationBasedForwardsOfConsumer * generatedEnergy) / 100E18, new bytes(0));
             return;
         }
         
@@ -77,7 +79,8 @@ contract SimpleDistributor is AbstractDistributor {
                 option2 = option1;
             }
             
-            require(energyToken.numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant(balancePeriod, generationPlantAddress) == 0, "Missing energy energy documentations for at least one consumption plant.");
+            require(energyToken.numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant(balancePeriod, generationPlantAddress) == 0,
+              "Missing energy energy documentations for at least one consumption plant.");
             
             numberOfCompletedConsumptionBasedDistributions[balancePeriod][generationPlantAddress]++;
             energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(option1, option2), new bytes(0));
@@ -97,7 +100,7 @@ contract SimpleDistributor is AbstractDistributor {
     /**
      * Must only be called by generation plants. Sends surplus certificates to the calling generation plant.
      * 
-     * Surplus certificates due to rounding errors are neglected. For surplus due to unsold forwards, the reglur distribute() functions has to be called.
+     * Surplus certificates due to rounding errors are neglected. For surplus due to unsold forwards, the regular distribute() functions has to be called.
      */
     function withdrawSurplusCertificates(uint256 _tokenId) external {
         (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);

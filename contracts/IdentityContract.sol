@@ -24,7 +24,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     mapping (uint256 => bool) burnedClaimIds;
     
     // Attributes related to ERC-1155
-    // id => (sender => PerishableValue)
+    // Energy token contract => token id => (token sender => PerishableValue)
     mapping (address => mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue))) public receptionApproval;
 
     // Other attributes
@@ -39,7 +39,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     }
 
     /**
-     * Market Authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
+     * Market authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
      * Other IdentityContracts need to specify the Market Authority's address as _marketAuthority. Their specification of _balancePeriodLength will be ignored.
      */
     constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength, address _owner) {
@@ -58,10 +58,13 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
         emit IdentityContractCreation(_marketAuthority, this);
     }
     
-    // IERC165 interface signature = '0x01ffc9a7'   
-    // IERC725 interface signature = '0x6f15538d'
-    // IERC735 interface signature = '0x848a042c'    
-    // IIdentityContract interface signature = '0x1fd50459'
+    /**
+     * Interface signatures:
+     * IERC165 interface signature = '0x01ffc9a7'   
+     * IERC725 interface signature = '0x6f15538d'
+     * IERC735 interface signature = '0x848a042c'    
+     * IIdentityContract interface signature = '0x1fd50459'
+     */
     function supportsInterface(bytes4 interfaceID) override(IERC165) external view returns (bool) {
         return
             interfaceID == IERC165.supportsInterface.selector ||
@@ -79,7 +82,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
         owner = _owner;
     }
     
-    function getData(bytes32 _key) override(IERC725, IIdentityContract) external view returns (bytes memory _value) {
+    function getData(bytes32 _key) override(IERC725, IIdentityContract) external view returns (bytes memory __value) {
         return data[_key];
     }
     
@@ -112,15 +115,15 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
         __uri = claims[_claimId].uri;
     }
     
-    function getClaimIdsByTopic(uint256 _topic) override(IERC735, IIdentityContract) external view returns(uint256[] memory claimIds) {
+    function getClaimIdsByTopic(uint256 _topic) override(IERC735, IIdentityContract) external view returns(uint256[] memory __claimIds) {
         return topics2ClaimIds[_topic];
     }
     
-    function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) override(IERC735, IIdentityContract) public returns (uint256 claimRequestId) {
+    function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) override(IERC735, IIdentityContract) public returns (uint256 __claimRequestId) {
         return IdentityContractLib.addClaim(claims, topics2ClaimIds, burnedClaimIds, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
-    function removeClaim(uint256 _claimId) override(IERC735, IIdentityContract) external returns (bool success) {
+    function removeClaim(uint256 _claimId) override(IERC735, IIdentityContract) external returns (bool __success) {
         return IdentityContractLib.removeClaim(owner, claims, topics2ClaimIds, burnedClaimIds, _claimId);
     }
 
@@ -153,6 +156,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     
     function approveBatchSender(address _energyToken, address _sender, uint64 _expiryDate, uint256[] calldata _values, uint256[] calldata _ids) override(IIdentityContract) external onlyOwner {
         require(_values.length < 4294967295, "_values array is too long.");
+        require(_values.length == _ids.length, "Unequal array lengths.");
         
         for(uint32 i=0; i < _values.length; i++) {
             receptionApproval[_energyToken][_ids[i]][_sender] = IdentityContractLib.PerishableValue(_values[i], _expiryDate);

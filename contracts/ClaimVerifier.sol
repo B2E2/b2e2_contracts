@@ -14,8 +14,13 @@ library ClaimVerifier {
     // Constants ERC-735
     uint256 constant public ECDSA_SCHEME = 1;
     
+    // JSON parsing constants.
+    uint256 constant MAX_NUMBER_OF_JSON_FIELDS = 20;
+    
     /**
-     * Iff _requiredValidAt is not zero, only claims that are not expired at that time and are already valid at that time are considered. If it is set to zero, no expiration or starting date check is performed.
+     * Iff _requiredValidAt is not zero, only claims that are not expired at that time and
+     * are already valid at that time are considered. If it is set to zero, no expiration
+     * or starting date check is performed.
      */
     function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId, uint64 _requiredValidAt, bool allowFutureValidity) public view returns(bool __valid) {
         (uint256 topic, uint256 scheme, address issuer, bytes memory signature, bytes memory data, ) = IdentityContract(_subject).getClaim(_claimId);
@@ -27,15 +32,28 @@ library ClaimVerifier {
                 return false;
         }
         
-        if(claimType == ClaimCommons.ClaimType.IsBalanceAuthority || claimType == ClaimCommons.ClaimType.IsMeteringAuthority || claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || claimType == ClaimCommons.ClaimType.MarketRulesClaim || claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
+        if(claimType == ClaimCommons.ClaimType.IsBalanceAuthority
+           || claimType == ClaimCommons.ClaimType.IsMeteringAuthority
+           || claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority
+           || claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim
+           || claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim
+           || claimType == ClaimCommons.ClaimType.MarketRulesClaim
+           || claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
             return verifySignature(_subject, topic, scheme, issuer, signature, data);
         }
         
-        if(claimType == ClaimCommons.ClaimType.MeteringClaim || claimType == ClaimCommons.ClaimType.BalanceClaim || claimType == ClaimCommons.ClaimType.ExistenceClaim || claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim || claimType == ClaimCommons.ClaimType.GenerationTypeClaim || claimType == ClaimCommons.ClaimType.LocationClaim || claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
+        if(claimType == ClaimCommons.ClaimType.MeteringClaim
+           || claimType == ClaimCommons.ClaimType.BalanceClaim
+           || claimType == ClaimCommons.ClaimType.ExistenceClaim
+           || claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim
+           || claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim
+           || claimType == ClaimCommons.ClaimType.GenerationTypeClaim
+           || claimType == ClaimCommons.ClaimType.LocationClaim
+           || claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
             return verifySignature(_subject, topic, scheme, issuer, signature, data) && (getClaimOfType(marketAuthority, address(uint160(issuer)), "", ClaimCommons.getHigherLevelClaim(claimType), _requiredValidAt) != 0);
         }
         
-        require(false, "Claim verification failed because the claim type was not recognized.");
+        revert("Claim verification failed because the claim type was not recognized.");
     }
     
     function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
@@ -51,7 +69,13 @@ library ClaimVerifier {
         if(ClaimCommons.claimType2Topic(_claimType) != _topic)
             return false;
        
-        if(_claimType == ClaimCommons.ClaimType.IsBalanceAuthority || _claimType == ClaimCommons.ClaimType.IsMeteringAuthority || _claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority || _claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim || _claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim || _claimType == ClaimCommons.ClaimType.MarketRulesClaim || _claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
+        if(_claimType == ClaimCommons.ClaimType.IsBalanceAuthority
+           || _claimType == ClaimCommons.ClaimType.IsMeteringAuthority
+           || _claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority
+           || _claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim
+           || _claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim
+           || _claimType == ClaimCommons.ClaimType.MarketRulesClaim
+           || _claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
             if(_claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
                 if(_issuer != _subject)
                     return false;
@@ -64,12 +88,19 @@ library ClaimVerifier {
             return correct;
         }
         
-        if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || _claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
+        if(_claimType == ClaimCommons.ClaimType.MeteringClaim
+           || _claimType == ClaimCommons.ClaimType.BalanceClaim
+           || _claimType == ClaimCommons.ClaimType.ExistenceClaim
+           || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim
+           || _claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim
+           || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim
+           || _claimType == ClaimCommons.ClaimType.LocationClaim
+           || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
             bool correctAccordingToSecondLevelAuthority = verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
             return correctAccordingToSecondLevelAuthority && (getClaimOfType(marketAuthority, address(uint160(_issuer)), "", ClaimCommons.getHigherLevelClaim(_claimType)) != 0);
         }
         
-        require(false, "Claim validation failed because the claim type was not recognized.");
+        revert("Claim validation failed because the claim type was not recognized.");
         return false; // Just to silence a warning about the return value being unassigned.
     }
     
@@ -83,14 +114,21 @@ library ClaimVerifier {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
+        bytes32 realWorldPlantIdHash = keccak256(abi.encodePacked(_realWorldPlantId));
         for(uint64 i = 0; i < claimIds.length; i++) {
             // Checking the claim's type is important because a malicious IDC can return claims of a different topic via getClaimIdsByTopic().
             (uint256 cTopic, , , , bytes memory data,) = IdentityContract(_subject).getClaim(claimIds[i]);
             if(cTopic != topic)
                 continue;
             
-            if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || _claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim) {
-                if(keccak256(abi.encodePacked(getRealWorldPlantId(data))) != keccak256(abi.encodePacked(_realWorldPlantId)))
+            if(_claimType == ClaimCommons.ClaimType.MeteringClaim
+               || _claimType == ClaimCommons.ClaimType.BalanceClaim
+               || _claimType == ClaimCommons.ClaimType.ExistenceClaim
+               || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim
+               || _claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim
+               || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim
+               || _claimType == ClaimCommons.ClaimType.LocationClaim) {
+                if(keccak256(abi.encodePacked(getRealWorldPlantId(data))) != realWorldPlantIdHash)
                     continue;
             }
             
@@ -130,14 +168,21 @@ library ClaimVerifier {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
 
+        bytes32 realWorldPlantIdHash = keccak256(abi.encodePacked(_realWorldPlantId));
         for(uint64 i = 0; i < claimIds.length; i++) {
             (uint256 cTopic, , , , bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
             
             if(cTopic != topic)
                 continue;
             
-            if(_claimType == ClaimCommons.ClaimType.MeteringClaim || _claimType == ClaimCommons.ClaimType.BalanceClaim || _claimType == ClaimCommons.ClaimType.ExistenceClaim || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim || _claimType == ClaimCommons.ClaimType.LocationClaim || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
-                if(keccak256(abi.encodePacked(getRealWorldPlantId(cData))) != keccak256(abi.encodePacked(_realWorldPlantId)))
+            if(_claimType == ClaimCommons.ClaimType.MeteringClaim
+               || _claimType == ClaimCommons.ClaimType.BalanceClaim
+               || _claimType == ClaimCommons.ClaimType.ExistenceClaim
+               || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim
+               || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim
+               || _claimType == ClaimCommons.ClaimType.LocationClaim
+               || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
+                if(keccak256(abi.encodePacked(getRealWorldPlantId(cData))) != realWorldPlantIdHash)
                     continue;
             }
             
@@ -174,19 +219,20 @@ library ClaimVerifier {
     
     function getStringField(string memory _fieldName, bytes memory _data) public pure returns(string memory) {
         string memory json = string(_data);
-        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 20);
+        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, MAX_NUMBER_OF_JSON_FIELDS);
 
         require(exitCode == 0, "Error in getStringField. Exit code is not 0.");
+        bytes32 fieldNameHash = keccak256(abi.encodePacked(_fieldName));
         for(uint i = 1; i < numberOfTokensFound; i += 2) {
             JsmnSolLib.Token memory keyToken = tokens[i];
             JsmnSolLib.Token memory valueToken = tokens[i+1];
             
-            if(keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end))) == keccak256(abi.encodePacked(_fieldName))) {
+            if(keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end))) == fieldNameHash) {
                 return JsmnSolLib.getBytes(json, valueToken.start, valueToken.end);
             }
         }
         
-        require(false, string(abi.encodePacked("_fieldName ", _fieldName, " not found.")));
+        revert(string(abi.encodePacked("_fieldName ", _fieldName, " not found.")));
         return ""; // Just to silence a warning about the return value being unassigned.
     }
     
@@ -261,15 +307,17 @@ library ClaimVerifier {
     // ########################
     function doesMatchingFieldExist(string memory _fieldName, string memory _fieldContent, bytes memory _data) internal pure returns(bool) {
         string memory json = string(_data);
-        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, 20);
+        (uint exitCode, JsmnSolLib.Token[] memory tokens, uint numberOfTokensFound) = JsmnSolLib.parse(json, MAX_NUMBER_OF_JSON_FIELDS);
         require(exitCode == 0, "Error in doesMatchingFieldExist. Exit code is not 0.");
         
+        bytes32 fieldNameHash = keccak256(abi.encodePacked(_fieldName));
+        bytes32 fieldContentHash = keccak256(abi.encodePacked(_fieldContent));
         for(uint i = 1; i < numberOfTokensFound; i += 2) {
             JsmnSolLib.Token memory keyToken = tokens[i];
             JsmnSolLib.Token memory valueToken = tokens[i+1];
 
-            if((keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end))) == keccak256(abi.encodePacked(_fieldName))) &&
-            (keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, valueToken.start, valueToken.end))) == keccak256(abi.encodePacked(_fieldContent)))) {
+            if((keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, keyToken.start, keyToken.end))) == fieldNameHash) &&
+            (keccak256(abi.encodePacked(JsmnSolLib.getBytes(json, valueToken.start, valueToken.end))) == fieldContentHash)) {
                 return true;
             }
         }
@@ -284,7 +332,15 @@ library ClaimVerifier {
         return ECDSA.recover(_claimInSigningFormat, _signature);
     }
     
-    // https://stackoverflow.com/a/40939341
+    /**
+     * Checks whether the address points to a contract by checking whether there is code
+     * for that address.
+     * 
+     * Is not 100% reliable as someone could state an address and only later deploy a
+     * contract to that address.
+     * 
+     * Source: https://stackoverflow.com/a/40939341
+    */
     function isContract(address _addr) internal view returns (bool) {
         uint size;
         assembly { size := extcodesize(_addr) }

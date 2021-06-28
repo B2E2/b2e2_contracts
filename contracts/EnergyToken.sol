@@ -112,6 +112,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, generationPlantP, realWorldPlantId, _id);
         }
 
+        // Perform a mint operation for each recipient.
         for (uint256 i = 0; i < _to.length; ++i) {
             address to = _to[i];
             uint256 quantity = _quantities[i];
@@ -131,7 +132,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
                 require(supply[_id] * (1000 * 3600) <= EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId) * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
 
             // Emit the Transfer/Mint event.
-            // the 0x0 source address implies a mint
+            // The 0x0 source address implies a mint.
             // It will also provide the circulating supply info.
             emit TransferSingle(msg.sender, address(0x0), to, _id, quantity);
 
@@ -196,8 +197,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         if(energyDocumentations[_plant][_balancePeriod].entered) {
             corrected = true;
         } else {
-        address[] storage affectedGenerationPlants = relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_plant];
-            for(uint32 i = 0; i < affectedGenerationPlants.length; i++) {
+            address[] storage affectedGenerationPlants = relevantGenerationPlantsForConsumptionPlant[_balancePeriod][_plant];
+            for(uint32 i = 0; i < affectedGenerationPlants.length; ++i) {
                 energyConsumedRelevantForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]] += _value;
                 numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][affectedGenerationPlants[i]]--;
             }
@@ -226,20 +227,20 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         if(!corrected) {
             EnergyTokenLib.ForwardKindOfGenerationPlant memory forwardKind = forwardKindOfGenerationPlant[_balancePeriod][_plant];
 
-			// If the forwards were not created, send the certificates to the generation plant. Otherwise, send them to the distributor of the forwards.
-			address certificateReceiver;
-			if(!forwardKind.set) {
-			    // When sending certificates directly to the receiver, the token family needs to be created here.
-			    // This is because function createForwards() was never called, which is how token famalies are
-			    // created in the case of certificates with forwards associated with them.
-			    createTokenFamily(_balancePeriod, _plant, 0);
-			    
-				certificateReceiver = _plant;
-			} else {
-				uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant, 0);
-				AbstractDistributor distributor = id2Distributor[forwardId];
-				certificateReceiver = address(distributor);
-			}
+            // If the forwards were not created, send the certificates to the generation plant. Otherwise, send them to the distributor of the forwards.
+            address certificateReceiver;
+            if(!forwardKind.set) {
+                // When sending certificates directly to the receiver, the token family needs to be created here.
+                // This is because function createForwards() was never called, which is how token famalies are
+                // created in the case of certificates with forwards associated with them.
+                createTokenFamily(_balancePeriod, _plant, 0);
+                
+                certificateReceiver = _plant;
+            } else {
+                uint256 forwardId = getTokenId(forwardKind.forwardKind, _balancePeriod, _plant, 0);
+                AbstractDistributor distributor = id2Distributor[forwardId];
+                certificateReceiver = address(distributor);
+            }
 
             uint256 certificateId = getTokenId(TokenKind.Certificate, _balancePeriod, _plant, 0);
             mint(certificateReceiver, certificateId, _value);
@@ -269,7 +270,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         
         string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant); 
         uint256 maxCon = EnergyTokenLib.getPlantConsumptionCapability(marketAuthority, _plant, realWorldPlantId);
-        // Only check if max consumption capability is known
+        // Only check if max consumption capability is known.
         if (maxCon != 0)
             require(_value * 1000 * 3600 <= maxCon * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
     }
@@ -362,7 +363,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // ERC1155.safeBatchTransferFrom(_from, _to, _ids, _values, _data);
         // ########################
         // MUST Throw on errors
-        require(_ids.length == _values.length, "_ids and _values array lenght must match.");
+        require(_ids.length == _values.length, "_ids and _values array length must match.");
         require(_from == msg.sender || operatorApproval[_from][msg.sender] == true, "Need operator approval for 3rd party transfers.");
 
         for (uint256 i = 0; i < _ids.length; ++i) {
