@@ -10,6 +10,9 @@ import "./IdentityContract.sol";
 import "./IdentityContractLib.sol";
 import "./ClaimCommons.sol";
 
+/**
+ * This library contains functionality that concerns the verification of claims.
+ */
 library ClaimVerifier {
     // Constants ERC-735
     uint256 constant public ECDSA_SCHEME = 1;

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
+/**
+ * This library contains functionality that concerns the entire code base.
+ */
 library Commons {
     /**
     * Balance period does not start at 00:00:00 + i*15:00 but at 00:00:01 + i*15:00.

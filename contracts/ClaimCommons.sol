@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
-/*
-* Everything in this contract actually shouldn't be its own contract but static members of IdentityContractFactory. However, Solidity seems to be lacking this feature.
-* So all contracts which need to access these enums and methods instead are subcontracts of this contract.
-*/
+/**
+ * This library contains functionality and constants shared between contracts throughout the codebase.
+ * It only contains functionality and constants that concern claims.
+ */
 library ClaimCommons {
     // Claims can have different types (ERC-735 calles these claim topics). This enum
     // contains all types that are of interest for this contract stack.

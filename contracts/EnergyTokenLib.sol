@@ -5,6 +5,9 @@ import "./IEnergyToken.sol";
 import "./ClaimVerifier.sol";
 import "./AbstractDistributor.sol";
 
+/**
+ * This library contains functionality that contains the EnergyToken contract.
+ */
 library EnergyTokenLib {
     struct EnergyDocumentation {
         IdentityContract documentingMeteringAuthority;
@@ -106,7 +109,8 @@ library EnergyTokenLib {
     /**
      * Checks all claims required for the particular given transfer regarding the sending side.
      */
-    function checkClaimsForTransferSending(IdentityContract marketAuthority, mapping(uint256 => AbstractDistributor) storage id2Distributor, address payable _from, string memory _realWorldPlantId, uint256 _id) public view {
+    function checkClaimsForTransferSending(IdentityContract marketAuthority, mapping(uint256 => AbstractDistributor) storage id2Distributor,
+      address payable _from, string memory _realWorldPlantId, uint256 _id) public view {
         IEnergyToken.TokenKind tokenKind = tokenKindFromTokenId(_id);
         if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward || tokenKind == IEnergyToken.TokenKind.GenerationBasedForward || tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward
           || tokenKind == IEnergyToken.TokenKind.PropertyForward) {
@@ -131,7 +135,8 @@ library EnergyTokenLib {
     /**
      * Checks all claims required for the particular given transfer regarding the reception side.
      */
-    function checkClaimsForTransferReception(IdentityContract marketAuthority, mapping(uint256 => AbstractDistributor) storage id2Distributor, address payable _to, string memory _realWorldPlantId, uint256 _id) public view {
+    function checkClaimsForTransferReception(IdentityContract marketAuthority, mapping(uint256 => AbstractDistributor) storage id2Distributor,
+      address payable _to, string memory _realWorldPlantId, uint256 _id) public view {
         IEnergyToken.TokenKind tokenKind = tokenKindFromTokenId(_id);
         if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward || tokenKind == IEnergyToken.TokenKind.GenerationBasedForward || tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward
           || tokenKind == IEnergyToken.TokenKind.PropertyForward) {
@@ -146,7 +151,8 @@ library EnergyTokenLib {
 
             (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             AbstractDistributor distributor = id2Distributor[_id];
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver) != 0, "Invalid AcceptedDistributorClaim.");
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver) != 0,
+              "Invalid AcceptedDistributorClaim.");
             return;
         }
         

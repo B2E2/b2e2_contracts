@@ -3,6 +3,10 @@ pragma solidity ^0.8.1;
 
 import "./IdentityContract.sol";
 
+/**
+ * This contract contains the functionality shared between SimpleDistributor and ComplexDistributor
+ * that is not contained in IdentityContract.
+ */
 abstract contract AbstractDistributor is IdentityContract {
     // Moving this modifier to the ClaimVerifier library does not affect the size of the
     // complex distributor at all. But it does affect the size of the ClaimVerifier library.

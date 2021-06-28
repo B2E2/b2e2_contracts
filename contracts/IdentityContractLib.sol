@@ -7,15 +7,10 @@ import "./ClaimCommons.sol";
 import "./ClaimVerifier.sol";
 import "./IdentityContract.sol";
 
+/**
+ * This library contains functionality that concerns the IdentityContract.
+ */
 library IdentityContractLib {
-    // Events ERC-725 (partially)
-    event ContractCreated(address indexed contractAddress);
-    
-    // Events ERC-735 (partially)
-    event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    
     // Structs related to ERC-1155
     struct PerishableValue {
         uint256 value;
@@ -31,6 +26,14 @@ library IdentityContractLib {
         bytes data;
         string uri;
     }
+    
+    // Events ERC-725 (partially)
+    event ContractCreated(address indexed contractAddress);
+    
+    // Events ERC-735 (partially)
+    event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     
     function execute(uint256 _operationType, address _to, uint256 _value, bytes memory _data) public {
         if(_operationType == 0) {

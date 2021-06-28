@@ -6,6 +6,10 @@ import "./EnergyToken.sol";
 import "./EnergyTokenLib.sol";
 import "./IEnergyToken.sol";
 
+/**
+ * The SimpleDistributor distributes certificates based on all forward kinds except
+ * for property forwards.
+ */
 contract SimpleDistributor is AbstractDistributor {
     EnergyToken public energyToken;
     

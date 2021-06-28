@@ -7,13 +7,11 @@ import "./IERC725.sol";
 import "./IERC735.sol";
 import "./IERC165.sol";
 
+/**
+ * An IdentityContract represents a user (i.e. a retail user or an authority, but also a distributor contract)
+ * on the blockchain.
+ */
 contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
-    // Events related to ERC-1155
-    event RequestTransfer(address recipient, address sender, uint256 value, uint64 expiryDate, uint256 tokenId);
-    
-    // Other events.
-    event IdentityContractCreation(IdentityContract indexed marketAuthority, IdentityContract identityContract);
-    
     // Attributes ERC-725
     address public owner;
     mapping (bytes32 => bytes) public data;
@@ -37,6 +35,12 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
         require(msg.sender == owner || msg.sender == address(this), "Only owner.");
         _;
     }
+    
+    // Events related to ERC-1155
+    event RequestTransfer(address recipient, address sender, uint256 value, uint64 expiryDate, uint256 tokenId);
+    
+    // Other events.
+    event IdentityContractCreation(IdentityContract indexed marketAuthority, IdentityContract identityContract);
 
     /**
      * Market authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
@@ -106,7 +110,8 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     }
     
     // Functions ERC-735
-    function getClaim(uint256 _claimId) override(IERC735, IIdentityContract) external view returns(uint256 __topic, uint256 __scheme, address __issuer, bytes memory __signature, bytes memory __data, string memory __uri) {
+    function getClaim(uint256 _claimId) override(IERC735, IIdentityContract) external view returns(uint256 __topic, uint256 __scheme,
+      address __issuer, bytes memory __signature, bytes memory __data, string memory __uri) {
         __topic = claims[_claimId].topic;
         __scheme = claims[_claimId].scheme;
         __issuer = claims[_claimId].issuer;
@@ -119,7 +124,8 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
         return topics2ClaimIds[_topic];
     }
     
-    function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) override(IERC735, IIdentityContract) public returns (uint256 __claimRequestId) {
+    function addClaim(uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri)
+      override(IERC735, IIdentityContract) public returns (uint256 __claimRequestId) {
         return IdentityContractLib.addClaim(claims, topics2ClaimIds, burnedClaimIds, marketAuthority, _topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
@@ -141,7 +147,8 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
         return 0xf23a6e61;
     }
     
-    function onERC1155BatchReceived(address /*_operator*/, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata /*_data*/) virtual override(IIdentityContract) external returns(bytes4) {
+    function onERC1155BatchReceived(address /*_operator*/, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata /*_data*/)
+      virtual override(IIdentityContract) external returns(bytes4) {
         for(uint32 i = 0; i < _ids.length; i++) {
             IdentityContractLib.consumeReceptionApproval(receptionApproval, balancePeriodLength, _ids[i], _from, _values[i]);
         }

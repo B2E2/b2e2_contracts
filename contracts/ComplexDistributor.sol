@@ -6,6 +6,10 @@ import "./EnergyToken.sol";
 import "./EnergyTokenLib.sol";
 import "./IEnergyToken.sol";
 
+/**
+ * The ComplexDistributor is used to distribute certificates based on the ownership of
+ * property forwards.
+ */
 contract ComplexDistributor is AbstractDistributor {
     EnergyToken public energyToken;
     
@@ -68,32 +72,6 @@ contract ComplexDistributor is AbstractDistributor {
         return 0xbc197c81;
     }
     
-    function checkApplicability(uint256 _certificateId, uint256 _forwardId) internal view {
-        (, uint64 certificateBalancePeriod, address certificateGenerationPlant) = energyToken.getTokenIdConstituents(_certificateId);
-        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, certificateGenerationPlant);
-        
-        require(propertyForwardsCriteriaSet[_forwardId], "criteria not set");
-        
-        EnergyTokenLib.Criterion[] storage criteria = propertyForwardsCriteria[_forwardId];
-        require(criteria.length > 0, "criteria length is zero");
-        
-        for(uint32 i = 0; i < criteria.length; i++) {
-            EnergyTokenLib.Criterion storage criterion = criteria[i];
-            
-            ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(criterion.topicId);
-
-            if(criterion.operator == EnergyTokenLib.Operator.eq) {
-                if(criterion.fieldValue.length > 0)
-                    require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, certificateGenerationPlant, realWorldPlantId, claimType, criterion.fieldName, string(criterion.fieldValue), certificateBalancePeriod) != 0, "certificate ID not applicable");
-                else
-                    require(ClaimVerifier.getClaimOfType(marketAuthority, certificateGenerationPlant, realWorldPlantId, claimType, certificateBalancePeriod) != 0, "certificate ID not applicable");
-            } else {
-                // TODO: implement
-                require(false, "not yet implemented");
-            }
-        }
-    }
-    
     function distribute(address payable _consumptionPlantAddress, uint256 _forwardId, uint256 _certificateId, uint256 _value) external {
         // Distributor applicability check. Required because this contract holding the necessary certificates to pay the consumption plant
         // is not sufficient grouns to assume that this is the correct distributor as soon as several forwards may cause payout of the
@@ -130,5 +108,34 @@ contract ComplexDistributor is AbstractDistributor {
     function withdrawSurplusCertificates(uint256 _forwardId, uint256 _certificateId, uint256 _value) external {
         certificates[msg.sender][_forwardId][_certificateId] -= _value;
         energyToken.safeTransferFrom(address(this), msg.sender, _certificateId, _value, new bytes(0));
+    }
+    
+    // ########################
+    // # Internal functions
+    // ########################
+    function checkApplicability(uint256 _certificateId, uint256 _forwardId) internal view {
+        (, uint64 certificateBalancePeriod, address certificateGenerationPlant) = energyToken.getTokenIdConstituents(_certificateId);
+        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, certificateGenerationPlant);
+        
+        require(propertyForwardsCriteriaSet[_forwardId], "criteria not set");
+        
+        EnergyTokenLib.Criterion[] storage criteria = propertyForwardsCriteria[_forwardId];
+        require(criteria.length > 0, "criteria length is zero");
+        
+        for(uint32 i = 0; i < criteria.length; i++) {
+            EnergyTokenLib.Criterion storage criterion = criteria[i];
+            
+            ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(criterion.topicId);
+
+            if(criterion.operator == EnergyTokenLib.Operator.eq) {
+                if(criterion.fieldValue.length > 0)
+                    require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, certificateGenerationPlant, realWorldPlantId, claimType, criterion.fieldName, string(criterion.fieldValue), certificateBalancePeriod) != 0, "certificate ID not applicable");
+                else
+                    require(ClaimVerifier.getClaimOfType(marketAuthority, certificateGenerationPlant, realWorldPlantId, claimType, certificateBalancePeriod) != 0, "certificate ID not applicable");
+            } else {
+                // TODO: implement
+                require(false, "not yet implemented");
+            }
+        }
     }
 }
