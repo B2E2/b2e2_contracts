@@ -31,6 +31,12 @@ contract SimpleDistributor is AbstractDistributor {
         testing = _testing;
     }
     
+    function supportsInterface(bytes4 interfaceID) override(IdentityContract) external view returns (bool) {
+        return
+            IdentityContract(this).supportsInterface(interfaceID) ||
+            interfaceID == SimpleDistributor.distribute.selector ^ SimpleDistributor.withdrawSurplusCertificates.selector;
+    }
+    
     function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) external onlyConsumptionPlants(_consumptionPlantAddress) {
         // Distributor applicability check. Required because this contract holding the necessary certificates to pay the consumption plant
         // is not sufficient grouns to assume that this is the correct distributor as soon as several forwards may cause payout of the

@@ -34,6 +34,12 @@ contract ComplexDistributor is AbstractDistributor {
         testing = _testing;
     }
     
+    function supportsInterface(bytes4 interfaceID) override(IdentityContract) external view returns (bool) {
+        return
+            IdentityContract(this).supportsInterface(interfaceID) ||
+            interfaceID == ComplexDistributor.setPropertyForwardsCriteria.selector ^ ComplexDistributor.distribute.selector ^ ComplexDistributor.withdrawSurplusCertificates.selector;
+    }
+    
     function setPropertyForwardsCriteria(uint256 _tokenId, EnergyTokenLib.Criterion[] calldata _criteria) external onlyEnergyToken {
         require(!propertyForwardsCriteriaSet[_tokenId], "criteria already set");
         propertyForwardsCriteriaSet[_tokenId] = true;

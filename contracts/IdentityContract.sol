@@ -69,7 +69,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
      * IERC735 interface signature = '0x848a042c'    
      * IIdentityContract interface signature = '0x1fd50459'
      */
-    function supportsInterface(bytes4 interfaceID) override(IERC165) external view returns (bool) {
+    function supportsInterface(bytes4 interfaceID) override(IERC165) external virtual view returns (bool) {
         return
             interfaceID == IERC165.supportsInterface.selector ||
             interfaceID == IERC725.execute.selector ^ IERC725.getData.selector ^ IERC725.setData.selector ||
