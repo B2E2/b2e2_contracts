@@ -62,19 +62,14 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
         emit IdentityContractCreation(_marketAuthority, this);
     }
     
-    /**
-     * Interface signatures:
-     * IERC165 interface signature = '0x01ffc9a7'   
-     * IERC725 interface signature = '0x6f15538d'
-     * IERC735 interface signature = '0x848a042c'    
-     * IIdentityContract interface signature = '0x1fd50459'
-     */
+    // For the definitions of the interface identifiers, see InterfaceIds.sol.
     function supportsInterface(bytes4 interfaceID) override(IERC165) external virtual view returns (bool) {
+        //return true;
         return
-            interfaceID == IERC165.supportsInterface.selector ||
-            interfaceID == IERC725.execute.selector ^ IERC725.getData.selector ^ IERC725.setData.selector ||
-            interfaceID == IERC735.getClaim.selector ^ IERC735.getClaimIdsByTopic.selector ^ IERC735.addClaim.selector ^ IERC735.removeClaim.selector ||                      
-            interfaceID == IIdentityContract.changeOwner.selector ^ IIdentityContract.getData.selector ^ IIdentityContract.setData.selector ^ IIdentityContract.execute.selector ^ IIdentityContract.getClaim.selector ^ IIdentityContract.getClaimIdsByTopic.selector ^ IIdentityContract.addClaim.selector ^ IIdentityContract.removeClaim.selector ^ IIdentityContract.burnClaimId.selector ^ IIdentityContract.reinstateClaimId.selector ^ IIdentityContract.onERC1155Received.selector ^ IIdentityContract.onERC1155BatchReceived.selector ^ IIdentityContract.approveSender.selector ^ IIdentityContract.approveBatchSender.selector;
+            interfaceID == 0x01ffc9a7 ||
+            interfaceID == 0x6f15538d ||
+            interfaceID == 0x848a042c ||
+            interfaceID == 0x1fd50459;
     }
   
     function selfdestructIdc() override(IIdentityContract) external onlyOwner {

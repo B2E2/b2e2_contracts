@@ -73,14 +73,13 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         marketAuthority = _marketAuthority;
     }
     
-    // IERC165 interface signature = '0x01ffc9a7'
-    // IERC1155 interface signature = '0xd9b67a26'
-    // IEnergyToken interface signature = '0x16c97c18'
+    // For the definitions of the interface identifiers, see InterfaceIds.sol.
     function supportsInterface(bytes4 interfaceID) override(IERC165, ERC1155) external view returns (bool) {
+        //return true;
         return
-            interfaceID == IERC165.supportsInterface.selector ||
-            interfaceID == ERC1155.safeTransferFrom.selector ^ ERC1155.safeBatchTransferFrom.selector ^ ERC1155.balanceOf.selector ^ ERC1155.balanceOfBatch.selector ^ ERC1155.setApprovalForAll.selector ^ ERC1155.isApprovedForAll.selector ||
-            interfaceID == IEnergyToken.decimals.selector ^ IEnergyToken.mint.selector ^ IEnergyToken.createForwards.selector ^ IEnergyToken.createPropertyForwards.selector ^ IEnergyToken.addMeasuredEnergyConsumption.selector ^ IEnergyToken.addMeasuredEnergyGeneration.selector ^ IEnergyToken.createTokenFamily.selector ^ IEnergyToken.temporallyTransportCertificates.selector ^ IEnergyToken.safeTransferFrom.selector ^ IEnergyToken.safeBatchTransferFrom.selector ^ IEnergyToken.getTokenId.selector ^ IEnergyToken.getPropertyTokenId.selector ^ IEnergyToken.getCriteriaHash.selector ^ IEnergyToken.getTokenIdConstituents.selector ^ IEnergyToken.tokenKind2Number.selector ^ IEnergyToken.number2TokenKind.selector ^ IEnergyToken.getInitialGenerationPlant.selector;
+            interfaceID == 0x01ffc9a7 ||
+            interfaceID == 0xd9b67a26 ||
+            interfaceID == 0x16c97c18;
     }
     
     function decimals() external override(IEnergyToken) pure returns (uint8) {

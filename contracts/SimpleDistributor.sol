@@ -31,10 +31,15 @@ contract SimpleDistributor is AbstractDistributor {
         testing = _testing;
     }
     
+    // For the definitions of the interface identifiers, see InterfaceIds.sol.
     function supportsInterface(bytes4 interfaceID) override(IdentityContract) external view returns (bool) {
+        //return true;
         return
-            IdentityContract(this).supportsInterface(interfaceID) ||
-            interfaceID == SimpleDistributor.distribute.selector ^ SimpleDistributor.withdrawSurplusCertificates.selector;
+            interfaceID == 0x01ffc9a7 ||
+            interfaceID == 0x6f15538d ||
+            interfaceID == 0x848a042c ||
+            interfaceID == 0x1fd50459 ||
+            interfaceID == 0xad467c35;
     }
     
     function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) external onlyConsumptionPlants(_consumptionPlantAddress) {

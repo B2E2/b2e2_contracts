@@ -34,10 +34,15 @@ contract ComplexDistributor is AbstractDistributor {
         testing = _testing;
     }
     
+    // For the definitions of the interface identifiers, see InterfaceIds.sol.
     function supportsInterface(bytes4 interfaceID) override(IdentityContract) external view returns (bool) {
+        //return true;
         return
-            IdentityContract(this).supportsInterface(interfaceID) ||
-            interfaceID == ComplexDistributor.setPropertyForwardsCriteria.selector ^ ComplexDistributor.distribute.selector ^ ComplexDistributor.withdrawSurplusCertificates.selector;
+            interfaceID == 0x01ffc9a7 ||
+            interfaceID == 0x6f15538d ||
+            interfaceID == 0x848a042c ||
+            interfaceID == 0x1fd50459 ||
+            interfaceID == 0x2e33b44b;
     }
     
     function setPropertyForwardsCriteria(uint256 _tokenId, EnergyTokenLib.Criterion[] calldata _criteria) external onlyEnergyToken {
