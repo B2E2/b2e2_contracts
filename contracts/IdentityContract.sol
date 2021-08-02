@@ -64,7 +64,6 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     
     // For the definitions of the interface identifiers, see InterfaceIds.sol.
     function supportsInterface(bytes4 interfaceID) override(IERC165) external virtual view returns (bool) {
-        //return true;
         return
             interfaceID == 0x01ffc9a7 ||
             interfaceID == 0x6f15538d ||

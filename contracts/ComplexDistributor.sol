@@ -36,7 +36,6 @@ contract ComplexDistributor is AbstractDistributor {
     
     // For the definitions of the interface identifiers, see InterfaceIds.sol.
     function supportsInterface(bytes4 interfaceID) override(IdentityContract) external view returns (bool) {
-        //return true;
         return
             interfaceID == 0x01ffc9a7 ||
             interfaceID == 0x6f15538d ||
