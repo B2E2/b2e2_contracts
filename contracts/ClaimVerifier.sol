@@ -104,7 +104,6 @@ library ClaimVerifier {
         }
         
         revert("Claim validation failed because the claim type was not recognized.");
-        return false; // Just to silence a warning about the return value being unassigned.
     }
     
     /**
@@ -236,7 +235,6 @@ library ClaimVerifier {
         }
         
         revert(string(abi.encodePacked("_fieldName ", _fieldName, " not found.")));
-        return ""; // Just to silence a warning about the return value being unassigned.
     }
     
     function getExpiryDate(bytes memory _data) public pure returns(uint64) {
