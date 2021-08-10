@@ -26,12 +26,12 @@ contract InterfaceIds {
     }
     
     // 0x1fd50459
-    function getInterfaceIdIdentityContract() external pure returns(bytes4) {
+    function getInterfaceIdIIdentityContract() external pure returns(bytes4) {
         return IIdentityContract.changeOwner.selector ^ IIdentityContract.getData.selector ^ IIdentityContract.setData.selector ^ IIdentityContract.execute.selector ^ IIdentityContract.getClaim.selector ^ IIdentityContract.getClaimIdsByTopic.selector ^ IIdentityContract.addClaim.selector ^ IIdentityContract.removeClaim.selector ^ IIdentityContract.burnClaimId.selector ^ IIdentityContract.reinstateClaimId.selector ^ IIdentityContract.onERC1155Received.selector ^ IIdentityContract.onERC1155BatchReceived.selector ^ IIdentityContract.approveSender.selector ^ IIdentityContract.approveBatchSender.selector;
     }
     
     // 0xd9b67a26
-    function getInterfaceIdERC1155() external pure returns(bytes4) {
+    function getInterfaceIdIERC1155() external pure returns(bytes4) {
         return ERC1155.safeTransferFrom.selector ^ ERC1155.safeBatchTransferFrom.selector ^ ERC1155.balanceOf.selector ^ ERC1155.balanceOfBatch.selector ^ ERC1155.setApprovalForAll.selector ^ ERC1155.isApprovedForAll.selector;
     }
     
@@ -41,12 +41,12 @@ contract InterfaceIds {
     }
     
     // 0xad467c35
-    function getInterfaceIdSimpleDistributor() external pure returns(bytes4) {
+    function getInterfaceIdISimpleDistributor() external pure returns(bytes4) {
         return ComplexDistributor.setPropertyForwardsCriteria.selector ^ ComplexDistributor.distribute.selector ^ ComplexDistributor.withdrawSurplusCertificates.selector;
     }
     
     // 0x2e33b44b
-    function getInterfaceIdComplexDistributor() external pure returns(bytes4) {
+    function getInterfaceIdIComplexDistributor() external pure returns(bytes4) {
         return SimpleDistributor.distribute.selector ^ SimpleDistributor.withdrawSurplusCertificates.selector;
     }
 }
