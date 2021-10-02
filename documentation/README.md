@@ -41,7 +41,7 @@ Signaturschema. Desweiteren beinhaltet ein Claim ein Gültigkeitszeitraum und, i
 | Is Physical Asset Authority Claim | Market Authority                    | Physical Asset Authority            | Market Authority authentifiziert und autorisiert den Identity Contract der Physical Asset Authority.                                            |
 | Metering Claim                    | Metering Authority                  | Consumption Plant, Generation Plant | Metering Authority bestätigt, dass sie die Messwerte der Anlage dem Blockchain Netzwerk bereitstellt.                                           |
 | Balance Claim                     | Balance Authority                   | Consumption Plant, Generation Plant | Balance Authority bestätigt, dass sie die Anlage in einem registrierten Bilanzkreis aufnimmt und bilanziell energetische Fehlmengen ausgleicht. |
-| Existence Claim                   | Physical Asset Authority            | Consumption Plant, Generation Plant | Physical Asset Authority bestätigt, dass die Anlage existiert und an das öffentliche Netz angeschlossen ist.                                    |
+| Existence Claim                   | Physical Asset Authority            | Consumption Plant, Generation Plant | Physical Asset Authority bestätigt, dass die Anlage existiert und an das öffentliche Netz angeschlossen ist. Zudem wird der Typ der Anlage spezifiziert (Erzeuger, Verbraucher, Speicher).                                    |
 | Generation Type Claim             | Physical Asset Authority            | Consumption Plant, Generation Plant | Physical Asset Authority bestätigt die Eigenschaften der Anlage (Verbraucher oder Erzeuger, Art der Erzeugung).                                 |
 | Location Claim                    | Physical Asset Authority            | Consumption Plant, Generation Plant | Physical Asset Authority bestätigt den Standort der Anlage.                                                                                     |
 | Identity Contract Factory Claim   | Market Authority                    | Market Authority                    | Market Authority veröffentlicht die Adresse der Identity Contract Factory.                                                                      |
@@ -151,6 +151,15 @@ Energiemenge dem Verbraucher in Rechnung. Die Rechnung kann auch eine Gutschrift
 Verbraucher oder Erzeuger darstellen.
 
 <img src="./images/42.png"></img>
+
+# Erweiterung: Abbildung von Speichern
+
+Ein Speicher ist ein Identity Contract mit einem Existence Claim mit der Eigenschaft "type=storage".
+Speicher können mit sogenannten Property Forwards Energie verkaufen. 
+Im Gegesatz zu den bisher eingeführten Forwards beziehen sich Property Forwards nicht auf spezifische Anlagen, sondern auf Eigenschaften.
+Beispielsweise kann ein Speicher mit Property Forwards Energie mit der Eigenschaft "Windkraft" für einen zukünftigen Bilanzzeitraum verkaufen, ohne die zugrunde liegenden Erzeugungsanlagen zum Zeitpunkt des Verkaufs angeben zu müssen. 
+Wenn Speicher Energie in das Netz einspeisen, dann werden keine neuen Certificates erstellt und an die Verbraucher geschickt. Stattdessen werden die ursprünglichen Certificates, welche der Speicher von den Erzeugungsanlagen erhalten hat, umgewandelt und an die Verbraucher geschickt. Bei dieser Umwandlung wird zum einen der Bilanzzeitraum angepasst und zum anderen die Informationen der alten Certificates referenziert. Durch die Referenz der alten Certificates sind Energieflüsse über mehrere Anlagen hinweg bilanziell nachvollziehbar. Ein Verbraucher, welcher Zertifikate von einem Speicher bekommen hat, kann somit einsehen von welcher Erzeugungsanlage diese Energie ursprünglich bilanziell generiert worden ist und welche Speicher diese Energie auf dem Weg zum Verbraucher bilanziell zwischengespeichert haben.
+
 
 # Begriffserklärungen
 
