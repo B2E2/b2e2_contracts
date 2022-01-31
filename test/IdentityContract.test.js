@@ -110,36 +110,36 @@ contract('IdentityContract', function(accounts) {
   });
 
   async function signatureVerificationTest(message) {
-	let subject = idcs[2].address;
+	const subject = idcs[2].address;
 	
-	let topic = 42;
-	let scheme = 1;
-	let issuer = accounts[9];
-	let data = web3.utils.toHex(message);
-	let hash = web3.utils.soliditySha3(subject, topic, data);
+	const topic = 42;
+	const scheme = 1;
+	const issuer = accounts[9];
+	const data = web3.utils.toHex(message);
+	const hash = web3.utils.soliditySha3(subject, topic, data);
 
-	let signature3 = await eutil.ecsign(new Buffer(hash.slice(2), "hex"), new Buffer(account9Sk.slice(2), "hex"));
-	let signature4 = '0x' + signature3.r.toString('hex') + signature3.s.toString('hex') + signature3.v.toString(16);
+	const signature3 = await eutil.ecsign(new Buffer(hash.slice(2), "hex"), new Buffer(account9Sk.slice(2), "hex"));
+	const signature4 = '0x' + signature3.r.toString('hex') + signature3.s.toString('hex') + signature3.v.toString(16);
 
-	let resultCorrectSignatureGiven = await claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, signature4, data);
-	let resultWrongIssuerGiven = await claimVerifier.verifySignature(idcs[2].address, topic, scheme, accounts[8], signature4, data);
-	let resultWrongSignatureGiven = await claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, "0xab" + signature4.slice(4), data);
-	let resultWrongTopicGiven = await claimVerifier.verifySignature(idcs[2].address, 43, scheme, issuer, signature4, data);
-	let resultWrongSchemeGiven = await claimVerifier.verifySignature(idcs[2].address, topic, 500, issuer, signature4, data);
+	const resultCorrectSignatureGiven = claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, signature4, data);
+	const resultWrongIssuerGiven = claimVerifier.verifySignature(idcs[2].address, topic, scheme, accounts[8], signature4, data);
+	const resultWrongSignatureGiven = claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, '0xb893fdc3bed932a0e51c974c868a80fa8220e6b1176f2e0ee5e2ffd6e21b59124dcfe1afa1bb8e68ecee4f3c3b3ad750cffe91d53b8049cb6416181bbd2c80de1d', data);
+	const resultWrongTopicGiven = claimVerifier.verifySignature(idcs[2].address, 43, scheme, issuer, signature4, data);
+	const resultWrongSchemeGiven = claimVerifier.verifySignature(idcs[2].address, topic, 500, issuer, signature4, data);
 
-	assert.isTrue(resultCorrectSignatureGiven);
-	assert.isFalse(resultWrongIssuerGiven);
-	assert.isFalse(resultWrongSignatureGiven);
-	assert.isFalse(resultWrongTopicGiven);
-	assert.isFalse(resultWrongSchemeGiven);
+	assert.isTrue(await resultCorrectSignatureGiven);
+	assert.isFalse(await resultWrongIssuerGiven);
+	await truffleAssert.reverts(resultWrongSignatureGiven);
+	assert.isFalse(await resultWrongTopicGiven);
+	assert.isFalse(await resultWrongSchemeGiven);
   }
 
   it("verifies signatures of short messages correctly.", async function() {
-	signatureVerificationTest("{ q: 'ab', answer: '42' }");
+	await signatureVerificationTest("{ q: 'ab', answer: '42' }");
   });
 
   it("verifies signatures of long messages (> 32 B) correctly.", async function() {
-	signatureVerificationTest("{ question: 'What\'s the answer to the Ultimate Question of Life, the Universe, and Everything', answer: '42' }");
+	await signatureVerificationTest("{ question: 'What\'s the answer to the Ultimate Question of Life, the Universe, and Everything', answer: '42' }");
   });
 
   it("can execute functions.", async function() {
@@ -160,7 +160,8 @@ contract('IdentityContract', function(accounts) {
   it("can create contracts via the execute function.", async function() {
 	let abi = JSON.parse(fs.readFileSync('./test/SimpleContractAbi.json', 'utf8'));
 	let bytecode = "0x608060405234801561001057600080fd5b50600560008190555060c4806100276000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c80634f28bf0e146037578063827d09bb146053575b600080fd5b603d607e565b6040518082815260200191505060405180910390f35b607c60048036036020811015606757600080fd5b81019080803590602001909291905050506084565b005b60005481565b806000819055505056fea2646970667358221220cc660561f0fb2fdb793736073e36c8454fd528fce41b78fb47115d3c50b33e1364736f6c63430007000033";
-	let deploymentResult = await idcs[1].execute(1, idcs[0].address, 0, bytecode, {from: accounts[6]});
+    // Confer: https://github.com/trufflesuite/truffle/releases/tag/v5.0.0#user-content-what-s-new-in-truffle-v5-interacting-with-your-contracts-overloaded-solidity-functions
+	let deploymentResult = await idcs[1].methods['execute(uint256,address,uint256,bytes)'](1, idcs[0].address, 0, bytecode, {from: accounts[6]});
 
 	// Make sure that the contract creation event has been emitted.
 	assert.equal(deploymentResult.logs[0].event, 'ContractCreated');

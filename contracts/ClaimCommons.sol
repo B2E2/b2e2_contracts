@@ -1,11 +1,17 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
-/*
-* Everything in this contract actually shouldn't be its own contract but static members of IdentityContractFactory. However, Solidity seems to be lacking this feature.
-* So all contracts which need to access these enums and methods instead are subcontracts of this contract.
-*/
+/**
+ * This library contains functionality and constants shared between contracts throughout the codebase.
+ * It only contains functionality and constants that concern claims.
+ */
 library ClaimCommons {
-    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority, MeteringClaim, BalanceClaim, ExistenceClaim, MaxPowerGenerationClaim, GenerationTypeClaim, LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim, AcceptedDistributorClaim, RealWorldPlantIdClaim, MaxPowerConsumptionClaim }
+    // Claims can have different types (ERC-735 calles these claim topics). This enum
+    // contains all types that are of interest for this contract stack.
+    enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority,
+        MeteringClaim, BalanceClaim, ExistenceClaim, MaxPowerGenerationClaim, GenerationTypeClaim,
+        LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim,
+        AcceptedDistributorClaim, RealWorldPlantIdClaim, MaxPowerConsumptionClaim}
 
     function claimType2Topic(ClaimType _claimType) external pure returns (uint256 __topic) {
         if(_claimType == ClaimType.IsBalanceAuthority) {
@@ -54,7 +60,7 @@ library ClaimCommons {
             return 10140;
         }        
 
-        require(false, "_claimType unknown.");
+        revert("_claimType unknown.");
     }
     
     function topic2ClaimType(uint256 _topic) external pure returns (ClaimType __claimType) {
@@ -104,7 +110,7 @@ library ClaimCommons {
             return ClaimType.MaxPowerConsumptionClaim;
         }        
 
-        require(false, "_topic unknown");
+        revert("_topic unknown");
     }
     
     function getHigherLevelClaim(ClaimType _claimType) external pure returns (ClaimType __higherLevelClaimType) {
@@ -133,6 +139,6 @@ library ClaimCommons {
             return ClaimType.IsBalanceAuthority;
         }
 
-        require(false, "no __higherLevelClaimType found.");
+        revert("no __higherLevelClaimType found.");
     }
 }

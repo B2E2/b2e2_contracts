@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
 import "./../dependencies/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
@@ -6,15 +7,10 @@ import "./ClaimCommons.sol";
 import "./ClaimVerifier.sol";
 import "./IdentityContract.sol";
 
+/**
+ * This library contains functionality that concerns the IdentityContract.
+ */
 library IdentityContractLib {
-    // Events ERC-725 (partially)
-    event ContractCreated(address indexed contractAddress);
-    
-    // Events ERC-735 (partially)
-    event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
-    
     // Structs related to ERC-1155
     struct PerishableValue {
         uint256 value;
@@ -31,10 +27,18 @@ library IdentityContractLib {
         string uri;
     }
     
+    // Events ERC-725 (partially)
+    event ContractCreated(address indexed contractAddress);
+    
+    // Events ERC-735 (partially)
+    event ClaimAdded(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    event ClaimRemoved(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    event ClaimChanged(uint256 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
+    
     function execute(uint256 _operationType, address _to, uint256 _value, bytes memory _data) public {
         if(_operationType == 0) {
-            (bool success, bytes memory returnData) = _to.call{value: _value}(_data);
-            if (success == false) {
+            (bool success, ) = _to.call{value: _value}(_data);
+            if (!success) {
                 assembly {
                     let ptr := mload(0x40)
                     let size := returndatasize()
@@ -45,10 +49,10 @@ library IdentityContractLib {
             return;
         }
         
-        // Copy calldata to memory so it can easily be accessed via assembly.
-        bytes memory dataMemory = _data;
-        
         if(_operationType == 1) {
+            // Copy calldata to memory so it can easily be accessed via assembly.
+            bytes memory dataMemory = _data;
+        
             address newContract;
             assembly {
                 newContract := create(0, add(dataMemory, 0x20), mload(dataMemory))
@@ -68,34 +72,37 @@ library IdentityContractLib {
         execute(_operationType, _to, _value, _data);
     }
     
-    function addClaim(mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (uint256 => bool) storage burnedClaimIds, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId) {
+    function addClaim(mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds,
+      mapping (uint256 => bool) storage burnedClaimIds, IdentityContract marketAuthority, uint256 _topic, uint256 _scheme, address _issuer,
+      bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 __claimRequestId) {
         // Make sure that claim is correct if the topic is in the relevant range.
         if(_topic >= 10000 && _topic <= 11000) {
             ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(_topic);
             require(ClaimVerifier.validateClaim(marketAuthority, claimType, address(this), _topic, _scheme, _issuer, _signature, _data), "Invalid claim.");
         }
         
-        claimRequestId = getClaimId(_issuer, _topic);
+        __claimRequestId = getClaimId(_issuer, _topic);
         
         // Check for burned claim IDs.
-        if(burnedClaimIds[claimRequestId])
+        if(burnedClaimIds[__claimRequestId])
             require(false, "Claim id burned.");
         
         // Emit and modify before adding to save gas.
-        if(keccak256(claims[claimRequestId].signature) != keccak256(new bytes(32))) { // Claim existence check since signature cannot be 0.
-            emit ClaimAdded(claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
+        if(keccak256(claims[__claimRequestId].signature) != keccak256(new bytes(32))) { // Claim existence check since signature cannot be 0.
+            emit ClaimAdded(__claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
             
-            topics2ClaimIds[_topic].push(claimRequestId);
+            topics2ClaimIds[_topic].push(__claimRequestId);
         } else {
             // Make sure that only issuer or holder can change claims
             require(msg.sender == address(this) || msg.sender == _issuer, "Only issuer or holder can change claims.");
-            emit ClaimChanged(claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
+            emit ClaimChanged(__claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
         }
         
-        claims[claimRequestId] = Claim(_topic, _scheme, _issuer, _signature, _data, _uri);
+        claims[__claimRequestId] = Claim(_topic, _scheme, _issuer, _signature, _data, _uri);
     }
     
-    function removeClaim(address owner, mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds, mapping (uint256 => bool) storage burnedClaimIds, uint256 _claimId) public returns (bool success) {
+    function removeClaim(address owner, mapping (uint256 => Claim) storage claims, mapping (uint256 => uint256[]) storage topics2ClaimIds,
+      mapping (uint256 => bool) storage burnedClaimIds, uint256 _claimId) public returns (bool __success) {
         require(msg.sender == owner || msg.sender == claims[_claimId].issuer, "Only issuer or holder can remove claims.");
         
         // Emit event and store burned signature before deleting to save gas for copy.
@@ -141,7 +148,8 @@ library IdentityContractLib {
     /**
      * Only consumes reception approval when handling forwards. Fails iff granted reception approval does not match.
      */
-    function consumeReceptionApproval(mapping (address => mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue))) storage receptionApproval, uint32 balancePeriodLength, uint256 _id, address _from, uint256 _value) public {
+    function consumeReceptionApproval(mapping (address => mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue))) storage receptionApproval,
+      uint32 balancePeriodLength, uint256 _id, address _from, uint256 _value) public {
         // Accept all certificate ERC-1155 transfers.
         if(isCertificate(_id))
             return;
@@ -165,6 +173,6 @@ library IdentityContractLib {
     }
     
     function isCertificate(uint256 _id) internal pure returns (bool) {
-        return (_id & 0x000000ff00000000000000000000000000000000000000000000000000000000) == 0x0000000400000000000000000000000000000000000000000000000000000000;
+        return (_id & 0xff00000000000000000000000000000000000000000000000000000000000000) == 0x0400000000000000000000000000000000000000000000000000000000000000;
     }
 }

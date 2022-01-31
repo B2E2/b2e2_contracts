@@ -7,13 +7,13 @@ const EnergyTokenLib = artifacts.require("EnergyTokenLib");
 const marketAuthority = artifacts.require("IdentityContract");
 const EnergyToken = artifacts.require("EnergyToken");
 
-const Distributor = artifacts.require("Distributor");
+const SimpleDistributor = artifacts.require("SimpleDistributor");
 
 module.exports = function(deployer, network, accounts) {
-  deployer.link(Commons, Distributor);
-  deployer.link(ClaimVerifier, Distributor);
-  deployer.link(IdentityContractLib, Distributor);
-  deployer.link(EnergyTokenLib, Distributor);
-  deployer.deploy(Distributor, EnergyToken.address, true, accounts[0]);
+  deployer.link(Commons, SimpleDistributor);
+  deployer.link(ClaimVerifier, SimpleDistributor);
+  deployer.link(IdentityContractLib, SimpleDistributor);
+  deployer.link(EnergyTokenLib, SimpleDistributor);
+  deployer.deploy(SimpleDistributor, EnergyToken.address, true, accounts[0]);
 };
 

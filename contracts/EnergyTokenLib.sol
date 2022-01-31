@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.1;
 
 import "./IEnergyToken.sol";
 import "./ClaimVerifier.sol";
+import "./AbstractDistributor.sol";
 
+/**
+ * This library contains functionality that contains the EnergyToken contract.
+ */
 library EnergyTokenLib {
     struct EnergyDocumentation {
         IdentityContract documentingMeteringAuthority;
@@ -17,29 +22,37 @@ library EnergyTokenLib {
         bool set;
     }
     
+    struct TokenFamilyProperties {
+        uint64 balancePeriod;
+        address generationPlant;
+        uint248 previousTokenFamilyBase;
+    }
+    
+    // When stating criteria, make sure to set the value field correctly.
+    // EQUALITY COMPARISON VIA eq IS PERFORMED ON A BYTE LEVEL.
+    // THIS MEANS THAT NUMBERS IN CLAIMS ARE TREATED AS UTF-8 STRINGS.
+    // Example: If a field is supposed to be set to 300000000, you can use
+    // this JS code to compute the value of the value field to give to web3:
+    // '0x' + Buffer.from('300000000', 'utf8').toString('hex')
+    enum Operator {eq, leq, geq}
+    struct Criterion {
+        uint256 topicId;
+        string fieldName;
+        Operator operator;
+        bytes fieldValue;
+    }
+    
     // ########################
     // # Public support functions
     // ########################
+
     /**
-     * tokenId: zeros (24 bit) || tokenKind number (8 bit) || balancePeriod (64 bit) || address of IdentityContract (160 bit)
-     */
-    function getTokenId(IEnergyToken.TokenKind _tokenKind, uint64 _balancePeriod, address _identityContractAddress) public pure returns (uint256 __tokenId) {
-        __tokenId = 0;
-        
-        __tokenId += tokenKind2Number(_tokenKind);
-        __tokenId = __tokenId << 64;
-        __tokenId += _balancePeriod;
-        __tokenId = __tokenId << 160;
-        __tokenId += uint256(uint160(_identityContractAddress));
-    }
-    
-        /**
      * | Bit (rtl) | Meaning                                         |
      * |-----------+-------------------------------------------------|
      * |         0 | Genus (Generation-based 0; Consumption-based 1) |
      * |         1 | Genus (Absolute 0; Relative 1)                  |
      * |         2 | Family (Forwards 0; Certificates 1)             |
-     * |         3 |                                                 |
+     * |         3 | Order (Simple forwards 0; Property Forwards 1)  |
      * |         4 |                                                 |
      * |         5 |                                                 |
      * |         6 |                                                 |
@@ -60,6 +73,9 @@ library EnergyTokenLib {
         if(_tokenKind == IEnergyToken.TokenKind.Certificate) {
             return 4;
         }
+        if(_tokenKind == IEnergyToken.TokenKind.PropertyForward) {
+            return 8;
+        }
         
         // Invalid TokenKind.
         require(false, "Invalid TokenKind.");
@@ -78,34 +94,33 @@ library EnergyTokenLib {
         if(_number == 4) {
             return IEnergyToken.TokenKind.Certificate;
         }
+        if(_number == 8) {
+            return IEnergyToken.TokenKind.PropertyForward;
+        }
         
         // Invalid number.
         require(false, "Invalid number.");
     }
     
-    function getTokenIdConstituents(uint256 _tokenId) public pure returns(IEnergyToken.TokenKind __tokenKind, uint64 __balancePeriod, address __identityContractAddress) {
-        __identityContractAddress = address(uint160(_tokenId));
-        __balancePeriod = uint64(_tokenId >> 160);
-        __tokenKind = number2TokenKind(uint8(_tokenId >> (160 + 64)));
-        
-        // Make sure that the tokenId can actually be derived via getTokenId().
-        // Without this check, it would be possible to create a second but different tokenId with the same constituents as not all bits are used.
-        require(getTokenId(__tokenKind, __balancePeriod, __identityContractAddress) == _tokenId, "tokenId cannot be derived via getTokenId method.");
+    function tokenKindFromTokenId(uint256 _id) public pure returns(IEnergyToken.TokenKind __tokenKind) {
+        __tokenKind = number2TokenKind(uint8(_id >> 248));
     }
     
-        /**
+    /**
      * Checks all claims required for the particular given transfer regarding the sending side.
      */
-    function checkClaimsForTransferSending(IdentityContract marketAuthority, mapping(uint256 => Distributor) storage id2Distributor, address payable _from, string memory _realWorldPlantId, uint256 _id) public view {
-        (IEnergyToken.TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
-        if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward || tokenKind == IEnergyToken.TokenKind.GenerationBasedForward || tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
+    function checkClaimsForTransferSending(IdentityContract marketAuthority, mapping(uint256 => AbstractDistributor) storage id2Distributor,
+      address payable _from, string memory _realWorldPlantId, uint256 _id) public view {
+        IEnergyToken.TokenKind tokenKind = tokenKindFromTokenId(_id);
+        if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward || tokenKind == IEnergyToken.TokenKind.GenerationBasedForward || tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward
+          || tokenKind == IEnergyToken.TokenKind.PropertyForward) {
             uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
-            require(balanceClaimId != 0, "Invalid  BalanceClaim.");
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid  ExistenceClaim.");
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid  MeteringClaim.");
+            require(balanceClaimId != 0, "Invalid BalanceClaim.");
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid ExistenceClaim.");
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid MeteringClaim.");
             
             (, , address balanceAuthoritySender, , ,) = IdentityContract(_from).getClaim(balanceClaimId);
-            Distributor distributor = id2Distributor[_id];
+            AbstractDistributor distributor = id2Distributor[_id];
             require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthoritySender) != 0, "Invalid AcceptedDistributorClaim.");
             return;
         }
@@ -120,21 +135,24 @@ library EnergyTokenLib {
     /**
      * Checks all claims required for the particular given transfer regarding the reception side.
      */
-    function checkClaimsForTransferReception(IdentityContract marketAuthority, mapping(uint256 => Distributor) storage id2Distributor, address payable _to, string memory _realWorldPlantId, uint256 _id) public view {
-        (IEnergyToken.TokenKind tokenKind, ,) = getTokenIdConstituents(_id);
-        if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward || tokenKind == IEnergyToken.TokenKind.GenerationBasedForward || tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
+    function checkClaimsForTransferReception(IdentityContract marketAuthority, mapping(uint256 => AbstractDistributor) storage id2Distributor,
+      address payable _to, string memory _realWorldPlantId, uint256 _id) public view {
+        IEnergyToken.TokenKind tokenKind = tokenKindFromTokenId(_id);
+        if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward || tokenKind == IEnergyToken.TokenKind.GenerationBasedForward || tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward
+          || tokenKind == IEnergyToken.TokenKind.PropertyForward) {
             uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
-            require(balanceClaimId != 0, "Invalid  BalanceClaim.");
+            require(balanceClaimId != 0, "Invalid BalanceClaim.");
             require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0,"Invalid ExistenceClaim." );
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0,"Invalid  MeteringClaim.");
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0,"Invalid MeteringClaim.");
 
             if (tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
-                require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim) != 0, "Invalid  MaxPowerConsumptionClaim.");
+                require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim) != 0, "Invalid 1MaxPowerConsumptionClaim.");
             }
 
             (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
-            Distributor distributor = id2Distributor[_id];
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver) != 0, "Invalid AcceptedDistributorClaim.");
+            AbstractDistributor distributor = id2Distributor[_id];
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver) != 0,
+              "Invalid AcceptedDistributorClaim.");
             return;
         }
         
@@ -164,11 +182,11 @@ library EnergyTokenLib {
         __maxCon = ClaimVerifier.getUint256Field("maxCon", claimData);
     }
 
-    function setId2Distributor(mapping(uint256 => Distributor) storage id2Distributor, uint256 _id, Distributor _distributor) public {
+    function setId2Distributor(mapping(uint256 => AbstractDistributor) storage id2Distributor, uint256 _id, AbstractDistributor _distributor) public {
         if(id2Distributor[_id] == _distributor)
             return;
         
-        if(id2Distributor[_id] != Distributor(address(0)))
+        if(id2Distributor[_id] != AbstractDistributor(address(0)))
             require(false, "Distributor _id already used.");
         
         id2Distributor[_id] = _distributor;
