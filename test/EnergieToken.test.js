@@ -496,7 +496,7 @@ contract('EnergyToken', function(accounts) {
 
 	// Mint more absolute forwards.
 	// Grant reception approval.
-	idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "83000000000000000000", forwardIds[0]).send({from: accounts[7], gas: 7000000});
+	await idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "83000000000000000000", forwardIds[0]).send({from: accounts[7], gas: 7000000});
 
 	// Perform actual mint operation via execute() of IDC 0.
 	let abiMintCall = energyTokenWeb3.methods.mint(forwardIds[0], [idcs[2].options.address], ["83000000000000000000"]).encodeABI();
@@ -802,8 +802,8 @@ contract('EnergyToken', function(accounts) {
     await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCall).send({from: accounts[5], gas: 7000000})
 
 	// Grant reception approval.
-	idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "150", '0x' + forwardId).send({from: accounts[6], gas: 7000000})
-	idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "150", '0x' + forwardIdNotApplicable).send({from: accounts[6], gas: 7000000})
+	await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "150", '0x' + forwardId).send({from: accounts[6], gas: 7000000})
+	await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, "1895220001", "150", '0x' + forwardIdNotApplicable).send({from: accounts[6], gas: 7000000})
 
 	// Perform mint operation via execute() of IDC 0.
 	let abiMintCall = energyTokenWeb3.methods.mint('0x' + forwardId, [idcs[1].options.address], ["150"]).encodeABI()
