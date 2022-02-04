@@ -30,7 +30,7 @@ library ClaimVerifier {
         ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(topic);
         
         if(_requiredValidAt != 0) {
-            uint64 currentTime = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), _requiredValidAt);
+            uint64 currentTime = marketAuthority.getBalancePeriod(_requiredValidAt);
             if(getExpiryDate(data) < currentTime || ((!allowFutureValidity) && getStartDate(data) > currentTime))
                 return false;
         }
@@ -144,7 +144,7 @@ library ClaimVerifier {
     }
     
     function getClaimOfType(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType) public view returns (uint256 __claimId) {
-        return getClaimOfType(marketAuthority, _subject, _realWorldPlantId, _claimType, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
+        return getClaimOfType(marketAuthority, _subject, _realWorldPlantId, _claimType, marketAuthority.getBalancePeriod(block.timestamp));
     }
     
     function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
@@ -163,7 +163,7 @@ library ClaimVerifier {
     }
     
     function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer) public view returns (uint256 __claimId) {
-        return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
+        return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, marketAuthority.getBalancePeriod(block.timestamp));
     }
     
     function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
@@ -203,7 +203,7 @@ library ClaimVerifier {
         return 0;
     }
     function getClaimOfTypeWithMatchingField_temporalValidityCheck(IdentityContract marketAuthority, uint64 _requiredValidAt, bytes memory cData) internal view returns(bool) {
-        return (_requiredValidAt > 0 && getExpiryDate(cData) < Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), _requiredValidAt));
+        return (_requiredValidAt > 0 && getExpiryDate(cData) < marketAuthority.getBalancePeriod(_requiredValidAt));
     }
     
     function getUint64Field(string memory _fieldName, bytes memory _data) public pure returns(uint64) {

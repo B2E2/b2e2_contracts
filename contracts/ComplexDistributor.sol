@@ -29,7 +29,8 @@ contract ComplexDistributor is AbstractDistributor {
         _;
     }
 
-    constructor(EnergyToken _energyToken, bool _testing, address _owner) IdentityContract(_energyToken.marketAuthority(), 0, _owner) {
+    constructor(EnergyToken _energyToken, bool _testing, address _owner)
+    IdentityContract(_energyToken.marketAuthority(), IdentityContract.BalancePeriodConfiguration(0, 0), _owner) {
         energyToken = _energyToken;
         testing = _testing;
     }
@@ -95,7 +96,7 @@ contract ComplexDistributor is AbstractDistributor {
         
         // Time period check
         (IEnergyToken.TokenKind forwardKind, uint64 balancePeriod, address debtorAddress) = energyToken.getTokenIdConstituents(_forwardId);
-        require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, block.timestamp), "balancePeriod has not yet ended.");
+        require(testing || balancePeriod < getBalancePeriod(block.timestamp), "balancePeriod has not yet ended.");
         
         // Forward kind check.
         require(forwardKind == IEnergyToken.TokenKind.PropertyForward, "incorrect forward kind");

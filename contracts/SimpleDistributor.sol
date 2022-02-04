@@ -26,7 +26,8 @@ contract SimpleDistributor is AbstractDistributor {
         _;
     }
 
-    constructor(EnergyToken _energyToken, bool _testing, address _owner) IdentityContract(_energyToken.marketAuthority(), 0, _owner) {
+    constructor(EnergyToken _energyToken, bool _testing, address _owner)
+    IdentityContract(_energyToken.marketAuthority(), IdentityContract.BalancePeriodConfiguration(0, 0), _owner) {
         energyToken = _energyToken;
         testing = _testing;
     }
@@ -54,7 +55,7 @@ contract SimpleDistributor is AbstractDistributor {
         (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
         
         // Time period check
-        require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, block.timestamp), "balancePeriod has not yet ended.");
+        require(testing || balancePeriod < getBalancePeriod(block.timestamp), "balancePeriod has not yet ended.");
         
         uint256 certificateTokenId = energyToken.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress, 0);
 
@@ -129,7 +130,7 @@ contract SimpleDistributor is AbstractDistributor {
         completedSurplusDistributions[_tokenId][generationPlantAddress] = true;
         
         // Time period check
-        require(testing || balancePeriod < Commons.getBalancePeriod(balancePeriodLength, block.timestamp), "balancePeriod has not yet ended.");
+        require(testing || balancePeriod < getBalancePeriod(block.timestamp), "balancePeriod has not yet ended.");
         
         uint256 certificateTokenId = energyToken.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress, 0);
         

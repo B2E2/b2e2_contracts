@@ -15,7 +15,7 @@ contract('IdentityContractFactory', function(accounts) {
   before(async function() {
 	accounts = await web3.eth.getAccounts();
 
-    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000", 900, accounts[9], {from: accounts[9]});
+    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000", [900, 1], accounts[9], {from: accounts[9]});
 	console.log(`Successfully deployed IdentityContract for Market Authority with address: ${marketAuthority.address}`);
     identityContractFactory = await IdentityContractFactory.new(marketAuthority.address, {from: accounts[9]});
 	console.log(`Successfully deployed IdentityContractFactory with address: ${identityContractFactory.address}`);
@@ -58,7 +58,8 @@ contract('IdentityContractFactory', function(accounts) {
 	let idcThroughFactory = await identityContractFactory.createIdentityContract({from: accounts[1]});
 	let idcThroughFactoryAdress = idcThroughFactory.logs[0].args.idcAddress;
 
-	let independentIdc = await IdentityContract.new(marketAuthority.address, 0, accounts[2], {from: accounts[2]});
+	let independentIdc = await IdentityContract.new(marketAuthority.address, [0, 0], accounts[2],
+                                                    {from: accounts[2]});
 
 	assert.equal(await identityContractFactory.isRegisteredIdentityContract(idcThroughFactoryAdress), true);
 	assert.equal(await identityContractFactory.isRegisteredIdentityContract(independentIdc.address), false);
