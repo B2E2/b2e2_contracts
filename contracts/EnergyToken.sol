@@ -13,8 +13,6 @@ import "./IERC165.sol";
  * The EnergyToken contract manages forwards and certificates.
  */
 contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
-    using Address for address;
-
     enum PlantType {Generation, Consumption}
 
     event EnergyDocumented(PlantType plantType, uint256 value, address indexed plant, bool corrected, uint64 indexed balancePeriod, address indexed meteringAuthority);
@@ -250,8 +248,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
             // It will also provide the circulating supply info.
-            emit TransferSingle(msg.sender, address(0x0), certificateReceiver, certificateId, _value);
-            _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, certificateReceiver, certificateId, _value, '');
+            emit TransferSingle(msg.sender, address(0), certificateReceiver, certificateId, _value);
+            // Do not call _doSafeTransferAcceptanceCheck because the recipient must accept the certificates.
         }
         emit EnergyDocumented(PlantType.Generation, _value, _plant, corrected, _balancePeriod, msg.sender);        
     }
@@ -301,8 +299,16 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         if(tokenKind == TokenKind.ConsumptionBasedForward)
             addPlantRelationship(generationPlant, _to, balancePeriod);
         
-        checkClaimsForTransferAllIncluded(_from, _to, _id);
-        
+        // This needs to be checked because otherwise distributors would need real world plant IDs
+        // as without them, getting the real world plant ID to pass on to checkClaimsForTransferSending
+        // and checkClaimsForTransferReception would cause a revert.
+        if(_data.length > 0) {
+            (uint256 forwardId) = abi.decode(_data, (uint256));
+            require(id2Distributor[forwardId] == AbstractDistributor(_from), "Must be by distributor.");
+        } else {
+            checkClaimsForTransferAllIncluded(_from, _to, _id);
+        }
+
         // ########################
         // ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
         // ########################
@@ -319,10 +325,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         emit TransferSingle(msg.sender, _from, _to, _id, _value);
 
         // Now that the balance is updated and the event was emitted,
-        // call onERC1155Received if the destination is a contract.
-        if (_to.isContract()) {
-            _doSafeTransferAcceptanceCheck(msg.sender, _from, _to, _id, _value, _data);
-        }
+        // call onERC1155Received. The destination always is a contract.
+        _doSafeTransferAcceptanceCheck(msg.sender, _from, _to, _id, _value, _data);
     }
     
     function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
@@ -366,21 +370,11 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         emit TransferBatch(msg.sender, _from, _to, _ids, _values);
 
         // Now that the balances are updated and the events are emitted,
-        // call onERC1155BatchReceived if the destination is a contract.
-        if (_to.isContract()) {
-            _doSafeBatchTransferAcceptanceCheck(msg.sender, _from, _to, _ids, _values, _data);
-        }
+        // call onERC1155BatchReceived. The destination always is a contract.
+        _doSafeBatchTransferAcceptanceCheck(msg.sender, _from, _to, _ids, _values, _data);
     }
     
     function checkClaimsForTransferAllIncluded(address _from, address _to, uint256 _id) internal view {
-        // This needs to be checked here because otherwise distributors would need real world plant IDs
-        // as without them, getting the real world plant ID to pass on to checkClaimsForTransferSending
-        // and checkClaimsForTransferReception would cause a revert.
-        TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
-        if(tokenKind == TokenKind.Certificate) {
-            return;
-        }
-        
         string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
         string memory realWorldPlantIdTo = ClaimVerifier.getRealWorldPlantId(marketAuthority, _to);
         EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, payable(_from), realWorldPlantIdFrom, _id);
