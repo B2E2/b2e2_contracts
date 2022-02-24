@@ -7,6 +7,9 @@ const fs = require('fs');
 
 exports.build = series(clean, parallel(update_submodule, npm_install_contracts), compile_contracts);
 
+exports.docker_build = series(clean, parallel(npm_install_contracts), compile_contracts);
+
+
 exports.tests = series(start_test_chain, run_tests, kill_test_chain);
 
 // ########################################
