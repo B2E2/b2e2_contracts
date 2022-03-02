@@ -41,7 +41,8 @@ contract('EnergyToken', function(accounts) {
   before(async function() {
 	accounts = await web3.eth.getAccounts();
 
-    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000", [900, 1], accounts[9], {from: accounts[9]});
+    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000",
+                                                 [900, 1, 3*30*24*3600], accounts[9], {from: accounts[9]});
 	console.log(`Successfully deployed IdentityContract for Market Authority with address: ${marketAuthority.address}`);
     identityContractFactory = await IdentityContractFactory.new(marketAuthority.address, {from: accounts[9]});
 	console.log(`Successfully deployed IdentityContractFactory with address: ${identityContractFactory.address}`);

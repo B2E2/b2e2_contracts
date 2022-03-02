@@ -26,11 +26,13 @@ contract('IdentityContract', function(accounts) {
 	
 	accounts = await web3.eth.getAccounts();
 
-    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000", [900, 1], accounts[9], {from: accounts[9]});
+    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000",
+                                                 [900, 1, 3*30*24*3600], accounts[9], {from: accounts[9]});
 	console.log(`Successfully deployed IdentityContract for Market Authority with address: ${marketAuthority.address}`);
 
 	for(let i=0; i < 3; i++) {
-	  idcs[i] = await IdentityContract.new(marketAuthority.address, [0, 0], accounts[i+5], {from: accounts[i+5]});
+	  idcs[i] = await IdentityContract.new(marketAuthority.address, [0, 0, 0], accounts[i+5],
+                                           {from: accounts[i+5]});
 	  console.log(`Successfully deployed IdentityContract ${i} with address: ${idcs[i].address}`);
 	}
   });

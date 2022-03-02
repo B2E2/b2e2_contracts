@@ -13,8 +13,9 @@ import "./IERC165.sol";
  */
 contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     struct BalancePeriodConfiguration {
-        uint32 length;
-        uint32 offset;
+        uint64 length;
+        uint64 offset;
+        uint64 certificateTradingWindow;
     }
 
     // Attributes ERC-725
@@ -57,7 +58,8 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
             balancePeriodConfiguration = _balancePeriodConfiguration;
         } else {
             marketAuthority = _marketAuthority;
-            (balancePeriodConfiguration.length, balancePeriodConfiguration.offset) = _marketAuthority.balancePeriodConfiguration();
+            (balancePeriodConfiguration.length, balancePeriodConfiguration.offset, balancePeriodConfiguration.certificateTradingWindow) =
+              _marketAuthority.balancePeriodConfiguration();
         }
         
         owner = _owner;

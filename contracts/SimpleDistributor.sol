@@ -27,7 +27,7 @@ contract SimpleDistributor is AbstractDistributor {
     }
 
     constructor(EnergyToken _energyToken, bool _testing, address _owner)
-    IdentityContract(_energyToken.marketAuthority(), IdentityContract.BalancePeriodConfiguration(0, 0), _owner) {
+    IdentityContract(_energyToken.marketAuthority(), IdentityContract.BalancePeriodConfiguration(0, 0, 0), _owner) {
         energyToken = _energyToken;
         testing = _testing;
     }

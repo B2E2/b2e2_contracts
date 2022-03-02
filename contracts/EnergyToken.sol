@@ -130,7 +130,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
             TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
             if(tokenKind == TokenKind.AbsoluteForward) {
-                (uint32 balancePeriodLength, ) = marketAuthority.balancePeriodConfiguration();
+                (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
                 require(supply[_id] * (1000 * 3600) <= EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId) * balancePeriodLength * 10**18, "Plant's capability exceeded.");
             }
 
@@ -295,8 +295,13 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     // ########################
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
-         if(tokenKind != TokenKind.Certificate)
+        if(tokenKind == TokenKind.Certificate) {
+            (, , uint64 certificateTradingWindow) = marketAuthority.balancePeriodConfiguration();
+            require(balancePeriod + certificateTradingWindow > marketAuthority.getBalancePeriod(block.timestamp),
+              "balancePeriod must be within the certificate trading window.");
+        } else {
             require(balancePeriod > marketAuthority.getBalancePeriod(block.timestamp), "balancePeriod must be in the future.");
+        }
         
         if(tokenKind == TokenKind.ConsumptionBasedForward)
             addPlantRelationship(generationPlant, _to, balancePeriod);
@@ -327,10 +332,14 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     
     function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
         uint64 currentBalancePeriod = marketAuthority.getBalancePeriod(block.timestamp);
+        (, , uint64 certificateTradingWindow) = marketAuthority.balancePeriodConfiguration();
         
         for (uint256 i = 0; i < _ids.length; ++i) {
             (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);
-            if(tokenKind != TokenKind.Certificate) {
+            if(tokenKind == TokenKind.Certificate) {
+                require(balancePeriod + certificateTradingWindow > currentBalancePeriod,
+                  "balancePeriod must be within the certificate trading window.");
+            } else {
                 require(balancePeriod > currentBalancePeriod, "balancePeriod must be in the future.");
             }
             
@@ -452,7 +461,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         
         string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant);
         uint256 maxGen = EnergyTokenLib.getPlantGenerationCapability(marketAuthority, _plant, realWorldPlantId);
-        (uint32 balancePeriodLength, ) = marketAuthority.balancePeriodConfiguration();
+        (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
         require(_value * 1000 * 3600 <= maxGen * balancePeriodLength * 10**18, "Plant's capability exceeded.");
     }
 
@@ -465,7 +474,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         uint256 maxCon = EnergyTokenLib.getPlantConsumptionCapability(marketAuthority, _plant, realWorldPlantId);
         // Only check if max consumption capability is known.
         if (maxCon != 0) {
-            (uint32 balancePeriodLength, ) = marketAuthority.balancePeriodConfiguration();
+            (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
             require(_value * 1000 * 3600 <= maxCon * balancePeriodLength * 10**18, "Plant's capability exceeded.");
         }
     }
