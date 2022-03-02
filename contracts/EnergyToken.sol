@@ -331,12 +331,22 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 
         // Now that the balance is updated and the event was emitted,
         // call onERC1155Received. The destination always is a contract.
-        _doSafeTransferAcceptanceCheck(msg.sender, _from, _to, _id, _value, _data);
+        // Do not perform the acceptance check if the sender is a distributor.
+        // Only distributors are allowed to send non-empty data as is checked
+        // prior to the balances update.
+        if(_data.length == 0) {
+            _doSafeTransferAcceptanceCheck(msg.sender, _from, _to, _id, _value, _data);
+        }
     }
     
     function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
         uint64 currentBalancePeriod = marketAuthority.getBalancePeriod(block.timestamp);
         (, , uint64 certificateTradingWindow) = marketAuthority.balancePeriodConfiguration();
+
+        if(_data.length > 0) {
+            (uint256 forwardId) = abi.decode(_data, (uint256));
+            require(id2Distributor[forwardId] == AbstractDistributor(_from), "Must be by distributor.");
+        }
         
         for (uint256 i = 0; i < _ids.length; ++i) {
             (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);
@@ -350,7 +360,9 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             if(tokenKind == TokenKind.ConsumptionBasedForward)
                 addPlantRelationship(generationPlant, _to, balancePeriod);
 
-            checkClaimsForTransferAllIncluded(_from, _to, _ids[i]);
+            if(_data.length == 0) {
+                checkClaimsForTransferAllIncluded(_from, _to, _ids[i]);
+            }
         }
         
         // ########################
@@ -380,7 +392,9 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 
         // Now that the balances are updated and the events are emitted,
         // call onERC1155BatchReceived. The destination always is a contract.
-        _doSafeBatchTransferAcceptanceCheck(msg.sender, _from, _to, _ids, _values, _data);
+        if(_data.length == 0) {
+            _doSafeBatchTransferAcceptanceCheck(msg.sender, _from, _to, _ids, _values, _data);
+        }
     }
     
     function checkClaimsForTransferAllIncluded(address _from, address _to, uint256 _id) internal view {
