@@ -304,12 +304,24 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         if(tokenKind == TokenKind.ConsumptionBasedForward)
             addPlantRelationship(generationPlant, _to, balancePeriod);
         
+        bool performSafeTransferAcceptanceCheck = true;
         // This needs to be checked because otherwise distributors would need real world plant IDs
         // as without them, getting the real world plant ID to pass on to checkClaimsForTransferSending
         // and checkClaimsForTransferReception would cause a revert.
         if(_data.length > 0) {
             (uint256 forwardId) = abi.decode(_data, (uint256));
-            require(id2Distributor[forwardId] == AbstractDistributor(_from), "Must be by distributor.");
+            if(id2Distributor[forwardId] == AbstractDistributor(_from)) {
+                // No requirements if the sender is a distributor.
+                // Not even the acceptance check.
+                performSafeTransferAcceptanceCheck = false;
+            } else {
+                require(ClaimVerifier.getClaimOfType(marketAuthority, _to, "", ClaimCommons.ClaimType.AcceptedDistributorClaim, marketAuthority.getBalancePeriod(block.timestamp)) != 0,
+                "Must be from or to distributor."); // May be intended to be from or to distributor as the forward ID check cannot tell the user's intention.
+                // If the require was passed, the user's intention is to send to a distributor.
+                // Therefore, only the sender's claims need to be checked.
+                string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
+                EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, payable(_from), realWorldPlantIdFrom, _id);
+            }
         } else {
             checkClaimsForTransferAllIncluded(_from, _to, _id);
         }
@@ -331,23 +343,53 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 
         // Now that the balance is updated and the event was emitted,
         // call onERC1155Received. The destination always is a contract.
-        // Do not perform the acceptance check if the sender is a distributor.
-        // Only distributors are allowed to send non-empty data as is checked
-        // prior to the balances update.
-        if(_data.length == 0) {
+        if(performSafeTransferAcceptanceCheck) {
             _doSafeTransferAcceptanceCheck(msg.sender, _from, _to, _id, _value, _data);
         }
     }
     
+    /**
+    * This function is disabled because it's difficult to write without exceeding the limit
+    * on the number of items on the stack and because it would exceed the block gas limit anyway.
+    */
     function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
+        revert("safeBatchTransferFrom is disabled");
+        /*
         uint64 currentBalancePeriod = marketAuthority.getBalancePeriod(block.timestamp);
-        (, , uint64 certificateTradingWindow) = marketAuthority.balancePeriodConfiguration();
-
+        
         if(_data.length > 0) {
             (uint256 forwardId) = abi.decode(_data, (uint256));
-            require(id2Distributor[forwardId] == AbstractDistributor(_from), "Must be by distributor.");
+            require(
+                id2Distributor[forwardId] == AbstractDistributor(_from) ||
+                (ClaimVerifier.getClaimOfType(marketAuthority, _to, "", ClaimCommons.ClaimType.AcceptedDistributorClaim, currentBalancePeriod) != 0 && true),
+                "Must be from or to distributor."
+            );
+        }
+
+        bool performSafeTransferAcceptanceCheck = true;
+        if(_data.length > 0) {
+            (uint256 forwardId) = abi.decode(_data, (uint256));
+            if(id2Distributor[forwardId] == AbstractDistributor(_from)) {
+                // No requirements if the sender is a distributor.
+                // Not even the acceptance check.
+                performSafeTransferAcceptanceCheck = false;
+            } else {
+                require(ClaimVerifier.getClaimOfType(marketAuthority, _to, "", ClaimCommons.ClaimType.AcceptedDistributorClaim, currentBalancePeriod) != 0,
+                "Must be from or to distributor."); // May be intended to be from or to distributor as the forward ID check cannot tell the user's intention.
+                // If the require was passed, the user's intention is to send to a distributor.
+                // Therefore, only the sender's claims need to be checked.
+                string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
+                for (uint256 i = 0; i < _ids.length; ++i) {
+                    EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, payable(_from), realWorldPlantIdFrom, _ids[i]);
+                }
+            }
+        } else {
+            for (uint256 i = 0; i < _ids.length; ++i) {
+                checkClaimsForTransferAllIncluded(_from, _to, _ids[i]);
+            }
         }
         
+        (, , uint64 certificateTradingWindow) = marketAuthority.balancePeriodConfiguration();
         for (uint256 i = 0; i < _ids.length; ++i) {
             (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);
             if(tokenKind == TokenKind.Certificate) {
@@ -392,9 +434,10 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 
         // Now that the balances are updated and the events are emitted,
         // call onERC1155BatchReceived. The destination always is a contract.
-        if(_data.length == 0) {
+        if(performSafeTransferAcceptanceCheck) {
             _doSafeBatchTransferAcceptanceCheck(msg.sender, _from, _to, _ids, _values, _data);
         }
+        */
     }
     
     function checkClaimsForTransferAllIncluded(address _from, address _to, uint256 _id) internal view {

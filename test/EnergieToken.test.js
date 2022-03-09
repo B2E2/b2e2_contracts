@@ -516,7 +516,10 @@ contract('EnergyToken', function(accounts) {
 	assert.equal(await energyToken.balanceOf(idcs[1].options.address, certificateIds[2]), "1360000000000000000");
 
     // Store the certificate ID because these certificates are needed for the test of the complex distributor.
-    complexDistributorCertificateId = certificateIds[2]
+    complexDistributorCertificateId = certificateIds[2];
+    await idcs[0].methods.approveSender(energyToken.address, idcs[1].options.address, "1895220001", "1360000000000000000", complexDistributorCertificateId).send({from: accounts[5], gas: 7000000});
+    const abiTransfer = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, idcs[0].options.address, complexDistributorCertificateId, "1360000000000000000", "0x").encodeABI();
+	await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[6], gas: 7000000});
   });
 
   it("Does not allow for transfer of certificates to the 0 address.", async function() {
@@ -741,7 +744,7 @@ contract('EnergyToken', function(accounts) {
 	await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall2).send({from: accounts[5], gas: 7000000})
   })
 
-  it.skip('distributes tokens correcty (complex distributor)', async function() {
+  it('distributes tokens correcty (complex distributor)', async function() {
 	// IDC 0: storage plant
 	// IDC 1: consumption plant
 
