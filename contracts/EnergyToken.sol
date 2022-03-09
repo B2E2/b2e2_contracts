@@ -351,8 +351,11 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     /**
     * This function is disabled because it's difficult to write without exceeding the limit
     * on the number of items on the stack and because it would exceed the block gas limit anyway.
+    *
+    * Make sure to comment noReentrancy back in when re-activating this function (it's commented
+    * out to avoid a compiler warning about unreachable code). Also: remove keyword 'pure'.
     */
-    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
+    function safeBatchTransferFrom(address /*_from*/, address /*_to*/, uint256[] calldata /*_ids*/, uint256[] calldata /*_values*/, bytes calldata /*_data*/) override(ERC1155, IEnergyToken) external /*noReentrancy*/ pure {
         revert("safeBatchTransferFrom is disabled");
         /*
         uint64 currentBalancePeriod = marketAuthority.getBalancePeriod(block.timestamp);
