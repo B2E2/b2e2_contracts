@@ -401,10 +401,6 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             
             if(tokenKind == TokenKind.ConsumptionBasedForward)
                 addPlantRelationship(generationPlant, _to, balancePeriod);
-
-            if(_data.length == 0) {
-                checkClaimsForTransferAllIncluded(_from, _to, _ids[i]);
-            }
         }
         
         // ########################
