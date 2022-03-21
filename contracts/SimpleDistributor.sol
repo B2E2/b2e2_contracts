@@ -58,6 +58,7 @@ contract SimpleDistributor is AbstractDistributor {
         require(testing || balancePeriod < getBalancePeriod(block.timestamp), "balancePeriod has not yet ended.");
         
         uint256 certificateTokenId = energyToken.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress, 0);
+        bytes memory tokenIdEncoded = abi.encode(_tokenId);
 
         // Distribution
         if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward) {
@@ -67,7 +68,7 @@ contract SimpleDistributor is AbstractDistributor {
             require(generated, "Generation plant has not produced any energy.");
 
             energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId,
-              Commons.min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer * generatedEnergy) / totalForwards), new bytes(0));
+              Commons.min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer * generatedEnergy) / totalForwards), tokenIdEncoded);
             return;
         }
         
@@ -77,7 +78,7 @@ contract SimpleDistributor is AbstractDistributor {
             require(generated, "Generation plant has not produced any energy.");
 
             energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId,
-              (generationBasedForwardsOfConsumer * generatedEnergy) / 100E18, new bytes(0));
+              (generationBasedForwardsOfConsumer * generatedEnergy) / 100E18, tokenIdEncoded);
             return;
         }
         
@@ -86,19 +87,24 @@ contract SimpleDistributor is AbstractDistributor {
             (uint256 generatedEnergy, uint256 consumedEnergy) = distribute_getGeneratedAndConsumedEnergy(generationPlantAddress, _consumptionPlantAddress, balancePeriod);
             uint256 totalConsumedEnergy = energyToken.energyConsumedRelevantForGenerationPlant(balancePeriod, generationPlantAddress);
 
+            // Block to reduce the stack depth.
+            uint256 min;
+            {
             uint256 option1 = (consumptionBasedForwards * consumedEnergy) / 100E18;
-            uint256 option2;
             if(totalConsumedEnergy > 0) {
-                option2 = (consumptionBasedForwards * consumedEnergy * generatedEnergy) / (100E18 * totalConsumedEnergy);
+                uint256 option2 = (consumptionBasedForwards * consumedEnergy * generatedEnergy) / (100E18 * totalConsumedEnergy);
+                min = Commons.min(option1, option2);
             } else {
-                option2 = option1;
+                min = option1;
             }
-            
+            }
+
             require(energyToken.numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant(balancePeriod, generationPlantAddress) == 0,
               "Missing energy energy documentations for at least one consumption plant.");
             
             numberOfCompletedConsumptionBasedDistributions[balancePeriod][generationPlantAddress]++;
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, Commons.min(option1, option2), new bytes(0));
+            
+            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min, tokenIdEncoded);
             return;
         }
         
@@ -133,6 +139,7 @@ contract SimpleDistributor is AbstractDistributor {
         require(testing || balancePeriod < getBalancePeriod(block.timestamp), "balancePeriod has not yet ended.");
         
         uint256 certificateTokenId = energyToken.getTokenId(IEnergyToken.TokenKind.Certificate, balancePeriod, generationPlantAddress, 0);
+        bytes memory tokenIdEncoded = abi.encode(_tokenId);
         
         // Surplus Distribution
         if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward) {
@@ -140,7 +147,7 @@ contract SimpleDistributor is AbstractDistributor {
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
             if(generatedEnergy > totalForwards) {
-                energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, generatedEnergy - totalForwards, new bytes(0));
+                energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, generatedEnergy - totalForwards, tokenIdEncoded);
             }
             return;
         }
@@ -149,7 +156,7 @@ contract SimpleDistributor is AbstractDistributor {
             // Only allow transfer of undistributable certificates if all consumption plants have gotten their certificates because otherwise it's not possible to figure out how many certificates are undistributable.
             require(energyToken.numberOfRelevantConsumptionPlantsForGenerationPlant(balancePeriod, generationPlantAddress) == numberOfCompletedConsumptionBasedDistributions[balancePeriod][generationPlantAddress], "Transfer of undistributable certificates is only allowed after all consumption plants have received their certificates.");
             uint256 distributorCertificatesBalance = energyToken.balanceOf(address(this), certificateTokenId);
-            energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, distributorCertificatesBalance, new bytes(0));
+            energyToken.safeTransferFrom(address(this), generationPlantAddress, certificateTokenId, distributorCertificatesBalance, tokenIdEncoded);
             return;
         }
         

@@ -21,6 +21,8 @@ contract ComplexDistributor is AbstractDistributor {
     mapping(uint256 => bool) propertyForwardsCriteriaSet;
     // debtor address => forward ID => certificate ID => amount
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) public certificates;
+    // debtor address => forward ID => sum of certificate amounts
+    mapping(address => mapping(uint256 => uint256)) public certificateTotals;
     
     bool testing;
     
@@ -70,6 +72,12 @@ contract ComplexDistributor is AbstractDistributor {
         
         // Increment internally kept balance.
         certificates[_from][forwardId][_id] += _value;
+
+        // Make sure that no extra certificates are sent.
+        certificateTotals[_from][forwardId] += _value;
+        (, uint256 energyGenerated, , bool generated, ) = energyToken.energyDocumentations(_from, certificateBalancePeriod);
+        require(generated, "The storage plant did not generate energy.");
+        require(certificateTotals[_from][forwardId] <= energyGenerated, "Too many certificates for energy generation.");
         
         return 0xf23a6e61;
     }
@@ -110,7 +118,7 @@ contract ComplexDistributor is AbstractDistributor {
         uint256 newCertificateId = energyToken.temporallyTransportCertificates(_certificateId, _forwardId, _value);
         
         // Actual distribution.
-        energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, newCertificateId, _value, new bytes(0));
+        energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, newCertificateId, _value, abi.encode(_forwardId));
     }
     
     /**
@@ -118,7 +126,7 @@ contract ComplexDistributor is AbstractDistributor {
      */
     function withdrawSurplusCertificates(uint256 _forwardId, uint256 _certificateId, uint256 _value) external {
         certificates[msg.sender][_forwardId][_certificateId] -= _value;
-        energyToken.safeTransferFrom(address(this), msg.sender, _certificateId, _value, new bytes(0));
+        energyToken.safeTransferFrom(address(this), msg.sender, _certificateId, _value, abi.encode(_forwardId));
     }
     
     // ########################
