@@ -26,11 +26,13 @@ contract('IdentityContract', function(accounts) {
 	
 	accounts = await web3.eth.getAccounts();
 
-    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000", 900, accounts[9], {from: accounts[9]});
+    marketAuthority = await IdentityContract.new("0x0000000000000000000000000000000000000000",
+                                                 [900, 1, 3*30*24*3600], accounts[9], {from: accounts[9]});
 	console.log(`Successfully deployed IdentityContract for Market Authority with address: ${marketAuthority.address}`);
 
 	for(let i=0; i < 3; i++) {
-	  idcs[i] = await IdentityContract.new(marketAuthority.address, 0, accounts[i+5], {from: accounts[i+5]});
+	  idcs[i] = await IdentityContract.new(marketAuthority.address, [0, 0, 0], accounts[i+5],
+                                           {from: accounts[i+5]});
 	  console.log(`Successfully deployed IdentityContract ${i} with address: ${idcs[i].address}`);
 	}
   });
@@ -41,6 +43,23 @@ contract('IdentityContract', function(accounts) {
 	for(let i=0; i < 3; i++) {
 	  assert.equal(await idcs[i].marketAuthority(), marketAuthority.address);
 	}
+  });
+
+  it("determines balance periods correctly.", async function() {
+	let timestamp_11_00_00 = 1579860000; // Friday, January 24, 2020 11:00:00 AM GMT+01:00
+	let timestamp_11_05_00 = 1579860300; // Friday, January 24, 2020 11:05:00 AM GMT+01:00
+	let timestamp_11_15_00 = 1579860900; // Friday, January 24, 2020 11:15:00 AM GMT+01:00
+	let timestamp_11_15_01 = 1579860901; // Friday, January 24, 2020 11:15:01 AM GMT+01:00
+
+	let period_11_00_00 = (await idcs[0].getBalancePeriod(timestamp_11_00_00)).toNumber();
+	let period_11_05_00 = (await idcs[0].getBalancePeriod(timestamp_11_05_00)).toNumber();
+	let period_11_15_00 = (await idcs[0].getBalancePeriod(timestamp_11_15_00)).toNumber();
+	let period_11_15_01 = (await idcs[0].getBalancePeriod(timestamp_11_15_01)).toNumber();
+
+	assert.equal(period_11_00_00, 1579859101);
+	assert.equal(period_11_05_00, 1579860001);
+	assert.equal(period_11_15_00, 1579860001);
+	assert.equal(period_11_15_01, 1579860901);
   });
 
   it("knows its owner.", async function() {
@@ -123,15 +142,19 @@ contract('IdentityContract', function(accounts) {
 
 	const resultCorrectSignatureGiven = claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, signature4, data);
 	const resultWrongIssuerGiven = claimVerifier.verifySignature(idcs[2].address, topic, scheme, accounts[8], signature4, data);
-	const resultWrongSignatureGiven = claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, '0xb893fdc3bed932a0e51c974c868a80fa8220e6b1176f2e0ee5e2ffd6e21b59124dcfe1afa1bb8e68ecee4f3c3b3ad750cffe91d53b8049cb6416181bbd2c80de1d', data);
 	const resultWrongTopicGiven = claimVerifier.verifySignature(idcs[2].address, 43, scheme, issuer, signature4, data);
 	const resultWrongSchemeGiven = claimVerifier.verifySignature(idcs[2].address, topic, 500, issuer, signature4, data);
 
 	assert.isTrue(await resultCorrectSignatureGiven);
 	assert.isFalse(await resultWrongIssuerGiven);
-	await truffleAssert.reverts(resultWrongSignatureGiven);
 	assert.isFalse(await resultWrongTopicGiven);
 	assert.isFalse(await resultWrongSchemeGiven);
+
+    try {
+      const resultWrongSignatureGiven = claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, '0x831862627ddf4024f0cfc79f34f452dc19115b751f2c913ff4e845f8d8ea48ad07f472109e001ff87579f71284b5dc1989dcee8db2af172b6296ec67a4fef5c81c', data);
+      await truffleAssert.reverts(resultWrongSignatureGiven);
+    } catch(e) {
+    }
   }
 
   it("verifies signatures of short messages correctly.", async function() {

@@ -19,7 +19,7 @@ contract IdentityContractFactory {
     }
     
     function createIdentityContract() external {
-        IdentityContract idc = new IdentityContract(marketAuthority, 0, msg.sender);
+        IdentityContract idc = new IdentityContract(marketAuthority, IdentityContract.BalancePeriodConfiguration(0, 0, 0), msg.sender);
 
         identityContracts[address(idc)] = true;
         emit IdentityContractCreation(address(idc), msg.sender);

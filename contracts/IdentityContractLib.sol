@@ -149,16 +149,20 @@ library IdentityContractLib {
      * Only consumes reception approval when handling forwards. Fails iff granted reception approval does not match.
      */
     function consumeReceptionApproval(mapping (address => mapping (uint256 => mapping(address => IdentityContractLib.PerishableValue))) storage receptionApproval,
-      uint32 balancePeriodLength, uint256 _id, address _from, uint256 _value) public {
-        // Accept all certificate ERC-1155 transfers.
-        if(isCertificate(_id))
-            return;
-        
+      uint64 _balancePeriod, uint256 _id, address _from, uint256 _value) public {
         address energyToken = msg.sender;
-        require(receptionApproval[energyToken][_id][_from].value == _value, "Approval for token value does not match.");
-        require(receptionApproval[energyToken][_id][_from].expiryDate >= Commons.getBalancePeriod(balancePeriodLength, block.timestamp), "Approval for token reception is expired.");
-        
-        receptionApproval[energyToken][_id][_from].value = 0;
+
+        // In the case of forwards, require an exact match; in the case of certificates anything
+        // not exceeding the limit is permissible.
+        if(isCertificate(_id)) {
+            require(receptionApproval[energyToken][_id][_from].value >= _value, "Approval for token value too low.");
+            receptionApproval[energyToken][_id][_from].value -= _value;
+        } else {
+            require(receptionApproval[energyToken][_id][_from].value == _value, "Approval for token value does not match.");
+            receptionApproval[energyToken][_id][_from].value = 0;
+        }
+
+        require(receptionApproval[energyToken][_id][_from].expiryDate >= _balancePeriod, "Approval for token reception is expired.");
     }
     
     

@@ -112,24 +112,17 @@ library EnergyTokenLib {
     function checkClaimsForTransferSending(IdentityContract marketAuthority, mapping(uint256 => AbstractDistributor) storage id2Distributor,
       address payable _from, string memory _realWorldPlantId, uint256 _id) public view {
         IEnergyToken.TokenKind tokenKind = tokenKindFromTokenId(_id);
-        if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward || tokenKind == IEnergyToken.TokenKind.GenerationBasedForward || tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward
-          || tokenKind == IEnergyToken.TokenKind.PropertyForward) {
-            uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
-            require(balanceClaimId != 0, "Invalid BalanceClaim.");
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid ExistenceClaim.");
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid MeteringClaim.");
-            
+        
+        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
+        require(balanceClaimId != 0, "Invalid BalanceClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid ExistenceClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid MeteringClaim.");
+        
+        if(tokenKind != IEnergyToken.TokenKind.Certificate) {
             (, , address balanceAuthoritySender, , ,) = IdentityContract(_from).getClaim(balanceClaimId);
             AbstractDistributor distributor = id2Distributor[_id];
             require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthoritySender) != 0, "Invalid AcceptedDistributorClaim.");
-            return;
         }
-        
-        if(tokenKind == IEnergyToken.TokenKind.Certificate) {
-            return;
-        }
-        
-        require(false, "Unknown tokenKind.");
     }
     
     /**
@@ -138,29 +131,22 @@ library EnergyTokenLib {
     function checkClaimsForTransferReception(IdentityContract marketAuthority, mapping(uint256 => AbstractDistributor) storage id2Distributor,
       address payable _to, string memory _realWorldPlantId, uint256 _id) public view {
         IEnergyToken.TokenKind tokenKind = tokenKindFromTokenId(_id);
-        if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward || tokenKind == IEnergyToken.TokenKind.GenerationBasedForward || tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward
-          || tokenKind == IEnergyToken.TokenKind.PropertyForward) {
-            uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
-            require(balanceClaimId != 0, "Invalid BalanceClaim.");
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0,"Invalid ExistenceClaim." );
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0,"Invalid MeteringClaim.");
+        
+        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
+        require(balanceClaimId != 0, "Invalid BalanceClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid ExistenceClaim." );
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid MeteringClaim.");
 
-            if (tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
-                require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim) != 0, "Invalid 1MaxPowerConsumptionClaim.");
-            }
+        if (tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
+            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim) != 0, "Invalid 1MaxPowerConsumptionClaim.");
+        }
 
+        if(tokenKind != IEnergyToken.TokenKind.Certificate) {
             (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             AbstractDistributor distributor = id2Distributor[_id];
             require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver) != 0,
-              "Invalid AcceptedDistributorClaim.");
-            return;
+                "Invalid AcceptedDistributorClaim.");
         }
-        
-        if(tokenKind == IEnergyToken.TokenKind.Certificate) {
-            return;
-        }
-        
-        require(false, "Unknown tokenKind.");
     }
     
     // ########################

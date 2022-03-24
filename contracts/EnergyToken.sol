@@ -13,8 +13,6 @@ import "./IERC165.sol";
  * The EnergyToken contract manages forwards and certificates.
  */
 contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
-    using Address for address;
-
     enum PlantType {Generation, Consumption}
 
     event EnergyDocumented(PlantType plantType, uint256 value, address indexed plant, bool corrected, uint64 indexed balancePeriod, address indexed meteringAuthority);
@@ -101,14 +99,14 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         require(msg.sender == generationPlant, "msg.sender needs to be allowed to mint.");
         
         // Forwards can only be minted prior to their balance period.
-        require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp), "Wrong balance period.");
+        require(balancePeriod > marketAuthority.getBalancePeriod(block.timestamp), "Wrong balance period.");
         
         // Forwards must have been created.
         require(id2Distributor[_id] != AbstractDistributor(address(0)), "Forwards not created.");
         
         realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, generationPlantP);
-        require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) != 0 ||
-          ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "storage", Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) != 0, "Invalid ExistenceClaim.");
+        require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", marketAuthority.getBalancePeriod(block.timestamp)) != 0 ||
+          ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "storage", marketAuthority.getBalancePeriod(block.timestamp)) != 0, "Invalid ExistenceClaim.");
         require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim) != 0, "Invalid MaxPowerGenerationClaim.");
         EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, generationPlantP, realWorldPlantId, _id);
         }
@@ -129,8 +127,10 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
 
             // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
             TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
-            if(tokenKind == TokenKind.AbsoluteForward)
-                require(supply[_id] * (1000 * 3600) <= EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId) * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
+            if(tokenKind == TokenKind.AbsoluteForward) {
+                (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
+                require(supply[_id] * (1000 * 3600) <= EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId) * balancePeriodLength * 10**18, "Plant's capability exceeded.");
+            }
 
             // Emit the Transfer/Mint event.
             // The 0x0 source address implies a mint.
@@ -153,7 +153,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     // The recipient always is msg.sender. Therefore, _doSafeTransferAcceptanceCheck() is not called.
     function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, SimpleDistributor _distributor) external override(IEnergyToken) onlyGenerationPlants(msg.sender, _balancePeriod) onlyDistributors(address(_distributor), _balancePeriod) {
         require(_tokenKind != TokenKind.Certificate && _tokenKind != TokenKind.PropertyForward, "_tokenKind cannot be Certificate or PropertyForward.");
-        require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
+        require(_balancePeriod > marketAuthority.getBalancePeriod(block.timestamp));
         
         createTokenFamily(_balancePeriod, msg.sender, 0);
         
@@ -174,7 +174,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     }
     
     function createPropertyForwards(uint64 _balancePeriod, ComplexDistributor _distributor, EnergyTokenLib.Criterion[] calldata _criteria) external override(IEnergyToken) onlyStoragePlants(msg.sender, _balancePeriod) onlyDistributors(address(_distributor), _balancePeriod) {
-        require(_balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp));
+        require(_balancePeriod > marketAuthority.getBalancePeriod(block.timestamp));
         
         bytes32 criteriaHash = keccak256(abi.encode(_criteria));
         createPropertyTokenFamily(_balancePeriod, msg.sender, 0, criteriaHash);
@@ -211,7 +211,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         emit EnergyDocumented(PlantType.Consumption, _value, _plant, corrected, _balancePeriod, msg.sender);
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities onlyGenerationOrStoragePlants(_plant, Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp)) noReentrancy {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities onlyGenerationOrStoragePlants(_plant, marketAuthority.getBalancePeriod(block.timestamp)) noReentrancy {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -248,8 +248,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             // Emit the Transfer/Mint event.
             // the 0x0 source address implies a mint
             // It will also provide the circulating supply info.
-            emit TransferSingle(msg.sender, address(0x0), certificateReceiver, certificateId, _value);
-            _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, certificateReceiver, certificateId, _value, '');
+            emit TransferSingle(msg.sender, address(0), certificateReceiver, certificateId, _value);
+            // Do not call _doSafeTransferAcceptanceCheck because the recipient must accept the certificates.
         }
         emit EnergyDocumented(PlantType.Generation, _value, _plant, corrected, _balancePeriod, msg.sender);        
     }
@@ -293,14 +293,39 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     // ########################
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
-         if(tokenKind != TokenKind.Certificate)
-            require(balancePeriod > Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp), "balancePeriod must be in the future.");
+        if(tokenKind == TokenKind.Certificate) {
+            (, , uint64 certificateTradingWindow) = marketAuthority.balancePeriodConfiguration();
+            require(balancePeriod + certificateTradingWindow > marketAuthority.getBalancePeriod(block.timestamp),
+              "balancePeriod must be within the certificate trading window.");
+        } else {
+            require(balancePeriod > marketAuthority.getBalancePeriod(block.timestamp), "balancePeriod must be in the future.");
+        }
         
         if(tokenKind == TokenKind.ConsumptionBasedForward)
             addPlantRelationship(generationPlant, _to, balancePeriod);
         
-        checkClaimsForTransferAllIncluded(_from, _to, _id);
-        
+        bool performSafeTransferAcceptanceCheck = true;
+        // This needs to be checked because otherwise distributors would need real world plant IDs
+        // as without them, getting the real world plant ID to pass on to checkClaimsForTransferSending
+        // and checkClaimsForTransferReception would cause a revert.
+        if(_data.length > 0) {
+            (uint256 forwardId) = abi.decode(_data, (uint256));
+            if(id2Distributor[forwardId] == AbstractDistributor(_from)) {
+                // No requirements if the sender is a distributor.
+                // Not even the acceptance check.
+                performSafeTransferAcceptanceCheck = false;
+            } else {
+                require(ClaimVerifier.getClaimOfType(marketAuthority, _to, "", ClaimCommons.ClaimType.AcceptedDistributorClaim, marketAuthority.getBalancePeriod(block.timestamp)) != 0,
+                "Must be from or to distributor."); // May be intended to be from or to distributor as the forward ID check cannot tell the user's intention.
+                // If the require was passed, the user's intention is to send to a distributor.
+                // Therefore, only the sender's claims need to be checked.
+                string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
+                EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, payable(_from), realWorldPlantIdFrom, _id);
+            }
+        } else {
+            checkClaimsForTransferAllIncluded(_from, _to, _id);
+        }
+
         // ########################
         // ERC1155.safeTransferFrom(_from, _to, _id, _value, _data);
         // ########################
@@ -317,25 +342,68 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         emit TransferSingle(msg.sender, _from, _to, _id, _value);
 
         // Now that the balance is updated and the event was emitted,
-        // call onERC1155Received if the destination is a contract.
-        if (_to.isContract()) {
+        // call onERC1155Received. The destination always is a contract.
+        if(performSafeTransferAcceptanceCheck) {
             _doSafeTransferAcceptanceCheck(msg.sender, _from, _to, _id, _value, _data);
         }
     }
     
-    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
-        uint64 currentBalancePeriod = Commons.getBalancePeriod(marketAuthority.balancePeriodLength(), block.timestamp);
+    /**
+    * This function is disabled because it's difficult to write without exceeding the limit
+    * on the number of items on the stack and because it would exceed the block gas limit anyway.
+    *
+    * Make sure to comment noReentrancy back in when re-activating this function (it's commented
+    * out to avoid a compiler warning about unreachable code). Also: remove keyword 'pure'.
+    */
+    function safeBatchTransferFrom(address /*_from*/, address /*_to*/, uint256[] calldata /*_ids*/, uint256[] calldata /*_values*/, bytes calldata /*_data*/) override(ERC1155, IEnergyToken) external /*noReentrancy*/ pure {
+        revert("safeBatchTransferFrom is disabled");
+        /*
+        uint64 currentBalancePeriod = marketAuthority.getBalancePeriod(block.timestamp);
         
+        if(_data.length > 0) {
+            (uint256 forwardId) = abi.decode(_data, (uint256));
+            require(
+                id2Distributor[forwardId] == AbstractDistributor(_from) ||
+                (ClaimVerifier.getClaimOfType(marketAuthority, _to, "", ClaimCommons.ClaimType.AcceptedDistributorClaim, currentBalancePeriod) != 0 && true),
+                "Must be from or to distributor."
+            );
+        }
+
+        bool performSafeTransferAcceptanceCheck = true;
+        if(_data.length > 0) {
+            (uint256 forwardId) = abi.decode(_data, (uint256));
+            if(id2Distributor[forwardId] == AbstractDistributor(_from)) {
+                // No requirements if the sender is a distributor.
+                // Not even the acceptance check.
+                performSafeTransferAcceptanceCheck = false;
+            } else {
+                require(ClaimVerifier.getClaimOfType(marketAuthority, _to, "", ClaimCommons.ClaimType.AcceptedDistributorClaim, currentBalancePeriod) != 0,
+                "Must be from or to distributor."); // May be intended to be from or to distributor as the forward ID check cannot tell the user's intention.
+                // If the require was passed, the user's intention is to send to a distributor.
+                // Therefore, only the sender's claims need to be checked.
+                string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
+                for (uint256 i = 0; i < _ids.length; ++i) {
+                    EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, payable(_from), realWorldPlantIdFrom, _ids[i]);
+                }
+            }
+        } else {
+            for (uint256 i = 0; i < _ids.length; ++i) {
+                checkClaimsForTransferAllIncluded(_from, _to, _ids[i]);
+            }
+        }
+        
+        (, , uint64 certificateTradingWindow) = marketAuthority.balancePeriodConfiguration();
         for (uint256 i = 0; i < _ids.length; ++i) {
             (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_ids[i]);
-            if(tokenKind != TokenKind.Certificate) {
+            if(tokenKind == TokenKind.Certificate) {
+                require(balancePeriod + certificateTradingWindow > currentBalancePeriod,
+                  "balancePeriod must be within the certificate trading window.");
+            } else {
                 require(balancePeriod > currentBalancePeriod, "balancePeriod must be in the future.");
             }
             
             if(tokenKind == TokenKind.ConsumptionBasedForward)
                 addPlantRelationship(generationPlant, _to, balancePeriod);
-
-            checkClaimsForTransferAllIncluded(_from, _to, _ids[i]);
         }
         
         // ########################
@@ -364,21 +432,14 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         emit TransferBatch(msg.sender, _from, _to, _ids, _values);
 
         // Now that the balances are updated and the events are emitted,
-        // call onERC1155BatchReceived if the destination is a contract.
-        if (_to.isContract()) {
+        // call onERC1155BatchReceived. The destination always is a contract.
+        if(performSafeTransferAcceptanceCheck) {
             _doSafeBatchTransferAcceptanceCheck(msg.sender, _from, _to, _ids, _values, _data);
         }
+        */
     }
     
     function checkClaimsForTransferAllIncluded(address _from, address _to, uint256 _id) internal view {
-        // This needs to be checked here because otherwise distributors would need real world plant IDs
-        // as without them, getting the real world plant ID to pass on to checkClaimsForTransferSending
-        // and checkClaimsForTransferReception would cause a revert.
-        TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
-        if(tokenKind == TokenKind.Certificate) {
-            return;
-        }
-        
         string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
         string memory realWorldPlantIdTo = ClaimVerifier.getRealWorldPlantId(marketAuthority, _to);
         EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, payable(_from), realWorldPlantIdFrom, _id);
@@ -450,7 +511,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         
         string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant);
         uint256 maxGen = EnergyTokenLib.getPlantGenerationCapability(marketAuthority, _plant, realWorldPlantId);
-        require(_value * 1000 * 3600 <= maxGen * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
+        (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
+        require(_value * 1000 * 3600 <= maxGen * balancePeriodLength * 10**18, "Plant's capability exceeded.");
     }
 
     function addMeasuredEnergyConsumption_capabilityCheck(address _plant, uint256 _value) internal view {
@@ -461,7 +523,9 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant); 
         uint256 maxCon = EnergyTokenLib.getPlantConsumptionCapability(marketAuthority, _plant, realWorldPlantId);
         // Only check if max consumption capability is known.
-        if (maxCon != 0)
-            require(_value * 1000 * 3600 <= maxCon * marketAuthority.balancePeriodLength() * 10**18, "Plant's capability exceeded.");
+        if (maxCon != 0) {
+            (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
+            require(_value * 1000 * 3600 <= maxCon * balancePeriodLength * 10**18, "Plant's capability exceeded.");
+        }
     }
 }

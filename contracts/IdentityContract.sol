@@ -12,6 +12,12 @@ import "./IERC165.sol";
  * on the blockchain.
  */
 contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
+    struct BalancePeriodConfiguration {
+        uint64 length;
+        uint64 offset;
+        uint64 certificateTradingWindow;
+    }
+
     // Attributes ERC-725
     address public owner;
     mapping (bytes32 => bytes) public data;
@@ -27,7 +33,7 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
 
     // Other attributes
     IdentityContract public marketAuthority;
-    uint32 public balancePeriodLength;
+    BalancePeriodConfiguration public balancePeriodConfiguration;
     uint256 public executionNonce;
     
     // Modifiers ERC-725
@@ -46,20 +52,30 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
      * Market authorities need to set _marketAuthority to 0x0 and specify _balancePeriodLength.
      * Other IdentityContracts need to specify the Market Authority's address as _marketAuthority. Their specification of _balancePeriodLength will be ignored.
      */
-    constructor(IdentityContract _marketAuthority, uint32 _balancePeriodLength, address _owner) {
+    constructor(IdentityContract _marketAuthority, BalancePeriodConfiguration memory _balancePeriodConfiguration, address _owner) {
         if(_marketAuthority == IdentityContract(address(0))) {
-            require(3600 % _balancePeriodLength == 0, "Balance period length must be a unit fraction of an hour.");
-            
             marketAuthority = this;
-            balancePeriodLength = _balancePeriodLength;
+            balancePeriodConfiguration = _balancePeriodConfiguration;
         } else {
             marketAuthority = _marketAuthority;
-            balancePeriodLength = _marketAuthority.balancePeriodLength();
+            (balancePeriodConfiguration.length, balancePeriodConfiguration.offset, balancePeriodConfiguration.certificateTradingWindow) =
+              _marketAuthority.balancePeriodConfiguration();
         }
         
         owner = _owner;
         
         emit IdentityContractCreation(_marketAuthority, this);
+    }
+
+    /**
+    * Balance period does not start at 00:00:00 + i*15:00 but at 00:00:01 + i*15:00.
+    * 
+    * Timestamps are uint64 across this contract stack because they are included in identifiers
+    * where space is scarce. 64 bits suffice.
+    */
+    function getBalancePeriod(uint256 _timestamp) public view returns(uint64 __beginningOfBalancePeriod) {
+        _timestamp = _timestamp - balancePeriodConfiguration.offset;
+        return uint64(_timestamp - (_timestamp % balancePeriodConfiguration.length) + balancePeriodConfiguration.offset);
     }
     
     // For the definitions of the interface identifiers, see InterfaceIds.sol.
@@ -137,14 +153,14 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     
     // Funtions ERC-1155 and related
     function onERC1155Received(address /*_operator*/, address _from, uint256 _id, uint256 _value, bytes calldata /*_data*/) virtual override(IIdentityContract) external returns(bytes4) {
-        IdentityContractLib.consumeReceptionApproval(receptionApproval, balancePeriodLength, _id, _from, _value);
+        IdentityContractLib.consumeReceptionApproval(receptionApproval, getBalancePeriod(block.timestamp), _id, _from, _value);
         return 0xf23a6e61;
     }
     
     function onERC1155BatchReceived(address /*_operator*/, address _from, uint256[] calldata _ids, uint256[] calldata _values, bytes calldata /*_data*/)
       virtual override(IIdentityContract) external returns(bytes4) {
         for(uint32 i = 0; i < _ids.length; i++) {
-            IdentityContractLib.consumeReceptionApproval(receptionApproval, balancePeriodLength, _ids[i], _from, _values[i]);
+            IdentityContractLib.consumeReceptionApproval(receptionApproval, getBalancePeriod(block.timestamp), _ids[i], _from, _values[i]);
         }
         
         return 0xbc197c81;
