@@ -19,5 +19,8 @@
     "tests": "gulp tests"
   },
   "author": "B2E2 Community <b2e2@enbw.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.13.0"
+  }
 }
