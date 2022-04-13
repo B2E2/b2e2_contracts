@@ -1,11 +1,6 @@
 'use strict';
 
-const truffleAssert = require('truffle-assertions');
-
-let accounts;
-
 var IdentityContract = artifacts.require('./IdentityContract.sol');
-var IdentityContractLib = artifacts.require('./IdentityContractLib.sol');
 var IdentityContractFactory = artifacts.require('./IdentityContractFactory.sol');
 var identityContractFactory;
 var marketAuthority;

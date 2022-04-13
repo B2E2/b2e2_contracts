@@ -4,14 +4,10 @@ const truffleAssert = require('truffle-assertions');
 const eutil = require('ethereumjs-util');
 const fs = require('fs');
 const IdentityContractFromJson = JSON.parse(fs.readFileSync('./build/contracts/IdentityContract.json', 'utf8'));
-let web3Idc = new web3.eth.Contract(IdentityContractFromJson.abi);
 
 const account9Sk = '0x3b9722b917db24a24b3783595f2d30441ca044a1fa6d8dba5c8be7743387a6f3';
 
-let accounts;
-
 var IdentityContract = artifacts.require('./IdentityContract.sol');
-var IdentityContractLib = artifacts.require('./IdentityContractLib.sol');
 var marketAuthority;
 var idcs = [];
 var ClaimVerifier = artifacts.require('./ClaimVerifier.sol');
@@ -21,9 +17,9 @@ contract('IdentityContract', function(accounts) {
 
     before(async function() {
         await ClaimVerifier.deployed().then(async function(instance) {
-	  claimVerifier = instance;
+            claimVerifier = instance;
         });
-	
+    
         accounts = await web3.eth.getAccounts();
 
         marketAuthority = await IdentityContract.new('0x0000000000000000000000000000000000000000',
@@ -31,9 +27,9 @@ contract('IdentityContract', function(accounts) {
         console.log(`Successfully deployed IdentityContract for Market Authority with address: ${marketAuthority.address}`);
 
         for(let i=0; i < 3; i++) {
-	  idcs[i] = await IdentityContract.new(marketAuthority.address, [0, 0, 0], accounts[i+5],
+            idcs[i] = await IdentityContract.new(marketAuthority.address, [0, 0, 0], accounts[i+5],
                 {from: accounts[i+5]});
-	  console.log(`Successfully deployed IdentityContract ${i} with address: ${idcs[i].address}`);
+            console.log(`Successfully deployed IdentityContract ${i} with address: ${idcs[i].address}`);
         }
     });
 
@@ -41,7 +37,7 @@ contract('IdentityContract', function(accounts) {
         assert.equal(await marketAuthority.marketAuthority(), marketAuthority.address);
 
         for(let i=0; i < 3; i++) {
-	  assert.equal(await idcs[i].marketAuthority(), marketAuthority.address);
+            assert.equal(await idcs[i].marketAuthority(), marketAuthority.address);
         }
     });
 
@@ -66,7 +62,7 @@ contract('IdentityContract', function(accounts) {
         assert.equal(await marketAuthority.owner(), accounts[9]);
 
         for(let i=0; i < 3; i++) {
-	  assert.equal(await idcs[i].owner(), accounts[i+5]);
+            assert.equal(await idcs[i].owner(), accounts[i+5]);
         }
     });
 
@@ -130,7 +126,7 @@ contract('IdentityContract', function(accounts) {
 
     async function signatureVerificationTest(message) {
         const subject = idcs[2].address;
-	
+    
         const topic = 42;
         const scheme = 1;
         const issuer = accounts[9];
@@ -150,11 +146,8 @@ contract('IdentityContract', function(accounts) {
         assert.isFalse(await resultWrongTopicGiven);
         assert.isFalse(await resultWrongSchemeGiven);
 
-        try {
-            const resultWrongSignatureGiven = claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, '0x831862627ddf4024f0cfc79f34f452dc19115b751f2c913ff4e845f8d8ea48ad07f472109e001ff87579f71284b5dc1989dcee8db2af172b6296ec67a4fef5c81c', data);
-            await truffleAssert.reverts(resultWrongSignatureGiven);
-        } catch(e) {
-        }
+        const resultWrongSignatureGiven = claimVerifier.verifySignature(idcs[2].address, topic, scheme, issuer, '0x831862627ddf4024f0cfc79f34f452dc19115b751f2c913ff4e845f8d8ea48ad07f472109e001ff87579f71284b5dc1989dcee8db2af172b6296ec67a4fef5c81c', data);
+        await truffleAssert.reverts(resultWrongSignatureGiven);
     }
 
     it('verifies signatures of short messages correctly.', async function() {
@@ -170,11 +163,11 @@ contract('IdentityContract', function(accounts) {
         // IDC 1 is owned by account 6.
         // Account 6 wants to change the owner of IDC 0 to account 2.
         // For this, account 6 needs to tell IDC 1 to tell IDC 0 to change its owner.
-	
+    
         // Prepare function call.
         const idc = new web3.eth.Contract(IdentityContractFromJson.abi, idcs[1].address);
         let data = idc.methods.changeOwner(accounts[2]).encodeABI();
-	
+    
         assert.equal(await idcs[0].owner(), idcs[1].address);
         await idc.methods.execute(0, idcs[0].address, 0, data).send({from: accounts[6]});
         assert.equal(await idcs[0].owner(), accounts[2]);
