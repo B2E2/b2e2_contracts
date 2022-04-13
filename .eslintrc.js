@@ -8,6 +8,15 @@ module.exports = {
   'parserOptions': {
     'ecmaVersion': 'latest'
   },
+  'globals': {
+    'web3': 'readonly',
+    'artifacts': 'readonly',
+    'contract': 'readonly',
+    'before': 'readonly',
+    'it': 'readonly',
+    'assert': 'readonly',
+    'Buffer': 'readonly',
+  },
   'rules': {
     'indent': [
       'error',
