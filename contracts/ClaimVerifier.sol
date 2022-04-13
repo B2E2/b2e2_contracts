@@ -100,7 +100,7 @@ library ClaimVerifier {
            || _claimType == ClaimCommons.ClaimType.LocationClaim
            || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
             bool correctAccordingToSecondLevelAuthority = verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
-            return correctAccordingToSecondLevelAuthority && (getClaimOfType(marketAuthority, address(uint160(_issuer)), "", ClaimCommons.getHigherLevelClaim(_claimType)) != 0);
+            return correctAccordingToSecondLevelAuthority;
         }
         
         revert("Claim validation failed because the claim type was not recognized.");
