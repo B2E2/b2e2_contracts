@@ -72,38 +72,22 @@ library ClaimVerifier {
         if(ClaimCommons.claimType2Topic(_claimType) != _topic)
             return false;
        
+        if(_claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
+            if(_issuer != _subject)
+                return false;
+        }
+
         if(_claimType == ClaimCommons.ClaimType.IsBalanceAuthority
            || _claimType == ClaimCommons.ClaimType.IsMeteringAuthority
            || _claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority
            || _claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim
            || _claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim
-           || _claimType == ClaimCommons.ClaimType.MarketRulesClaim
-           || _claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
-            if(_claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
-                if(_issuer != _subject)
-                    return false;
-            } else {
+           || _claimType == ClaimCommons.ClaimType.MarketRulesClaim) {
                 if(_issuer != address(marketAuthority))
                     return false;
-            }
-            
-            bool correct = verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
-            return correct;
         }
-        
-        if(_claimType == ClaimCommons.ClaimType.MeteringClaim
-           || _claimType == ClaimCommons.ClaimType.BalanceClaim
-           || _claimType == ClaimCommons.ClaimType.ExistenceClaim
-           || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim
-           || _claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim
-           || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim
-           || _claimType == ClaimCommons.ClaimType.LocationClaim
-           || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
-            bool correctAccordingToSecondLevelAuthority = verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
-            return correctAccordingToSecondLevelAuthority;
-        }
-        
-        revert("Claim validation failed because the claim type was not recognized.");
+
+        return verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
     }
     
     /**
