@@ -152,8 +152,11 @@ contract ComplexDistributor is AbstractDistributor {
                 else
                     require(ClaimVerifier.getClaimOfType(marketAuthority, certificateGenerationPlant, realWorldPlantId, claimType, certificateBalancePeriod) != 0, "certificate ID not applicable");
             } else {
-                // TODO: implement
-                require(false, "not yet implemented");
+                if(criterion.operator == EnergyTokenLib.Operator.geq) {
+                    require(ClaimVerifier.getClaimOfTypeWithGeqField(marketAuthority, certificateGenerationPlant, realWorldPlantId, claimType, criterion.fieldName, string(criterion.fieldValue), certificateBalancePeriod) != 0, "certificate ID not applicable");
+                } else {
+                    require(ClaimVerifier.getClaimOfTypeWithLeqField(marketAuthority, certificateGenerationPlant, realWorldPlantId, claimType, criterion.fieldName, string(criterion.fieldValue), certificateBalancePeriod) != 0, "certificate ID not applicable");
+                }
             }
         }
     }

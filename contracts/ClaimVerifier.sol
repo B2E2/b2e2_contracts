@@ -72,38 +72,22 @@ library ClaimVerifier {
         if(ClaimCommons.claimType2Topic(_claimType) != _topic)
             return false;
        
+        if(_claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
+            if(_issuer != _subject)
+                return false;
+        }
+
         if(_claimType == ClaimCommons.ClaimType.IsBalanceAuthority
            || _claimType == ClaimCommons.ClaimType.IsMeteringAuthority
            || _claimType == ClaimCommons.ClaimType.IsPhysicalAssetAuthority
            || _claimType == ClaimCommons.ClaimType.IdentityContractFactoryClaim
            || _claimType == ClaimCommons.ClaimType.EnergyTokenContractClaim
-           || _claimType == ClaimCommons.ClaimType.MarketRulesClaim
-           || _claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
-            if(_claimType == ClaimCommons.ClaimType.RealWorldPlantIdClaim) {
-                if(_issuer != _subject)
-                    return false;
-            } else {
+           || _claimType == ClaimCommons.ClaimType.MarketRulesClaim) {
                 if(_issuer != address(marketAuthority))
                     return false;
-            }
-            
-            bool correct = verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
-            return correct;
         }
-        
-        if(_claimType == ClaimCommons.ClaimType.MeteringClaim
-           || _claimType == ClaimCommons.ClaimType.BalanceClaim
-           || _claimType == ClaimCommons.ClaimType.ExistenceClaim
-           || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim
-           || _claimType == ClaimCommons.ClaimType.MaxPowerConsumptionClaim
-           || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim
-           || _claimType == ClaimCommons.ClaimType.LocationClaim
-           || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
-            bool correctAccordingToSecondLevelAuthority = verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
-            return correctAccordingToSecondLevelAuthority && (getClaimOfType(marketAuthority, address(uint160(_issuer)), "", ClaimCommons.getHigherLevelClaim(_claimType)) != 0);
-        }
-        
-        revert("Claim validation failed because the claim type was not recognized.");
+
+        return verifySignature(_subject, _topic, _scheme, _issuer, _signature, _data);
     }
     
     /**
@@ -205,6 +189,80 @@ library ClaimVerifier {
     function getClaimOfTypeWithMatchingField_temporalValidityCheck(IdentityContract marketAuthority, uint64 _requiredValidAt, bytes memory cData) internal view returns(bool) {
         return (_requiredValidAt > 0 && getExpiryDate(cData) < marketAuthority.getBalancePeriod(_requiredValidAt));
     }
+
+    function getClaimOfTypeWithGeqField(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
+        uint256 topic = ClaimCommons.claimType2Topic(_claimType);
+        uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
+
+        bytes32 realWorldPlantIdHash = keccak256(abi.encodePacked(_realWorldPlantId));
+        for(uint64 i = 0; i < claimIds.length; i++) {
+            (uint256 cTopic, , , , bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
+            
+            if(cTopic != topic)
+                continue;
+            
+            if(_claimType == ClaimCommons.ClaimType.MeteringClaim
+               || _claimType == ClaimCommons.ClaimType.BalanceClaim
+               || _claimType == ClaimCommons.ClaimType.ExistenceClaim
+               || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim
+               || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim
+               || _claimType == ClaimCommons.ClaimType.LocationClaim
+               || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
+                if(keccak256(abi.encodePacked(getRealWorldPlantId(cData))) != realWorldPlantIdHash)
+                    continue;
+            }
+            
+            if(getClaimOfTypeWithMatchingField_temporalValidityCheck(marketAuthority, _requiredValidAt, cData))
+                continue;
+            
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i]))
+                continue;
+            
+            // Separate function call to avoid stack too deep error.
+            if(doesGeqFieldExist(_fieldName, _fieldContent, cData)) {
+                return claimIds[i];
+            }
+        }
+        
+        return 0;
+    }
+
+    function getClaimOfTypeWithLeqField(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
+        uint256 topic = ClaimCommons.claimType2Topic(_claimType);
+        uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
+
+        bytes32 realWorldPlantIdHash = keccak256(abi.encodePacked(_realWorldPlantId));
+        for(uint64 i = 0; i < claimIds.length; i++) {
+            (uint256 cTopic, , , , bytes memory cData,) = IdentityContract(_subject).getClaim(claimIds[i]);
+            
+            if(cTopic != topic)
+                continue;
+            
+            if(_claimType == ClaimCommons.ClaimType.MeteringClaim
+               || _claimType == ClaimCommons.ClaimType.BalanceClaim
+               || _claimType == ClaimCommons.ClaimType.ExistenceClaim
+               || _claimType == ClaimCommons.ClaimType.MaxPowerGenerationClaim
+               || _claimType == ClaimCommons.ClaimType.GenerationTypeClaim
+               || _claimType == ClaimCommons.ClaimType.LocationClaim
+               || _claimType == ClaimCommons.ClaimType.AcceptedDistributorClaim) {
+                if(keccak256(abi.encodePacked(getRealWorldPlantId(cData))) != realWorldPlantIdHash)
+                    continue;
+            }
+            
+            if(getClaimOfTypeWithMatchingField_temporalValidityCheck(marketAuthority, _requiredValidAt, cData))
+                continue;
+            
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i]))
+                continue;
+            
+            // Separate function call to avoid stack too deep error.
+            if(doesLeqFieldExist(_fieldName, _fieldContent, cData)) {
+                return claimIds[i];
+            }
+        }
+        
+        return 0;
+    }
     
     function getUint64Field(string memory _fieldName, bytes memory _data) public pure returns(uint64) {
         int fieldAsInt = JsmnSolLib.parseInt(getStringField(_fieldName, _data));
@@ -212,11 +270,16 @@ library ClaimVerifier {
         require(fieldAsInt < 0x10000000000000000, "fieldAsInt must be less than 0x10000000000000000.");
         return uint64(uint256(fieldAsInt));
     }
-    
+
     function getUint256Field(string calldata _fieldName, bytes calldata _data) external pure returns(uint256) {
         int fieldAsInt = JsmnSolLib.parseInt(getStringField(_fieldName, _data));
         require(fieldAsInt >= 0, "fieldAsInt must be greater than or equal to 0.");
         return uint256(fieldAsInt);
+    }
+    
+    function getInt256Field(string memory _fieldName, bytes memory _data) internal pure returns(int256) {
+        int fieldAsInt = JsmnSolLib.parseInt(getStringField(_fieldName, _data));
+        return fieldAsInt;
     }
     
     function getStringField(string memory _fieldName, bytes memory _data) public pure returns(string memory) {
@@ -323,6 +386,14 @@ library ClaimVerifier {
             }
         }
         return false;
+    }
+
+    function doesGeqFieldExist(string memory _fieldName, string memory _fieldContent, bytes memory _data) internal pure returns(bool) {
+        return getInt256Field(_fieldName, _data) >= JsmnSolLib.parseInt(_fieldContent);
+    }
+
+    function doesLeqFieldExist(string memory _fieldName, string memory _fieldContent, bytes memory _data) internal pure returns(bool) {
+        return getInt256Field(_fieldName, _data) <= JsmnSolLib.parseInt(_fieldContent);
     }
     
     function claimAttributes2SigningFormat(address _subject, uint256 _topic, bytes memory _data) internal pure returns (bytes32 __claimInSigningFormat) {
