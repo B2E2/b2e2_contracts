@@ -135,7 +135,7 @@ Hierbei werden sowohl die Claims der Verbrauchsanlage als auch die der Erzeugung
 
 Die Metering Authority dokumentiert auf der Blockchain die Messwerte der Anlagen. Dafür speichert die Metering Authority durch Aufruf der “addMeasuredEnergyConsumption” bzw. “addMeasuredEnergyGeneration” Methode im Energy Token Contract die Messwerte der Anlagen ab. Dabei werden zum einen die Claims der Metering Authority überprüft und zum anderen die Claims der Anlagen.
 
-<img src="./images/3.png"></img>
+<img src="./images/31.png"></img>
 
 Die Balance Authority des Verbrauchers beschafft diesem die ihm zustehenden Certificates.
 Dafür führt die Balance Authority des Verbrauchers durch Aufruf der “distribute” Methode die
