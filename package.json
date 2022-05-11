@@ -5,10 +5,10 @@
   "main": "truffle-config.js",
   "dependencies": {
     "child_process": "^1.0.2",
-    "ethereumjs-util": "^6.2.0",
-    "ganache": "^7.0.0-alpha.1",
+    "ethereumjs-util": "^7.1.4",
+    "ganache": "^7.1.0",
     "gulp": "^4.0.2",
-    "truffle": "^5.1.67",
+    "truffle": "^5.5.13",
     "truffle-assertions": "^0.9.2",
     "truffle-contract-size": "^2.0.1",
     "truffle-hdwallet-provider": "^1.0.6"
@@ -21,6 +21,6 @@
   "author": "B2E2 Community <b2e2@enbw.com>",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^8.13.0"
+    "eslint": "^8.15.0"
   }
 }
