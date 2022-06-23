@@ -293,6 +293,8 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     // ########################
     function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) override(ERC1155, IEnergyToken) external noReentrancy {
         (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
+        require(supply[_id] != 0, "Token does not exist.");
+
         if(tokenKind == TokenKind.Certificate) {
             (, , uint64 certificateTradingWindow) = marketAuthority.balancePeriodConfiguration();
             require(balancePeriod + certificateTradingWindow > marketAuthority.getBalancePeriod(block.timestamp),
