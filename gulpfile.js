@@ -5,9 +5,9 @@ const fs = require('fs');
 // ########################################
 // ########################################
 
-exports.build = series(clean, parallel(update_submodule, npm_install_contracts), compile_contracts);
+exports.build = series(clean, parallel(update_submodule, yarn_install_contracts), compile_contracts);
 
-exports.docker_build = series(clean, parallel(npm_install_contracts), compile_contracts);
+exports.docker_build = series(clean, parallel(yarn_install_contracts), compile_contracts);
 
 
 exports.tests = series(start_test_chain, run_tests, kill_test_chain);
@@ -81,12 +81,12 @@ function run_tests(cb) {
 // ########################################
 // ########################################
 
-function npm_install_contracts(cb) {
+function yarn_install_contracts(cb) {
   if (fs.existsSync(`./node_modules`)) {
     return cb();
   }
 
-  exec("npm i", (error, stdout, stderr) => {
+  exec("yarn install", (error, stdout, stderr) => {
     if (error) {
       console.error(stderr);
       throw error;

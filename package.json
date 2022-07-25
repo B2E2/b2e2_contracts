@@ -14,7 +14,7 @@
     "truffle-hdwallet-provider": "^1.0.6"
   },
   "scripts": {
-    "prebuild": "npm i",
+    "prebuild": "yarn install",
     "build": "gulp build",
     "tests": "gulp tests"
   },
