@@ -14,7 +14,7 @@
     "truffle-hdwallet-provider": "^1.0.17"
   },
   "scripts": {
-    "prebuild": "yarn install",
+    "prebuild": "yarn install --frozen-lockfile",
     "build": "gulp build",
     "tests": "gulp tests"
   },

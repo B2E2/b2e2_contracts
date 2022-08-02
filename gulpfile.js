@@ -86,7 +86,7 @@ function yarn_install_contracts(cb) {
     return cb();
   }
 
-  exec("yarn install", (error, stdout, stderr) => {
+  exec("yarn install --frozen-lockfile", (error, stdout, stderr) => {
     if (error) {
       console.error(stderr);
       throw error;
