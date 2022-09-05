@@ -244,12 +244,14 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             }
 
             uint256 certificateId = getTokenId(TokenKind.Certificate, _balancePeriod, _plant, 0);
-            mint(certificateReceiver, certificateId, _value);
-            // Emit the Transfer/Mint event.
-            // the 0x0 source address implies a mint
-            // It will also provide the circulating supply info.
-            emit TransferSingle(msg.sender, address(0), certificateReceiver, certificateId, _value);
-            // Do not call _doSafeTransferAcceptanceCheck because the recipient must accept the certificates.
+            if(_value > 0) {
+                mint(certificateReceiver, certificateId, _value);
+                // Emit the Transfer/Mint event.
+                // the 0x0 source address implies a mint
+                // It will also provide the circulating supply info.
+                emit TransferSingle(msg.sender, address(0), certificateReceiver, certificateId, _value);
+                // Do not call _doSafeTransferAcceptanceCheck because the recipient must accept the certificates.
+            }
         }
         emit EnergyDocumented(PlantType.Generation, _value, _plant, corrected, _balancePeriod, msg.sender);        
     }
