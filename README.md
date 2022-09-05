@@ -14,11 +14,11 @@ The latest version of the sequence and entity relationship diagrams from the whi
     git clone --recursive <<todo: official github repo URL>>
 
 ## Installing Dependencies
-    sudo npm install -g truffle ganache ganache-cli
+    sudo yarn global add truffle ganache ganache-cli
     cd Energietokens-Implementierung
-    npm install
+    yarn install
 	cd dependencies/jsmnSol
-	npm install
+	yarn install
 
 ## Building & Deployment
 Launch Ganache:
