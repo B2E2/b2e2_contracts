@@ -1,3 +1,4 @@
+require('dotenv').config();
 const {exec, spawn} = require('child_process');
 const {parallel, series} = require('gulp');
 const fs = require('fs');
@@ -18,7 +19,7 @@ exports.tests = series(start_test_chain, run_tests, kill_test_chain);
 function start_test_chain() {
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line max-len
-    const child = spawn(`npx ganache-cli --gasLimit 10000000 -m "hire fancy burst fresh gadget theme cloud broom insane screen foster where"`, [], {
+        const child = spawn(`npx ganache-cli --gasLimit 10000000 -m '${process.env.MNEMONIC}'`, [], {
       shell: true,
     });
 
