@@ -4,7 +4,7 @@
   "description": "",
   "main": "truffle-config.js",
   "dependencies": {
-    "@truffle/hdwallet-provider": "^2.1.2",
+    "@truffle/hdwallet-provider": "^2.1.7",
     "child_process": "^1.0.2",
     "dotenv": "^16.0.3",
     "ethereumjs-util": "^7.1.5",
