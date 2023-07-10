@@ -274,9 +274,13 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // Prepare variables.
         uint64 balancePeriod = tokenFamilyProperties[uint248(_targetForwardId)].balancePeriod;
         address storagePlant = tokenFamilyProperties[uint248(_targetForwardId)].generationPlant;
+
+        // Make sure that energy can only flow into the future.
+        (, uint64 balancePeriodOriginalCertificates,) = getTokenIdConstituents(_originalCertificateId);
+        require(balancePeriodOriginalCertificates < balancePeriod, "energy must flow into the future");
         
         // Make sure that the storage plant has transported enough energy temporally.
-        // Note thay correcting documentations affect the behavior of this function.
+        // Note that correcting documentations affect the behavior of this function.
         EnergyTokenLib.EnergyDocumentation storage energyDocumentation = energyDocumentations[storagePlant][balancePeriod];
         require(energyDocumentation.generated, "The storage plant has not generated any energy.");
         storagePlantEnergyUsedForTemporalTransportation[storagePlant][balancePeriod] += _value;
