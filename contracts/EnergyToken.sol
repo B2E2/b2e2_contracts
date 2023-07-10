@@ -18,6 +18,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     event EnergyDocumented(PlantType plantType, uint256 value, address indexed plant, bool corrected, uint64 indexed balancePeriod, address indexed meteringAuthority);
     event ForwardsCreated(TokenKind tokenKind, uint64 balancePeriod, AbstractDistributor distributor, uint256 id);
     event TokenFamilyCreation(uint248);
+    event BalanceConvertedToSouldbound(uint256 tokenId, address agent, uint256 value);
     
     // id => whetherCreated
     mapping (uint256 => bool) createdForwards;
@@ -288,6 +289,13 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // Perform the actual temporal transportation.
         burn(msg.sender, _originalCertificateId, _value);
         mint(msg.sender, __targetCertificateId, _value);
+    }
+
+    function makeSoulbound(uint256 _id, uint256 _value) external {
+        require(balances[_id][msg.sender] >= _value, "insuficient funds");
+        balances[_id][msg.sender] -= _value;
+        balancesSoulbound[_id][msg.sender] += _value;
+        emit BalanceConvertedToSouldbound(_id, msg.sender, _value);
     }
     
     // ########################
