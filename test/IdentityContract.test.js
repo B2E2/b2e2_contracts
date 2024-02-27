@@ -5,7 +5,7 @@ const eutil = require('ethereumjs-util');
 const fs = require('fs');
 const IdentityContractFromJson = JSON.parse(fs.readFileSync('./build/contracts/IdentityContract.json', 'utf8'));
 
-const account9Sk = '0x3b9722b917db24a24b3783595f2d30441ca044a1fa6d8dba5c8be7743387a6f3';
+const account9Sk = '0x0b1e3843d7172d055d410af0c27f22db56a0a7518238ac4dd3aa55f09fce0b3b';
 
 var IdentityContract = artifacts.require('./IdentityContract.sol');
 var marketAuthority;
