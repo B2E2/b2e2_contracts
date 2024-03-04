@@ -6,6 +6,7 @@ jobs:
   check_linter_and_tests:
     name: Create/update todos
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: default_environment
     steps:
       - uses: actions/checkout@master
