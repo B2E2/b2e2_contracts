@@ -37,6 +37,10 @@ function start_test_chain() {
         });
 
         child.on('exit', (code, signal) => {
+        // TODO: why can code be null?
+            if(code === null)
+                code = 0;
+
             console.log(`Chain exited with code ${code} and signale ${signal}`);
             if(code !== 0) {
                 process.exit(1);
