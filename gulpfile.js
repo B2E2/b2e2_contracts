@@ -16,7 +16,7 @@ exports.tests = series(start_test_chain, run_tests, kill_test_chain);
 // ########################################
 
 function start_test_chain() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
     // eslint-disable-next-line max-len
         const child = spawn(`npx ganache-cli --gasLimit 10000000 -m '${process.env.MNEMONIC}'`, [], {
             shell: true,
@@ -72,7 +72,7 @@ function run_tests(cb) {
         console.error(data);
     });
 
-    child.on('exit', (code, signal) => {
+    child.on('exit', (code, _signal) => {
         console.log(`Tests exited with code ${code}`);
         return cb();
     });
@@ -116,7 +116,7 @@ function compile_contracts(cb) {
         console.error(data);
     });
 
-    child.on('exit', (code, signal) => {
+    child.on('exit', (code, _signal) => {
         console.log(`Server exited with code ${code}`);
         return cb();
     });

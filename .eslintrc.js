@@ -23,5 +23,9 @@ module.exports = {
         quotes: ['error', 'single'],
         semi: ['error', 'always'],
         'no-shadow': ['error', {}],
+        'no-unused-vars': [
+            'warn',
+            { 'vars': 'all', 'varsIgnorePattern': '^_', 'args': 'after-used', 'argsIgnorePattern': '^_' }
+        ],
     },
 };
