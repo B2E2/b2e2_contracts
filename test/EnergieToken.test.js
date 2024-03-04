@@ -717,7 +717,8 @@ contract('EnergyToken', function(accounts) {
     });
 
     it('can create property forwards.', async function() {
-        const balancePeriod = 1737549001;
+        const balancePeriodCertificates = 1737549001;
+        const balancePeriodPropertyForwards = balancePeriodCertificates + 2*9000 + 15*60;
 
         // Before property forwards can be created, IDC 0 (previously a generation plant) needs to become a storage plant.
         const jsonExistenceStorage = '{ "type": "storage", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
@@ -728,35 +729,35 @@ contract('EnergyToken', function(accounts) {
         await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, dataExistenceStorage, '', account8Sk);
         await addClaim(idcs[0], 10140, physicalAssetAuthority.options.address, dataMaxCon, '', account8Sk);
 
-        const abiCreateForwardsCall1 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 0, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]]).encodeABI();
+        const abiCreateForwardsCall1 = energyTokenWeb3.methods.createPropertyForwards(balancePeriodPropertyForwards, complexDistributor.address, [[10065, 'maxGen', 0, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]]).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall1).send({from: accounts[5], gas: 7000000});
 
         // Make sure that repeated calls revert as forwards cannot be created more than once.
         await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall1).send({from: accounts[5], gas: 7000000}));
 
         // It needs to be possible to create more than one forward per storage plant and balance period.
-        const abiCreateForwardsCall2 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 1, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]]).encodeABI();
+        const abiCreateForwardsCall2 = energyTokenWeb3.methods.createPropertyForwards(balancePeriodPropertyForwards, complexDistributor.address, [[10065, 'maxGen', 1, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]]).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall2).send({from: accounts[5], gas: 7000000});
 
-        const abiCreateForwardsCall3 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 2, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]]).encodeABI();
+        const abiCreateForwardsCall3 = energyTokenWeb3.methods.createPropertyForwards(balancePeriodPropertyForwards, complexDistributor.address, [[10065, 'maxGen', 2, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]]).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall3).send({from: accounts[5], gas: 7000000});
 
-        const abiCreateForwardsCall4 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 0, '0x' + Buffer.from('300000001', 'utf8').toString('hex')]]).encodeABI();
+        const abiCreateForwardsCall4 = energyTokenWeb3.methods.createPropertyForwards(balancePeriodPropertyForwards, complexDistributor.address, [[10065, 'maxGen', 0, '0x' + Buffer.from('300000001', 'utf8').toString('hex')]]).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall4).send({from: accounts[5], gas: 7000000});
 
-        const abiCreateForwardsCall5 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 1, '0x' + Buffer.from('300000001', 'utf8').toString('hex')]]).encodeABI();
+        const abiCreateForwardsCall5 = energyTokenWeb3.methods.createPropertyForwards(balancePeriodPropertyForwards, complexDistributor.address, [[10065, 'maxGen', 1, '0x' + Buffer.from('300000001', 'utf8').toString('hex')]]).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall5).send({from: accounts[5], gas: 7000000});
 
-        const abiCreateForwardsCall6 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 2, '0x' + Buffer.from('300000001', 'utf8').toString('hex')]]).encodeABI();
+        const abiCreateForwardsCall6 = energyTokenWeb3.methods.createPropertyForwards(balancePeriodPropertyForwards, complexDistributor.address, [[10065, 'maxGen', 2, '0x' + Buffer.from('300000001', 'utf8').toString('hex')]]).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall6).send({from: accounts[5], gas: 7000000});
 
-        const abiCreateForwardsCall7 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 0, '0x' + Buffer.from('299999999', 'utf8').toString('hex')]]).encodeABI();
+        const abiCreateForwardsCall7 = energyTokenWeb3.methods.createPropertyForwards(balancePeriodPropertyForwards, complexDistributor.address, [[10065, 'maxGen', 0, '0x' + Buffer.from('299999999', 'utf8').toString('hex')]]).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall7).send({from: accounts[5], gas: 7000000});
 
-        const abiCreateForwardsCall8 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 1, '0x' + Buffer.from('299999999', 'utf8').toString('hex')]]).encodeABI();
+        const abiCreateForwardsCall8 = energyTokenWeb3.methods.createPropertyForwards(balancePeriodPropertyForwards, complexDistributor.address, [[10065, 'maxGen', 1, '0x' + Buffer.from('299999999', 'utf8').toString('hex')]]).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall8).send({from: accounts[5], gas: 7000000});
 
-        const abiCreateForwardsCall9 = energyTokenWeb3.methods.createPropertyForwards(balancePeriod, complexDistributor.address, [[10065, 'maxGen', 2, '0x' + Buffer.from('299999999', 'utf8').toString('hex')]]).encodeABI();
+        const abiCreateForwardsCall9 = energyTokenWeb3.methods.createPropertyForwards(balancePeriodPropertyForwards, complexDistributor.address, [[10065, 'maxGen', 2, '0x' + Buffer.from('299999999', 'utf8').toString('hex')]]).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall9).send({from: accounts[5], gas: 7000000});
     });
 
@@ -764,7 +765,12 @@ contract('EnergyToken', function(accounts) {
         // IDC 0: storage plant
         // IDC 1: consumption plant
 
-        const balancePeriod = 1737549001;
+        const balancePeriodCertificates = 1737549001;
+        const balancePeriodPropertyForwards = balancePeriodCertificates + 2*9000 + 15*60;
+
+        // Document that the storage plant has generated the energy.
+        let abiAddGenerationCall1 = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, '30000000000000000000', balancePeriodPropertyForwards).encodeABI();
+        await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiAddGenerationCall1).send({from: accounts[8], gas: 7000000});
 
         // Define criteria testsets (1 test run for each element of the test set).
         const criteriaTestset = [
@@ -788,7 +794,7 @@ contract('EnergyToken', function(accounts) {
 
         for(const criteriaNotApplicable of criteriaNotApplicableTestset) {
             const criteriaHashNotApplicable = await energyToken.getCriteriaHash(criteriaNotApplicable);
-            let forwardIdNotApplicable = (await energyToken.getPropertyTokenId(balancePeriod, idcs[0].options.address, 0, criteriaHashNotApplicable)).toString('hex');
+            let forwardIdNotApplicable = (await energyToken.getPropertyTokenId(balancePeriodPropertyForwards, idcs[0].options.address, 0, criteriaHashNotApplicable)).toString('hex');
             // Pad forward ID to 32 Byte.
             while(forwardIdNotApplicable.length < 64) {
                 forwardIdNotApplicable = '0' + forwardIdNotApplicable;
@@ -814,7 +820,7 @@ contract('EnergyToken', function(accounts) {
             // web3.utils.soliditySha3({type: 'tuple(uint256,string,uint8,bytes)[]', value: [ [...] ]})
             // does not work.
             const criteriaHash = await energyToken.getCriteriaHash(criteria);
-            let forwardId = (await energyToken.getPropertyTokenId(balancePeriod, idcs[0].options.address, 0, criteriaHash)).toString('hex');
+            let forwardId = (await energyToken.getPropertyTokenId(balancePeriodPropertyForwards, idcs[0].options.address, 0, criteriaHash)).toString('hex');
 
             // Pad forward ID to 32 Byte.
             while(forwardId.length < 64) {
