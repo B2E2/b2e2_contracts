@@ -15,8 +15,8 @@
     "truffle-contract-size": "^2.0.1"
   },
   "scripts": {
-    "lint": "npx eslint --ext .js .",
-    "lintfix": "npx eslint --fix --ext .js .",
+    "lint": "npx eslint --max-warnings 0 --ext .js .",
+    "lintfix": "npx eslint --max-warnings 0 --fix --ext .js .",
     "prebuild": "npm ci",
     "build": "gulp build",
     "tests": "gulp tests"
