@@ -10,6 +10,9 @@ The Blockchain identities are implemented with the [ERC725](https://github.com/e
 
 The latest version of the sequence and entity relationship diagrams from the whitepaper can be found in the directory './documentation'.  
 
+# Setup
+Make sure that your node JS version is 14.12.0 because some of the dependencies do not work with newer versions.
+
 ## Cloning the repository
     git clone --recursive <<todo: official github repo URL>>
 
