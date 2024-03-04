@@ -3,7 +3,7 @@ name: CI
 on: ["push"]
 
 jobs:
-  check_prettier_linter_and_tests:
+  check_linter_and_tests:
     name: Create/update todos
     runs-on: ubuntu-latest
     environment: default_environment
