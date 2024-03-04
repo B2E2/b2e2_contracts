@@ -4,7 +4,6 @@ const ClaimVerifier = artifacts.require('ClaimVerifier');
 const IdentityContractLib = artifacts.require('IdentityContractLib');
 const EnergyTokenLib = artifacts.require('EnergyTokenLib');
 
-const marketAuthority = artifacts.require('IdentityContract');
 const EnergyToken = artifacts.require('EnergyToken');
 
 const ComplexDistributor = artifacts.require('ComplexDistributor');
