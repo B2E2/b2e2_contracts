@@ -41,4 +41,4 @@ Then (in a different terminal instance) compile the contracts and deploy them:
     npm run tests
 ```
 
-Expected behavior: 14 tests passing, 0 tests failing, 1 test skipped ("pending")
+Expected behavior: 28 tests passing, 0 tests failing, 1 test skipped ("pending")
