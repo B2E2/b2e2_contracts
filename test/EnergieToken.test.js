@@ -3,11 +3,11 @@
 const truffleAssert = require('truffle-assertions');
 const eutil = require('ethereumjs-util');
 
-const account5Sk = '0x59f30428e71675b8e8cfb7dea06434b8b95f802cbf2b9bc80d7d0b05807843d2';
-const account6Sk = '0xa78a0c60210d7ffa2fa3f75de66c16807c9a21879b543aa1e9d17c9065460c83';
-const account7Sk = '0x0e450bf6e5846262f6a6069f60392af206ba927be42f8726de3ae160d34616fb';
-const account8Sk = '0x468b0e172ee343ccf12e5ab0a75bf82c3b794e310ff588fbf4234a19a3fe9a31';
-const account9Sk = '0x3b9722b917db24a24b3783595f2d30441ca044a1fa6d8dba5c8be7743387a6f3';
+const account5Sk = '0x6df57b1393f3ddd3a0347ce8b7cdab7eee05d7d6ca95b4f6c0ed34b195e05c49';
+const account6Sk = '0x32304e16365a29cf15efcdb87e57011e62d6565a7d412e072ad71193f736a39e';
+const account7Sk = '0xa19ef78cf010a48dc62830878ec57e1e0cb50e42721b095251f9b477d9b67aec';
+const account8Sk = '0xca4d0784a515ad9ad7aef35f49004de0cbba14649cc7ed36cef0134838954cb6';
+const account9Sk = '0x0b1e3843d7172d055d410af0c27f22db56a0a7518238ac4dd3aa55f09fce0b3b';
 
 var IdentityContract = artifacts.require('./IdentityContract.sol');
 var IdentityContractFactory = artifacts.require('./IdentityContractFactory.sol');
