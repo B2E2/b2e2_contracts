@@ -38,6 +38,9 @@ function start_test_chain() {
 
         child.on('exit', (code, signal) => {
             console.log(`Chain exited with code ${code} and signale ${signal}`);
+            if(code !== 0) {
+                process.exit(1);
+            }
         });
     });
 }
@@ -74,6 +77,10 @@ function run_tests(cb) {
 
     child.on('exit', (code, _signal) => {
         console.log(`Tests exited with code ${code}`);
+        if(code !== 0) {
+            process.exit(1);
+        }
+
         return cb();
     });
 }
@@ -118,6 +125,10 @@ function compile_contracts(cb) {
 
     child.on('exit', (code, _signal) => {
         console.log(`Server exited with code ${code}`);
+        if(code !== 0) {
+            process.exit(1);
+        }
+
         return cb();
     });
 }
