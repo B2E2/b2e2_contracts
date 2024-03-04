@@ -37,7 +37,7 @@ function start_test_chain() {
         });
 
         child.on('exit', (code, signal) => {
-        // TODO: why can code be null?
+        // TODO: Why can the exit code be null?
             if(code === null)
                 code = 0;
 
