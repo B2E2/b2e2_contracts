@@ -37,8 +37,8 @@ Then (in a different terminal instance) compile the contracts and deploy them:
 
 ## Testing
 ```
-    npm run build
-    npm run tests
+npm run build
+npm run tests
 ```
 
 Expected behavior: 28 tests passing, 0 tests failing, 1 test skipped ("pending")
