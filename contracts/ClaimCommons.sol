@@ -9,7 +9,7 @@ library ClaimCommons {
     // Claims can have different types (ERC-735 calles these claim topics). This enum
     // contains all types that are of interest for this contract stack.
     enum ClaimType {IsBalanceAuthority, IsMeteringAuthority, IsPhysicalAssetAuthority,
-        MeteringClaim, BalanceClaim, ExistenceClaim, MaxPowerGenerationClaim, GenerationTypeClaim,
+        MeteringClaim, BalanceClaim, ExistenceClaim,InstallationDateClaim, MaxPowerGenerationClaim, GenerationTypeClaim,
         LocationClaim, IdentityContractFactoryClaim, EnergyTokenContractClaim, MarketRulesClaim,
         AcceptedDistributorClaim, RealWorldPlantIdClaim, MaxPowerConsumptionClaim}
 
@@ -31,6 +31,9 @@ library ClaimCommons {
         }
         if(_claimType == ClaimType.ExistenceClaim) {
             return 10060;
+        }
+        if(_claimType == ClaimType.InstallationDateClaim) {
+            return 10062;
         }
         if(_claimType == ClaimType.MaxPowerGenerationClaim) {
             return 10065;
@@ -82,6 +85,9 @@ library ClaimCommons {
         if(_topic == 10060) {
             return ClaimType.ExistenceClaim;
         }
+        if(_topic == 10062) {
+            return ClaimType.InstallationDateClaim;
+        }
         if(_topic == 10065) {
             return ClaimType.MaxPowerGenerationClaim;
         }
@@ -121,6 +127,9 @@ library ClaimCommons {
             return ClaimType.IsBalanceAuthority;
         }
         if(_claimType == ClaimType.ExistenceClaim) {
+            return ClaimType.IsPhysicalAssetAuthority;
+        }
+        if(_claimType == ClaimType.InstallationDateClaim) {
             return ClaimType.IsPhysicalAssetAuthority;
         }
         if(_claimType == ClaimType.GenerationTypeClaim) {
