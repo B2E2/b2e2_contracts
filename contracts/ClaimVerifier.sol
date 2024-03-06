@@ -97,7 +97,6 @@ library ClaimVerifier {
      * Iff _requiredValidAt is not zero, only claims that are not expired at that time and are already valid at that time are considered. If it is set to zero, no expiration or startig date check is performed.
      */
     function getClaimOfType(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
-        //return 1; // TODO: REMOVE
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
         
