@@ -157,6 +157,8 @@ contract('EnergyToken', function(accounts) {
         const dataMaxGen = web3.utils.toHex(jsonMaxGen);
         const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         const dataMaxCon = web3.utils.toHex(jsonMaxCon);
+        const jsonInstallationDate = '{ "installationDate": "1609459200", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        const dataInstallationDate = web3.utils.toHex(jsonInstallationDate);
 
         await addClaim(idcs[0], 10130, idcs[0].options.address, data, '', account5Sk);
         await addClaim(idcs[0], 10050, balanceAuthority.options.address, data, '', account8Sk);
@@ -165,6 +167,7 @@ contract('EnergyToken', function(accounts) {
         await addClaim(idcs[0], 10080, physicalAssetAuthority.options.address, data, '', account8Sk);
         await addClaim(idcs[0], 10040, meteringAuthority.options.address, data, '', account8Sk);
         await addClaim(idcs[0], 10065, physicalAssetAuthority.options.address, dataMaxGen, '', account8Sk);
+        await addClaim(idcs[0], 10062, physicalAssetAuthority.options.address, dataInstallationDate, '', account8Sk);
 
         // Give claims to IDC 2.
         await addClaim(idcs[2], 10130, idcs[2].options.address, data, '', account7Sk);
@@ -173,6 +176,7 @@ contract('EnergyToken', function(accounts) {
         await addClaim(idcs[2], 10060, physicalAssetAuthority.options.address, dataExistenceGeneration, '', account8Sk);
         await addClaim(idcs[2], 10065, physicalAssetAuthority.options.address, dataMaxGen, '', account8Sk);
         await addClaim(idcs[2], 10140, physicalAssetAuthority.options.address, dataMaxCon, '', account8Sk);
+        await addClaim(idcs[2], 10062, physicalAssetAuthority.options.address, dataInstallationDate, '', account8Sk);
 
         // Get token ID.
         //await energyToken.createTokenFamily(1737540001, idcs[0].options.address, 0)
