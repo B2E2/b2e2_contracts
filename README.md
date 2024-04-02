@@ -14,7 +14,7 @@ The latest version of the sequence and entity relationship diagrams from the whi
 Make sure that your node JS version is 16.17.1 because some of the dependencies do not work with newer versions.
 
 ## Cloning the repository
-    git clone --recursive <<todo: official github repo URL>>
+    git clone --recursive https://github.com/B2E2/b2e2_contracts.git
 
 ## Installing Dependencies
     sudo npm global add truffle ganache ganache-cli

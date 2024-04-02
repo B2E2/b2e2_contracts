@@ -16,6 +16,7 @@ import "./ClaimCommons.sol";
 library ClaimVerifier {
     // Constants ERC-735
     uint256 constant public ECDSA_SCHEME = 1;
+    uint256 constant public PREFIXED_ECDSA_SCHEME = 2;
     
     // JSON parsing constants.
     uint256 constant MAX_NUMBER_OF_JSON_FIELDS = 20;
@@ -325,10 +326,10 @@ library ClaimVerifier {
     
     function verifySignature(address _subject, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data) public view returns (bool __valid) {
          // Check for currently unsupported signature.
-        if(_scheme != ECDSA_SCHEME)
+        if(_scheme != ECDSA_SCHEME && _scheme != PREFIXED_ECDSA_SCHEME)
             return false;
         
-        address signer = getSignerAddress(claimAttributes2SigningFormat(_subject, _topic, _data), _signature);
+        address signer = getSignerAddress(claimAttributes2SigningFormat(_scheme, _subject, _topic, _data), _signature);
         
         if(isContract(_issuer)) {
             return signer == IdentityContract(_issuer).owner();
@@ -400,8 +401,11 @@ library ClaimVerifier {
         return getInt256Field(_fieldName, _data) <= JsmnSolLib.parseInt(_fieldContent);
     }
     
-    function claimAttributes2SigningFormat(address _subject, uint256 _topic, bytes memory _data) internal pure returns (bytes32 __claimInSigningFormat) {
-        return keccak256(abi.encodePacked(_subject, _topic, _data));
+    function claimAttributes2SigningFormat(uint256 _scheme, address _subject, uint256 _topic, bytes memory _data) internal pure returns (bytes32 __claimInSigningFormat) {
+        if(_scheme == ECDSA_SCHEME)
+          return keccak256(abi.encodePacked(_subject, _topic, _data));
+        else
+          return ECDSA.toEthSignedMessageHash(keccak256(abi.encodePacked(_subject, _topic, _data)));
     }
     
     function getSignerAddress(bytes32 _claimInSigningFormat, bytes memory _signature) internal pure returns (address __signer) {
