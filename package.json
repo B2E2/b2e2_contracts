@@ -17,7 +17,7 @@
   "scripts": {
     "lint": "npx eslint --max-warnings 0 --ext .js .",
     "lintfix": "npx eslint --max-warnings 0 --fix --ext .js .",
-    "prebuild": "npm ci",
+    "prebuild": "npm install",
     "build": "gulp build",
     "tests": "gulp tests"
   },

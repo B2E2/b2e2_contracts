@@ -97,7 +97,7 @@ function npm_install_contracts(cb) {
         return cb();
     }
 
-    exec('npm ci', (error, stdout, stderr) => {
+    exec('npm install', (error, stdout, stderr) => {
         if (error) {
             console.error(stderr);
             throw error;
