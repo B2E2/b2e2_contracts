@@ -5,11 +5,8 @@
   "main": "truffle-config.js",
   "dependencies": {
     "@truffle/hdwallet-provider": "^2.1.13",
-    "child_process": "^1.0.2",
-    "dotenv": "^16.0.3",
     "ethereumjs-util": "^7.1.5",
     "ganache": "^7.9.2",
-    "gulp": "^5.0.0",
     "truffle": "^5.11.5",
     "truffle-assertions": "^0.9.2",
     "truffle-contract-size": "^2.0.1"
@@ -18,8 +15,14 @@
     "lint": "npx eslint --max-warnings 0 --ext .js .",
     "lintfix": "npx eslint --max-warnings 0 --fix --ext .js .",
     "prebuild": "npm install",
-    "build": "gulp build",
-    "tests": "gulp tests"
+    "build": "npm run clean && npm run update-submodules && npm i && npm run compile-contracts",
+    "tests": "npm run start-test-chain && npm run tests-on-running-chain && npm run kill-test-chain",
+    "start-test-chain": "set -a && . ./.env && set +a && ./start_ganache_async.sh",
+    "kill-test-chain": "kill $(ps aux | grep '[g]anache-cli' | awk '{print $2}')",
+    "tests-on-running-chain": "set -a && . ./.env && set +a && npx truffle test --network development",
+    "compile-contracts": "npx truffle compile",
+    "clean": "rm -rf ./build; rm -rf ./node_modules",
+    "update-submodules": "git submodule update --recursive --init"
   },
   "author": "B2E2 Community <b2e2@enbw.com>",
   "license": "MIT",
