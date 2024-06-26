@@ -12,8 +12,8 @@
     "truffle-contract-size": "^2.0.1"
   },
   "scripts": {
-    "lint": "npx eslint --max-warnings 0 --ext .js .",
-    "lintfix": "npx eslint --max-warnings 0 --fix --ext .js .",
+    "lint": "npx eslint --max-warnings 0 .",
+    "lintfix": "npx eslint --max-warnings 0 --fix .",
     "prebuild": "npm install",
     "build": "npm run clean && npm run update-submodules && npm i && npm run compile-contracts",
     "tests": "npm run start-test-chain && npm run tests-on-running-chain && npm run kill-test-chain",
@@ -27,6 +27,7 @@
   "author": "B2E2 Community <b2e2@enbw.com>",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^8.20.0"
+    "@eslint/js": "^9.5.0",
+    "eslint": "^9.5.0"
   }
 }
