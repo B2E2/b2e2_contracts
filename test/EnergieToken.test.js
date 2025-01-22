@@ -62,7 +62,7 @@ contract('EnergyToken', function(accounts) {
         physicalAssetAuthority = new web3.eth.Contract(abi, physicalAssetAuthorityAddress);
         console.log(`Successfully deployed Physical Asset Authority IDC with address: ${physicalAssetAuthority.options.address}`);
 
-        let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1" }';
+        let json = '{ "q": "ab", "expiryDate": "1958292001", "startDate": "1" }';
         let data = web3.utils.toHex(json);
         await addClaim(balanceAuthority, 10010, marketAuthority.address, data, '', account9Sk);
         await addClaim(meteringAuthority, 10020, marketAuthority.address, data, '', account9Sk);
@@ -111,7 +111,7 @@ contract('EnergyToken', function(accounts) {
 
     it('determines token IDs correctly.', async function() {
         // Get token ID.
-        const receivedTokenId = await energyToken.getTokenId(2, 1579860001, '0x7f10C80B27f9D4E8524748f2b31cAc86069f6C49', 0);
+        const receivedTokenId = await energyToken.getTokenId(2, 1642932001, '0x7f10C80B27f9D4E8524748f2b31cAc86069f6C49', 0);
 
         // Pad token ID to full length.
         let receivedTokenIdPadded = receivedTokenId.toString('hex');
@@ -121,7 +121,7 @@ contract('EnergyToken', function(accounts) {
     
         // Determine expected token ID.
         const tokenKind = '03'; // A consumption-based forward is stated as a 2 when calling functions (position in the enum listing) but it is rerpesented as "03" (last 2 bits set (relative, consumption-based)).
-        const balancePeriod = 1579860001;
+        const balancePeriod = 1642932001;
         const addressOfIdc = '0x7f10C80B27f9D4E8524748f2b31cAc86069f6C49';
         const expectedTokenId = tokenKind + web3.utils.soliditySha3({type: 'uint64', value: balancePeriod},
             {type: 'address', value: addressOfIdc},
@@ -143,21 +143,21 @@ contract('EnergyToken', function(accounts) {
         // IDC 2 is the token recipient.
 
         // Claim necessary for receiving.
-        let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
+        let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1958292001", "startDate": "1", "address": "' + idcs[2].options.address.slice(2).toLowerCase() + '" }';
         let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
         await addClaim(simpleDistributor, 10120, balanceAuthority.options.address, dataAcceptedDistributor, '', account8Sk);
         await addClaim(complexDistributor, 10120, balanceAuthority.options.address, dataAcceptedDistributor, '', account8Sk);
 
         // Give claims to IDC 0.
-        const json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        const json = '{ "q": "ab", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         const data = web3.utils.toHex(json);
-        const jsonExistenceGeneration = '{ "type": "generation", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        const jsonExistenceGeneration = '{ "type": "generation", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         const dataExistenceGeneration = web3.utils.toHex(jsonExistenceGeneration);
-        const jsonMaxGen = '{ "maxGen": "300000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        const jsonMaxGen = '{ "maxGen": "300000000", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         const dataMaxGen = web3.utils.toHex(jsonMaxGen);
-        const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         const dataMaxCon = web3.utils.toHex(jsonMaxCon);
-        const jsonInstallationDate = '{ "installationDate": "1609459200", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        const jsonInstallationDate = '{ "installationDate": "1672531200", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         const dataInstallationDate = web3.utils.toHex(jsonInstallationDate);
 
         await addClaim(idcs[0], 10130, idcs[0].options.address, data, '', account5Sk);
@@ -179,8 +179,8 @@ contract('EnergyToken', function(accounts) {
         await addClaim(idcs[2], 10062, physicalAssetAuthority.options.address, dataInstallationDate, '', account8Sk);
 
         // Get token ID.
-        //await energyToken.createTokenFamily(1737540001, idcs[0].options.address, 0)
-        let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address, 0);
+        //await energyToken.createTokenFamily(1800612001, idcs[0].options.address, 0)
+        let receivedTokenId = await energyToken.getTokenId(2, 1800612001, idcs[0].options.address, 0);
 
         // Pad token ID to full length.
         let receivedTokenIdPadded = receivedTokenId.toString('hex');
@@ -190,10 +190,10 @@ contract('EnergyToken', function(accounts) {
         let id = '0x' + receivedTokenIdPadded;
 
         // Grant reception approval.
-        await idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, '1895220001', '17000000000000000000', id).send({from: accounts[7], gas: 7000000});
+        await idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, '1958292001', '17000000000000000000', id).send({from: accounts[7], gas: 7000000});
 
         // Create forwards.
-        let abiCreateForwardsCall = energyTokenWeb3.methods.createForwards(1737540001, 2, simpleDistributor.address).encodeABI();
+        let abiCreateForwardsCall = energyTokenWeb3.methods.createForwards(1800612001, 2, simpleDistributor.address).encodeABI();
 
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall).send({from: accounts[5], gas: 7000000});
 
@@ -215,7 +215,7 @@ contract('EnergyToken', function(accounts) {
     });
 
     it('can create generation-based forwards.', async function() {
-        let balancePeriod = '1895220001';
+        let balancePeriod = '1958292001';
         let abiCreateTokensCall = energyTokenWeb3.methods.createForwards(balancePeriod, 1, simpleDistributor.address).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateTokensCall).send({from: accounts[5], gas: 7000000});
 
@@ -233,7 +233,7 @@ contract('EnergyToken', function(accounts) {
         // IDC 2 has 17 tokens (17E18 elementary units) from the mint operation.
 
         // Get token ID.
-        let receivedTokenId = await energyToken.getTokenId(2, 1737540001, idcs[0].options.address, 0);
+        let receivedTokenId = await energyToken.getTokenId(2, 1800612001, idcs[0].options.address, 0);
 
         // Pad token ID to full length.
         let receivedTokenIdPadded = receivedTokenId.toString('hex');
@@ -243,14 +243,14 @@ contract('EnergyToken', function(accounts) {
         let id = '0x' + receivedTokenIdPadded;
 
         // Grant reception approval for sending 12 tokens from IDC 2 to IDC 1.
-        let abiApproveSenderCall = idcs[1].methods.approveSender(energyToken.address, idcs[2].options.address, '1895220001', '5000000000000000000', id).encodeABI();
+        let abiApproveSenderCall = idcs[1].methods.approveSender(energyToken.address, idcs[2].options.address, '1958292001', '5000000000000000000', id).encodeABI();
         await idcs[1].methods.execute(0, idcs[1].options.address, 0, abiApproveSenderCall).send({from: accounts[6], gas: 7000000});
 
         // Before the transfer can happen, some claims need to be issued and published.
         // Claims necessary for sending.
-        let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        let json = '{ "q": "ab", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         let data = web3.utils.toHex(json);
-        const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         const dataMaxCon = web3.utils.toHex(jsonMaxCon);    
         await addClaim(idcs[1], 10130, idcs[1].options.address, data, '', account6Sk);
         await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, '', account8Sk);
@@ -264,7 +264,7 @@ contract('EnergyToken', function(accounts) {
         await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, '', account8Sk);
 
         // Claim necessary for receiving.
-        let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1895220001", "startDate": "1", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
+        let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1958292001", "startDate": "1", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
         let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
         await addClaim(idcs[1], 10120, balanceAuthority.options.address, dataAcceptedDistributor, '', account8Sk);
 
@@ -300,7 +300,7 @@ contract('EnergyToken', function(accounts) {
         await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferSelf1).send({from: accounts[7], gas: 7000000}));
 
         // Transferring tokens to a receiver without the necessary claims needs to fail.
-        let abiApproveSenderCallSimpleDistributor = simpleDistributorWeb3.methods.approveSender(energyToken.address, idcs[2].options.address, '1895220001', '1000000000000000000', id).encodeABI();
+        let abiApproveSenderCallSimpleDistributor = simpleDistributorWeb3.methods.approveSender(energyToken.address, idcs[2].options.address, '1958292001', '1000000000000000000', id).encodeABI();
         await simpleDistributorWeb3.methods.execute(0, simpleDistributorWeb3.options.address, 0, abiApproveSenderCallSimpleDistributor).send({from: accounts[0], gas: 7000000});
         let abiTransferToSimpleDistributor = energyTokenWeb3.methods.safeTransferFrom(idcs[2].options.address, simpleDistributorWeb3.options.address, id, '1000000000000000000', '0x').encodeABI();
         await truffleAssert.reverts(idcs[2].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferToSimpleDistributor).send({from: accounts[7], gas: 7000000}));
@@ -308,7 +308,7 @@ contract('EnergyToken', function(accounts) {
 
     it.skip('can perform batch transfers.', async function() {
         // Get token ID of forward. Using a different balance period to get balances back to zero.
-        let receivedTokenId1 = await energyToken.getTokenId(2, 1737540901, idcs[0].options.address, 0);
+        let receivedTokenId1 = await energyToken.getTokenId(2, 1800612901, idcs[0].options.address, 0);
 
         // Pad token ID to full length.
         let receivedTokenId1Padded = receivedTokenId1.toString('hex');
@@ -318,7 +318,7 @@ contract('EnergyToken', function(accounts) {
         let id1 = '0x' + receivedTokenId1Padded;
 
         // Get token ID of another forward.
-        let receivedTokenId2 = await energyToken.getTokenId(2, 1737549901, idcs[0].options.address, 0);
+        let receivedTokenId2 = await energyToken.getTokenId(2, 1800621901, idcs[0].options.address, 0);
 
         // Pad token ID to full length.
         let receivedTokenId2Padded = receivedTokenId2.toString('hex');
@@ -328,15 +328,15 @@ contract('EnergyToken', function(accounts) {
         let id2 = '0x' + receivedTokenId2Padded;
 
         // Reception approval for receiving minted forwards.
-        let abiApproveSenderCall11 = idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1895220001', '17000000000000000000', id1).encodeABI();
+        let abiApproveSenderCall11 = idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1958292001', '17000000000000000000', id1).encodeABI();
         await idcs[1].methods.execute(0, idcs[1].options.address, 0, abiApproveSenderCall11).send({from: accounts[6], gas: 7000000});
-        let abiApproveSenderCall12 = idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1895220001', '17000000000000000000', id2).encodeABI();
+        let abiApproveSenderCall12 = idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1958292001', '17000000000000000000', id2).encodeABI();
         await idcs[1].methods.execute(0, idcs[1].options.address, 0, abiApproveSenderCall12).send({from: accounts[6], gas: 7000000});
 
         // Forwards creation.
-        let abiCreateForwardsCall1 = energyTokenWeb3.methods.createForwards(1737540901, 2, simpleDistributor.address).encodeABI();
+        let abiCreateForwardsCall1 = energyTokenWeb3.methods.createForwards(1800612901, 2, simpleDistributor.address).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall1).send({from: accounts[5], gas: 7000000});
-        let abiCreateForwardsCall2 = energyTokenWeb3.methods.createForwards(1737549901, 2, simpleDistributor.address).encodeABI();
+        let abiCreateForwardsCall2 = energyTokenWeb3.methods.createForwards(1800621901, 2, simpleDistributor.address).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall2).send({from: accounts[5], gas: 7000000});
 
         // Minting.
@@ -346,9 +346,9 @@ contract('EnergyToken', function(accounts) {
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiMintCall2).send({from: accounts[5], gas: 8000000});
 
         // Reception approval is required for forwards.
-        let abiApproveSenderCall21 = idcs[2].methods.approveSender(energyToken.address, idcs[1].options.address, '1895220001', '1000000000000000000', id1).encodeABI();
+        let abiApproveSenderCall21 = idcs[2].methods.approveSender(energyToken.address, idcs[1].options.address, '1958292001', '1000000000000000000', id1).encodeABI();
         await idcs[2].methods.execute(0, idcs[2].options.address, 0, abiApproveSenderCall21).send({from: accounts[7], gas: 7000000});
-        let abiApproveSenderCall22 = idcs[2].methods.approveSender(energyToken.address, idcs[1].options.address, '1895220001', '3000000000000000000', id2).encodeABI();
+        let abiApproveSenderCall22 = idcs[2].methods.approveSender(energyToken.address, idcs[1].options.address, '1958292001', '3000000000000000000', id2).encodeABI();
         await idcs[2].methods.execute(0, idcs[2].options.address, 0, abiApproveSenderCall22).send({from: accounts[7], gas: 7000000});
 
         // Transfer.
@@ -367,7 +367,7 @@ contract('EnergyToken', function(accounts) {
     });
 
     it('rejects too big generation energy documentations', async function() {
-        let balancePeriod = 1737524701;
+        let balancePeriod = 1800596701;
 
         // Forwards must be created first so distributor is set.
         let abiCreateForwards = energyTokenWeb3.methods.createForwards(balancePeriod, 0, simpleDistributorWeb3.options.address).encodeABI();
@@ -387,7 +387,7 @@ contract('EnergyToken', function(accounts) {
     });
 
     it('rejects too big consumption energy documentations', async function() {
-        let balancePeriod = 1737524701;
+        let balancePeriod = 1800596701;
 
         // Zero must work.
         let abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[2].options.address, 0, balancePeriod).encodeABI();
@@ -404,7 +404,7 @@ contract('EnergyToken', function(accounts) {
 
     it('distributes tokens correctly (simple distributor).', async function() {
         // Set balance period different from any other balance period in the tests.
-        let balancePeriod = 1737549001;
+        let balancePeriod = 1800621001;
         let certificateIds = [];
     
         for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
@@ -419,7 +419,7 @@ contract('EnergyToken', function(accounts) {
             certificateIds[forwardKind] = '0x' + receivedCertificateIdPadded;
 
             // Grant reception approval.
-            await idcs[1].methods.approveSender(energyToken.address, simpleDistributorWeb3.options.address, '1895220001', '1700000000000000000000', certificateIds[forwardKind]).send({from: accounts[6], gas: 7000000});
+            await idcs[1].methods.approveSender(energyToken.address, simpleDistributorWeb3.options.address, '1958292001', '1700000000000000000000', certificateIds[forwardKind]).send({from: accounts[6], gas: 7000000});
         }
 
         // Determine forward IDs.
@@ -445,7 +445,7 @@ contract('EnergyToken', function(accounts) {
                 continue; // Generation-based forwards cannot be minted.
 
             // Grant reception approval.
-            await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1895220001', '17000000000000000000', forwardIds[forwardKind]).send({from: accounts[6], gas: 7000000});
+            await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1958292001', '17000000000000000000', forwardIds[forwardKind]).send({from: accounts[6], gas: 7000000});
 
             // Perform actual mint operation via execute() of IDC 0.
             let abiMintCall = energyTokenWeb3.methods.mint(forwardIds[forwardKind], [idcs[1].options.address], ['17000000000000000000']).encodeABI();
@@ -453,7 +453,7 @@ contract('EnergyToken', function(accounts) {
         }
 
         // Transfer generation-based forwards.
-        await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1895220001', '17000000000000000000', forwardIds[1]).send({from: accounts[6], gas: 7000000});
+        await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1958292001', '17000000000000000000', forwardIds[1]).send({from: accounts[6], gas: 7000000});
         let abiTransferGenerationBasedForwards = energyTokenWeb3.methods.safeTransferFrom(idcs[0].options.address, idcs[1].options.address, forwardIds[1], '17000000000000000000', '0x').encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferGenerationBasedForwards).send({from: accounts[5], gas: 7000000});
 
@@ -495,7 +495,7 @@ contract('EnergyToken', function(accounts) {
 
         // Mint more absolute forwards.
         // Grant reception approval.
-        await idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, '1895220001', '83000000000000000000', forwardIds[0]).send({from: accounts[7], gas: 7000000});
+        await idcs[2].methods.approveSender(energyToken.address, idcs[0].options.address, '1958292001', '83000000000000000000', forwardIds[0]).send({from: accounts[7], gas: 7000000});
 
         // Perform actual mint operation via execute() of IDC 0.
         let abiMintCall = energyTokenWeb3.methods.mint(forwardIds[0], [idcs[2].options.address], ['83000000000000000000']).encodeABI();
@@ -516,14 +516,14 @@ contract('EnergyToken', function(accounts) {
 
         // Store the certificate ID because these certificates are needed for the test of the complex distributor.
         complexDistributorCertificateId = certificateIds[2];
-        await idcs[0].methods.approveSender(energyToken.address, idcs[1].options.address, '1895220001', '1360000000000000000', complexDistributorCertificateId).send({from: accounts[5], gas: 7000000});
+        await idcs[0].methods.approveSender(energyToken.address, idcs[1].options.address, '1958292001', '1360000000000000000', complexDistributorCertificateId).send({from: accounts[5], gas: 7000000});
         const abiTransfer = energyTokenWeb3.methods.safeTransferFrom(idcs[1].options.address, idcs[0].options.address, complexDistributorCertificateId, '1360000000000000000', '0x').encodeABI();
         await idcs[1].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransfer).send({from: accounts[6], gas: 7000000});
     });
 
     it('Does not allow for transfer of certificates to the 0 address.', async function() {
         // Choose the same balance period as was used in the previous tests so the certificates can be re-used.
-        let balancePeriod = 1737549001;
+        let balancePeriod = 1800621001;
         let certificateIds = [];
     
         for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
@@ -544,7 +544,7 @@ contract('EnergyToken', function(accounts) {
     });
 
     it('distributes surplus certificates correctly.', async function() {
-        let balancePeriod = 1737560701;
+        let balancePeriod = 1800632701;
         let certificateIds = [];
     
         for(let forwardKind = 0; forwardKind <= 2; forwardKind++) {
@@ -559,8 +559,8 @@ contract('EnergyToken', function(accounts) {
             certificateIds[forwardKind] = '0x' + receivedCertificateIdPadded;
 
             // Grant reception approval.
-            await idcs[0].methods.approveSender(energyToken.address, simpleDistributorWeb3.options.address, '1895220001', '1700000000000000000000', certificateIds[forwardKind]).send({from: accounts[5], gas: 7000000});
-            await idcs[1].methods.approveSender(energyToken.address, simpleDistributorWeb3.options.address, '1895220001', '1700000000000000000000', certificateIds[forwardKind]).send({from: accounts[6], gas: 7000000});
+            await idcs[0].methods.approveSender(energyToken.address, simpleDistributorWeb3.options.address, '1958292001', '1700000000000000000000', certificateIds[forwardKind]).send({from: accounts[5], gas: 7000000});
+            await idcs[1].methods.approveSender(energyToken.address, simpleDistributorWeb3.options.address, '1958292001', '1700000000000000000000', certificateIds[forwardKind]).send({from: accounts[6], gas: 7000000});
         }
 
         // Determine forward IDs.
@@ -586,7 +586,7 @@ contract('EnergyToken', function(accounts) {
                 continue; // Generation-based forwards cannot be minted.
 
             // Grant reception approval.
-            await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1895220001', '17000000000000000000', forwardIds[forwardKind]).send({from: accounts[6], gas: 7000000});
+            await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1958292001', '17000000000000000000', forwardIds[forwardKind]).send({from: accounts[6], gas: 7000000});
 
             // Perform actual mint operation via execute() of IDC 0.
             let abiMintCall = energyTokenWeb3.methods.mint(forwardIds[forwardKind], [idcs[1].options.address], ['17000000000000000000']).encodeABI();
@@ -629,7 +629,7 @@ contract('EnergyToken', function(accounts) {
     });
 
     it('accepts documentations without forwards having been created.', async function() {
-        const balancePeriod = 1737743401;
+        const balancePeriod = 1800815401;
     
         const abiUpdateEnergyDoc = energyTokenWeb3.methods.addMeasuredEnergyGeneration(idcs[0].options.address, '20000000000000000000', balancePeriod).encodeABI();
         await meteringAuthority.methods.execute(0, energyTokenWeb3.options.address, 0, abiUpdateEnergyDoc).send({from: accounts[8], gas: 7000000});
@@ -650,12 +650,12 @@ contract('EnergyToken', function(accounts) {
     });
 
     it('keeps track of energy data.', async function() {
-        let json = '{ "q": "ab", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        let json = '{ "q": "ab", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         let data = web3.utils.toHex(json);
         await addClaim(idcs[2], 10070, physicalAssetAuthority.options.address, data, '', account8Sk);
         await addClaim(idcs[2], 10080, physicalAssetAuthority.options.address, data, '', account8Sk);
 
-        let balancePeriod = 1895220001;
+        let balancePeriod = 1958292001;
 
         // The call must revert if it comes from something that's not a metering authority's IDC (even if it's by the metering authority directly).
         let abiAddConsumptionCall1 = energyTokenWeb3.methods.addMeasuredEnergyConsumption(idcs[1].options.address, 500, balancePeriod).encodeABI();
@@ -721,13 +721,13 @@ contract('EnergyToken', function(accounts) {
     });
 
     it('can create property forwards.', async function() {
-        const balancePeriodCertificates = 1737549001;
+        const balancePeriodCertificates = 1800621001;
         const balancePeriodPropertyForwards = balancePeriodCertificates + 2*9000 + 15*60;
 
         // Before property forwards can be created, IDC 0 (previously a generation plant) needs to become a storage plant.
-        const jsonExistenceStorage = '{ "type": "storage", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        const jsonExistenceStorage = '{ "type": "storage", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         const dataExistenceStorage = web3.utils.toHex(jsonExistenceStorage);
-        const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1895220001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
+        const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         const dataMaxCon = web3.utils.toHex(jsonMaxCon);
 
         await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, dataExistenceStorage, '', account8Sk);
@@ -769,7 +769,7 @@ contract('EnergyToken', function(accounts) {
         // IDC 0: storage plant
         // IDC 1: consumption plant
 
-        const balancePeriodCertificates = 1737549001;
+        const balancePeriodCertificates = 1800621001;
         const balancePeriodPropertyForwards = balancePeriodCertificates + 2*9000 + 15*60;
 
         // Document that the storage plant has generated the energy.
@@ -809,7 +809,7 @@ contract('EnergyToken', function(accounts) {
             await truffleAssert.reverts(idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCallNotApplicable).send({from: accounts[5], gas: 7000000}));
 
             // Grant reception approval.
-            await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1895220001', '150', '0x' + forwardIdNotApplicable).send({from: accounts[6], gas: 7000000});
+            await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1958292001', '150', '0x' + forwardIdNotApplicable).send({from: accounts[6], gas: 7000000});
 
             // Mint.
             let abiMintCallNotApplicable = energyTokenWeb3.methods.mint('0x' + forwardIdNotApplicable, [idcs[1].options.address], ['150']).encodeABI();
@@ -836,7 +836,7 @@ contract('EnergyToken', function(accounts) {
             await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiTransferCall).send({from: accounts[5], gas: 7000000});
 
             // Grant reception approval.
-            await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1895220001', '150', '0x' + forwardId).send({from: accounts[6], gas: 7000000});
+            await idcs[1].methods.approveSender(energyToken.address, idcs[0].options.address, '1958292001', '150', '0x' + forwardId).send({from: accounts[6], gas: 7000000});
 
             // Perform mint operation via execute() of IDC 0.
             let abiMintCall = energyTokenWeb3.methods.mint('0x' + forwardId, [idcs[1].options.address], ['150']).encodeABI();
