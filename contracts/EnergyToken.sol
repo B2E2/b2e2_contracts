@@ -18,7 +18,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     event EnergyDocumented(PlantType plantType, uint256 value, address indexed plant, bool corrected, uint64 indexed balancePeriod, address indexed meteringAuthority);
     event ForwardsCreated(TokenKind tokenKind, uint64 balancePeriod, AbstractDistributor distributor, uint256 id);
     event TokenFamilyCreation(uint248);
-    event BalanceConvertedToSoulbound(uint256 tokenId, address agent, uint256 value);
+    event BalanceConvertedToSoulbound(uint256 tokenId, address owner, uint256 value);
     
     // id => whetherCreated
     mapping (uint256 => bool) createdForwards;
