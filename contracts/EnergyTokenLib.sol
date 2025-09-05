@@ -137,10 +137,6 @@ library EnergyTokenLib {
         require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid ExistenceClaim." );
         require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid MeteringClaim.");
 
-        if (tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim) != 0, "Invalid 1MaxPowerConsumptionClaim.");
-        }
-
         if(tokenKind != IEnergyToken.TokenKind.Certificate) {
             (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             AbstractDistributor distributor = id2Distributor[_id];
