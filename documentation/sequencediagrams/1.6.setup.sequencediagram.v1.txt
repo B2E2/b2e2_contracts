@@ -17,7 +17,7 @@ group Authentication and Authorization with Claims
 
 PhysicalAssetAuthority -> Producer:[<<ExistenceClaim>>, \n<<GenerationTypeClaim>>, \n<<LocationClaim>>]
 activate Producer
-Producer ->GenerationPlant.sol:add Claims (\n[<<ExistenceClaim>>, \n<<GenerationTypeClaim>>, \n<<LocationClaim>>\n<<MaxPowerGenerationClaim>>])
+Producer ->GenerationPlant.sol:add Claims (\n[<<ExistenceClaim>>, \n<<GenerationTypeClaim>>, \n<<LocationClaim>>\n<<MaxPowerGenerationClaim>> (optional)])
 activate GenerationPlant.sol
 deactivate Producer
 GenerationPlant.sol -> PhysicalAssetAuthority.sol:get Claim with _claimType="IsPhysicalAssetAuthority"

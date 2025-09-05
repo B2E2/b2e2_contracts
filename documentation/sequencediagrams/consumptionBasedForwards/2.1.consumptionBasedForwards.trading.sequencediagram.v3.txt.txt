@@ -26,7 +26,7 @@ activate EnergyToken.sol
 
 GenerationPlant.sol<-EnergyToken.sol:get Claims
 activate GenerationPlant.sol
-GenerationPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>,\n<<GenerationTypeClaim>>,\n<<MaxPowerGenerationClaim>>,\n<<LocationClaim>>]
+GenerationPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>,\n<<GenerationTypeClaim>>,\n<<MaxPowerGenerationClaim>> (optional),\n<<LocationClaim>>]
 deactivate GenerationPlant.sol
 
 EnergyToken.sol -> Distributor.sol:get Claim
@@ -75,7 +75,7 @@ activate EnergyToken.sol
 
 GenerationPlant.sol<-EnergyToken.sol:get Claims
 activate GenerationPlant.sol
-GenerationPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>,\n<<GenerationTypeClaim>>,\n<<MaxPowerGenerationClaim>>,\n<<LocationClaim>>]
+GenerationPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>,\n<<GenerationTypeClaim>>,\n<<MaxPowerGenerationClaim>> (optional),\n<<LocationClaim>>]
 deactivate GenerationPlant.sol
 
 

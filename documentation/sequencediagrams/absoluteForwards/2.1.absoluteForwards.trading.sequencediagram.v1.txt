@@ -81,7 +81,7 @@ GenerationPlant.sol<-EnergyToken.sol:get Claims
 
 
 activate GenerationPlant.sol
-GenerationPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<GenerationTypeClaim>>, \n<<LocationClaim>>, \n<<MeteringClaim>>,\n <<MaxPowerGenerationClaim>>]
+GenerationPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<GenerationTypeClaim>>, \n<<LocationClaim>>, \n<<MeteringClaim>>,\n <<MaxPowerGenerationClaim>> (optional)]
 
 
 

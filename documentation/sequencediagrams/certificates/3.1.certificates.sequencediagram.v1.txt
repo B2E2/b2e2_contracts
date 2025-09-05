@@ -49,7 +49,7 @@ activate EnergyToken.sol
 ConsumptionPlant.sol<-EnergyToken.sol:get Claims
 
 activate ConsumptionPlant.sol
-ConsumptionPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>,\n<<GenerationTypeClaim>>,\n<<MaxPowerGenerationClaim>>,\n<<LocationClaim>>]
+ConsumptionPlant.sol-->>EnergyToken.sol:[<<BalanceClaim>>, \n<<ExistenceClaim>>, \n<<MeteringClaim>>,\n<<GenerationTypeClaim>>,\n<<MaxPowerGenerationClaim>> (optional),\n<<LocationClaim>>]
 deactivate ConsumptionPlant.sol
 MeteringAuthority.sol<-EnergyToken.sol:get Claim
 activate MeteringAuthority.sol
