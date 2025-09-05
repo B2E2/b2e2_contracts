@@ -158,7 +158,7 @@ library EnergyTokenLib {
         __maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
     }
 
-    function getPlantConsumptionCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId) internal view returns (uint256 __maxCon) {
+    function getPlantConsumptionCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId) public view returns (uint256 __maxCon) {
         uint256 maxPowerConsumptionClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim);
 
         if (maxPowerConsumptionClaimId == 0)
