@@ -154,6 +154,10 @@ library EnergyTokenLib {
     // ########################
     function getPlantGenerationCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId) public view returns (uint256 __maxGen) {
         uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim);
+        
+        if (maxPowerGenerationClaimId == 0)
+            return 0;
+        
         (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerGenerationClaimId);
         __maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
     }
