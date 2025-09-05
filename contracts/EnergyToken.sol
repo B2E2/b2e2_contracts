@@ -108,7 +108,6 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, generationPlantP);
         require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", marketAuthority.getBalancePeriod(block.timestamp)) != 0 ||
           ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "storage", marketAuthority.getBalancePeriod(block.timestamp)) != 0, "Invalid ExistenceClaim.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim) != 0, "Invalid MaxPowerGenerationClaim.");
         EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, generationPlantP, realWorldPlantId, _id);
         }
 
@@ -126,11 +125,15 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             // Grant the items to the caller.
             mint(to, _id, quantity);
 
-            // In the case of absolute forwards, require that the increased supply is not above the plant's capability.
+            // In the case of absolute forwards, require that the increased supply is not above the plant's capability if a MaxPowerGenerationClaim exists.
             TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
             if(tokenKind == TokenKind.AbsoluteForward) {
                 (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
-                require(supply[_id] * (1000 * 3600) <= EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId) * balancePeriodLength * 10**18, "Plant's capability exceeded.");
+                uint256 maxGen = EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId);
+                // Only check capability if max generation capability is known.
+                if(maxGen != 0) {
+                    require(supply[_id] * (1000 * 3600) <= maxGen * balancePeriodLength * 10**18, "Plant's capability exceeded.");
+                }
             }
 
             // Emit the Transfer/Mint event.
@@ -527,6 +530,11 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         
         string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant);
         uint256 maxGen = EnergyTokenLib.getPlantGenerationCapability(marketAuthority, _plant, realWorldPlantId);
+        // Only check capability if max generation capability is known.
+        if(maxGen == 0) {
+            return;
+        }
+        
         (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
         require(_value * 1000 * 3600 <= maxGen * balancePeriodLength * 10**18, "Plant's capability exceeded.");
     }
@@ -538,10 +546,12 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         
         string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant); 
         uint256 maxCon = EnergyTokenLib.getPlantConsumptionCapability(marketAuthority, _plant, realWorldPlantId);
-        // Only check if max consumption capability is known.
-        if (maxCon != 0) {
-            (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
-            require(_value * 1000 * 3600 <= maxCon * balancePeriodLength * 10**18, "Plant's capability exceeded.");
+        // Only check capability if max consumption capability is known.
+        if (maxCon == 0) {
+            return;
         }
+        
+        (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
+        require(_value * 1000 * 3600 <= maxCon * balancePeriodLength * 10**18, "Plant's capability exceeded.");
     }
 }

@@ -137,10 +137,6 @@ library EnergyTokenLib {
         require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid ExistenceClaim." );
         require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid MeteringClaim.");
 
-        if (tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
-            require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim) != 0, "Invalid 1MaxPowerConsumptionClaim.");
-        }
-
         if(tokenKind != IEnergyToken.TokenKind.Certificate) {
             (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             AbstractDistributor distributor = id2Distributor[_id];
@@ -154,11 +150,15 @@ library EnergyTokenLib {
     // ########################
     function getPlantGenerationCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId) public view returns (uint256 __maxGen) {
         uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim);
+        
+        if (maxPowerGenerationClaimId == 0)
+            return 0;
+        
         (, , , , bytes memory claimData, ) = IdentityContract(_plant).getClaim(maxPowerGenerationClaimId);
         __maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
     }
 
-    function getPlantConsumptionCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId) internal view returns (uint256 __maxCon) {
+    function getPlantConsumptionCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId) public view returns (uint256 __maxCon) {
         uint256 maxPowerConsumptionClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim);
 
         if (maxPowerConsumptionClaimId == 0)
