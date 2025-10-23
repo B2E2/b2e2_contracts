@@ -88,7 +88,7 @@ library IdentityContractLib {
             require(false, "Claim id burned.");
         
         // Emit and modify before adding to save gas.
-        if(keccak256(claims[__claimRequestId].signature) != keccak256(new bytes(32))) { // Claim existence check since signature cannot be 0.
+        if(claims[__claimRequestId].signature.length == 0) { // Claim existence check since signature cannot be empty.
             emit ClaimAdded(__claimRequestId, _topic, _scheme, _issuer, _signature, _data, _uri);
             
             topics2ClaimIds[_topic].push(__claimRequestId);
