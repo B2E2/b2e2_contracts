@@ -89,7 +89,12 @@ contract('EnergyToken', function(accounts) {
         console.log(`Successfully deployed ComplexDistributor with address: ${complexDistributor.address}`);
     });
 
-    async function addClaim(subject, topic, issuerAddress, data, uri, signingKey) {
+    /*
+    * Not suitable for overriding claims if sendViaIdc is false because that would require the sender
+    * to be the subject or the issues from the perspective of function addClaim() of the subject.
+    * To override claims, set sendViaIdc = true and make sure to use a web3 contract.
+    */
+    async function addClaim(subject, topic, issuerAddress, data, uri, signingKey, sendViaIdc=false, txSenderAccount=null) {
         // Handle difference between Truffle contract object and web3 contract object.
         let isWeb3Contract = false;
         let subjectAddress = subject.address;
@@ -103,9 +108,19 @@ contract('EnergyToken', function(accounts) {
         let signatureMerged = '0x' + signatureSplit.r.toString('hex') + signatureSplit.s.toString('hex') + signatureSplit.v.toString(16);
 
         if(!isWeb3Contract) {
+            if(sendViaIdc)
+                throw new Error('invalid parameterization of addClaim');
             await subject.addClaim(topic, 1, issuerAddress, signatureMerged, data, uri);
         } else {
-            await subject.methods.addClaim(topic, 1, issuerAddress, signatureMerged, data, uri).send({from: accounts[0], gas: 7000000});
+            if(!sendViaIdc) {
+                await subject.methods.addClaim(topic, 1, issuerAddress, signatureMerged, data, uri).send({from: accounts[0], gas: 7000000});
+            } else {
+                if(txSenderAccount===null)
+                    throw new Error('invalid parameterization of addClaim');
+
+                const abiAddClaim = subject.methods.addClaim(topic, 1, issuerAddress, signatureMerged, data, uri).encodeABI();
+                await subject.methods.execute(0, subject.options.address, 0, abiAddClaim).send({from: txSenderAccount, gas: 7000000});
+            }
         }
     }
 
@@ -727,8 +742,8 @@ contract('EnergyToken', function(accounts) {
         const jsonMaxCon = '{ "maxCon": "150000000", "expiryDate": "1958292001", "startDate": "1", "realWorldPlantId": "bestPlantId" }';
         const dataMaxCon = web3.utils.toHex(jsonMaxCon);
 
-        await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, dataExistenceStorage, '', account8Sk);
-        await addClaim(idcs[0], 10140, physicalAssetAuthority.options.address, dataMaxCon, '', account8Sk);
+        await addClaim(idcs[0], 10060, physicalAssetAuthority.options.address, dataExistenceStorage, '', account8Sk, true, accounts[5]);
+        await addClaim(idcs[0], 10140, physicalAssetAuthority.options.address, dataMaxCon, '', account8Sk, true, accounts[5]);
 
         const abiCreateForwardsCall1 = energyTokenWeb3.methods.createPropertyForwards(balancePeriodPropertyForwards, complexDistributor.address, [[10065, 'maxGen', 0, '0x' + Buffer.from('300000000', 'utf8').toString('hex')]]).encodeABI();
         await idcs[0].methods.execute(0, energyTokenWeb3.options.address, 0, abiCreateForwardsCall1).send({from: accounts[5], gas: 7000000});
