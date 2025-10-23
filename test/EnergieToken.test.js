@@ -260,9 +260,6 @@ contract('EnergyToken', function(accounts) {
         await addClaim(idcs[1], 10040, meteringAuthority.options.address, data, '', account8Sk);
         await addClaim(idcs[1], 10140, physicalAssetAuthority.options.address, dataMaxCon, '', account8Sk);
 
-        // Claims necessary for receiving.
-        await addClaim(idcs[1], 10050, balanceAuthority.options.address, data, '', account8Sk);
-
         // Claim necessary for receiving.
         let jsonAcceptedDistributor = '{ "t": "t", "expiryDate": "1958292001", "startDate": "1", "address": "' + idcs[1].options.address.slice(2).toLowerCase() + '" }';
         let dataAcceptedDistributor = web3.utils.toHex(jsonAcceptedDistributor);
