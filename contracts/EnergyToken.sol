@@ -470,17 +470,17 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
      */
     function checkClaimsForTransferSending(
       address payable _from, string memory _realWorldPlantId, uint256 _id) internal view {
-        IEnergyToken.TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
+        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, ) = getTokenIdConstituents(_id);
         
-        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
+        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, balancePeriod);
         require(balanceClaimId != 0, "Invalid BalanceClaim.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid ExistenceClaim.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid MeteringClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, balancePeriod) != 0, "Invalid ExistenceClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, balancePeriod) != 0, "Invalid MeteringClaim.");
         
         if(tokenKind != IEnergyToken.TokenKind.Certificate) {
             (, , address balanceAuthoritySender, , ,) = IdentityContract(_from).getClaim(balanceClaimId);
             AbstractDistributor distributor = id2Distributor[_id];
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthoritySender) != 0, "Invalid AcceptedDistributorClaim.");
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthoritySender, balancePeriod) != 0, "Invalid AcceptedDistributorClaim.");
         }
     }
 
@@ -489,17 +489,17 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
      */
     function checkClaimsForTransferReception(
       address payable _to, string memory _realWorldPlantId, uint256 _id) public view {
-        IEnergyToken.TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
+        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, ) = getTokenIdConstituents(_id);
         
-        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
+        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, balancePeriod);
         require(balanceClaimId != 0, "Invalid BalanceClaim.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid ExistenceClaim." );
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid MeteringClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, balancePeriod) != 0, "Invalid ExistenceClaim." );
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, balancePeriod) != 0, "Invalid MeteringClaim.");
 
         if(tokenKind != IEnergyToken.TokenKind.Certificate) {
             (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             AbstractDistributor distributor = id2Distributor[_id];
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver) != 0,
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver, balancePeriod) != 0,
                 "Invalid AcceptedDistributorClaim.");
         }
     }
