@@ -108,7 +108,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, generationPlantP);
         require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", marketAuthority.getBalancePeriod(block.timestamp)) != 0 ||
           ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "storage", marketAuthority.getBalancePeriod(block.timestamp)) != 0, "Invalid ExistenceClaim.");
-        EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, generationPlantP, realWorldPlantId, _id);
+        checkClaimsForTransferSending(generationPlantP, realWorldPlantId, _id);
         }
 
         // Perform a mint operation for each recipient.
@@ -119,7 +119,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             require(to != address(0x0), "_to must be non-zero.");
 
             if(to != msg.sender) {
-                EnergyTokenLib.checkClaimsForTransferReception(marketAuthority, id2Distributor, payable(to), ClaimVerifier.getRealWorldPlantId(marketAuthority, to), _id);
+                checkClaimsForTransferReception(payable(to), ClaimVerifier.getRealWorldPlantId(marketAuthority, to), _id);
             }
 
             // Grant the items to the caller.
@@ -339,7 +339,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
                 // If the require was passed, the user's intention is to send to a distributor.
                 // Therefore, only the sender's claims need to be checked.
                 string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
-                EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, payable(_from), realWorldPlantIdFrom, _id);
+                checkClaimsForTransferSending(payable(_from), realWorldPlantIdFrom, _id);
             }
         } else {
             checkClaimsForTransferAllIncluded(_from, _to, _id);
@@ -461,8 +461,47 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     function checkClaimsForTransferAllIncluded(address _from, address _to, uint256 _id) internal view {
         string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
         string memory realWorldPlantIdTo = ClaimVerifier.getRealWorldPlantId(marketAuthority, _to);
-        EnergyTokenLib.checkClaimsForTransferSending(marketAuthority, id2Distributor, payable(_from), realWorldPlantIdFrom, _id);
-        EnergyTokenLib.checkClaimsForTransferReception(marketAuthority, id2Distributor, payable(_to), realWorldPlantIdTo, _id);
+        checkClaimsForTransferSending(payable(_from), realWorldPlantIdFrom, _id);
+        checkClaimsForTransferReception(payable(_to), realWorldPlantIdTo, _id);
+    }
+
+    /**
+     * Checks all claims required for the particular given transfer regarding the sending side.
+     */
+    function checkClaimsForTransferSending(
+      address payable _from, string memory _realWorldPlantId, uint256 _id) internal view {
+        IEnergyToken.TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
+        
+        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
+        require(balanceClaimId != 0, "Invalid BalanceClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid ExistenceClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid MeteringClaim.");
+        
+        if(tokenKind != IEnergyToken.TokenKind.Certificate) {
+            (, , address balanceAuthoritySender, , ,) = IdentityContract(_from).getClaim(balanceClaimId);
+            AbstractDistributor distributor = id2Distributor[_id];
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthoritySender) != 0, "Invalid AcceptedDistributorClaim.");
+        }
+    }
+
+    /**
+     * Checks all claims required for the particular given transfer regarding the reception side.
+     */
+    function checkClaimsForTransferReception(
+      address payable _to, string memory _realWorldPlantId, uint256 _id) public view {
+        IEnergyToken.TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
+        
+        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim);
+        require(balanceClaimId != 0, "Invalid BalanceClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim) != 0, "Invalid ExistenceClaim." );
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim) != 0, "Invalid MeteringClaim.");
+
+        if(tokenKind != IEnergyToken.TokenKind.Certificate) {
+            (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
+            AbstractDistributor distributor = id2Distributor[_id];
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver) != 0,
+                "Invalid AcceptedDistributorClaim.");
+        }
     }
     
     
