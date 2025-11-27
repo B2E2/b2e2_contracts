@@ -3,6 +3,8 @@ on: ["push"]
 jobs:
   build:
     runs-on: "ubuntu-latest"
+    # Run only in the BlockInfinity repo, not in the repo of the b2e2 org
+    if: github.repository == 'BlockInfinity/b2e2_contracts'
     steps:
       - uses: "actions/checkout@v4"
       - name: "TODO to Issue"
