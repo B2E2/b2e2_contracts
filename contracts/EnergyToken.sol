@@ -157,7 +157,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     // The recipient always is msg.sender. Therefore, _doSafeTransferAcceptanceCheck() is not called.
     function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, SimpleDistributor _distributor) external override(IEnergyToken) onlyGenerationPlants(msg.sender, _balancePeriod) onlyDistributors(address(_distributor), _balancePeriod) {
         require(_tokenKind != TokenKind.Certificate && _tokenKind != TokenKind.PropertyForward, "_tokenKind cannot be Certificate or PropertyForward.");
-        require(_balancePeriod > marketAuthority.getBalancePeriod(block.timestamp));
+        require(_balancePeriod > marketAuthority.getBalancePeriod(block.timestamp), "balance period of forwards must be in the future");
         
         createTokenFamily(_balancePeriod, msg.sender, 0);
         
@@ -178,7 +178,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     }
     
     function createPropertyForwards(uint64 _balancePeriod, ComplexDistributor _distributor, EnergyTokenLib.Criterion[] calldata _criteria) external override(IEnergyToken) onlyStoragePlants(msg.sender, _balancePeriod) onlyDistributors(address(_distributor), _balancePeriod) {
-        require(_balancePeriod > marketAuthority.getBalancePeriod(block.timestamp));
+        require(_balancePeriod > marketAuthority.getBalancePeriod(block.timestamp), "balance period of property forwards must be in the future");
         
         bytes32 criteriaHash = keccak256(abi.encode(_criteria));
         createPropertyTokenFamily(_balancePeriod, msg.sender, 0, criteriaHash);
