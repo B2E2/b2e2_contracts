@@ -42,7 +42,7 @@ contract SimpleDistributor is AbstractDistributor {
             interfaceID == 0xad467c35;
     }
     
-    function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) external onlyConsumptionPlants(_consumptionPlantAddress) {
+    function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) external {
         // Distributor applicability check. Required because this contract holding the necessary certificates to pay the consumption plant
         // is not sufficient grouns to assume that this is the correct distributor as soon as several forwards may cause payout of the
         // same certificates.
@@ -53,6 +53,9 @@ contract SimpleDistributor is AbstractDistributor {
         completedDistributions[_tokenId][_consumptionPlantAddress] = true;
         
         (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
+
+        // Make sure that _consumptionPlantAddress is a consumption plant.
+        ClaimVerifier.f_onlyConsumptionOrStoragePlants(marketAuthority, _consumptionPlantAddress, balancePeriod);
         
         // Time period check
         require(testing || balancePeriod < getBalancePeriod(block.timestamp), "balancePeriod has not yet ended.");

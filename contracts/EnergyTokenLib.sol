@@ -110,8 +110,8 @@ library EnergyTokenLib {
     // ########################
     // # Internal functions
     // ########################
-    function getPlantGenerationCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId) public view returns (uint256 __maxGen) {
-        uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim);
+    function getPlantGenerationCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId, uint64 _balancePeriod) public view returns (uint256 __maxGen) {
+        uint256 maxPowerGenerationClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerGenerationClaim, _balancePeriod);
         
         if (maxPowerGenerationClaimId == 0)
             return 0;
@@ -120,8 +120,8 @@ library EnergyTokenLib {
         __maxGen = ClaimVerifier.getUint256Field("maxGen", claimData);
     }
 
-    function getPlantConsumptionCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId) public view returns (uint256 __maxCon) {
-        uint256 maxPowerConsumptionClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim);
+    function getPlantConsumptionCapability(IdentityContract marketAuthority, address _plant, string memory _realWorldPlantId, uint64 _balancePeriod) public view returns (uint256 __maxCon) {
+        uint256 maxPowerConsumptionClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _plant, _realWorldPlantId, ClaimCommons.ClaimType.MaxPowerConsumptionClaim, _balancePeriod);
 
         if (maxPowerConsumptionClaimId == 0)
             return 0;
