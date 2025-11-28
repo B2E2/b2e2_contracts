@@ -26,14 +26,13 @@ library ClaimVerifier {
      * are already valid at that time are considered. If it is set to zero, no expiration
      * or starting date check is performed.
      */
-    // TODO: remove last param (always false)
-    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId, uint64 _requiredValidAt, bool allowFutureValidity) public view returns(bool __valid) {
+    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId, uint64 _requiredValidAt) public view returns(bool __valid) {
         (uint256 topic, uint256 scheme, address issuer, bytes memory signature, bytes memory data, ) = IdentityContract(_subject).getClaim(_claimId);
         ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(topic);
         
         if(_requiredValidAt != 0) {
             uint64 currentTime = marketAuthority.getBalancePeriod(_requiredValidAt);
-            if(getExpiryDate(data) < currentTime || ((!allowFutureValidity) && getStartDate(data) > currentTime))
+            if(getExpiryDate(data) < currentTime || getStartDate(data) > currentTime)
                 return false;
         }
         
@@ -117,7 +116,7 @@ library ClaimVerifier {
                     continue;
             }
             
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt, false))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt))
                 continue;
             
             return claimIds[i];
@@ -135,7 +134,7 @@ library ClaimVerifier {
         if(cTopic != topic)
             return 0;
         
-        if(!verifyClaim(marketAuthority, _subject, claimId, _requiredValidAt, false))
+        if(!verifyClaim(marketAuthority, _subject, claimId, _requiredValidAt))
             return 0;
         
         return claimId;
@@ -167,7 +166,7 @@ library ClaimVerifier {
             if(getClaimOfTypeWithMatchingField_temporalValidityCheck(marketAuthority, _requiredValidAt, cData))
                 continue;
             
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt, false))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt))
                 continue;
             
             // Separate function call to avoid stack too deep error.
@@ -208,7 +207,7 @@ library ClaimVerifier {
             if(getClaimOfTypeWithMatchingField_temporalValidityCheck(marketAuthority, _requiredValidAt, cData))
                 continue;
             
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt, false))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt))
                 continue;
             
             // Separate function call to avoid stack too deep error.
@@ -246,7 +245,7 @@ library ClaimVerifier {
             if(getClaimOfTypeWithMatchingField_temporalValidityCheck(marketAuthority, _requiredValidAt, cData))
                 continue;
             
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt, false))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt))
                 continue;
             
             // Separate function call to avoid stack too deep error.
