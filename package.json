@@ -16,7 +16,7 @@
     "lintfix": "npx eslint --max-warnings 0 --fix .",
     "prebuild": "npm install",
     "build": "npm run clean && npm run update-submodules && npm i && npm run compile-contracts",
-    "tests": "npm run start-test-chain && npm run tests-on-running-chain ; npm run kill-test-chain",
+    "tests": "npm run start-test-chain && (npm run tests-on-running-chain; STATUS=$?; npm run kill-test-chain; exit $STATUS)",
     "start-test-chain": "set -a && . ./.env && set +a && ./start_ganache_async.sh",
     "kill-test-chain": "kill $(ps aux | grep '[g]anache-cli' | awk '{print $2}')",
     "tests-on-running-chain": "set -a && . ./.env && set +a && npx truffle test --network development",
