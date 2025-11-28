@@ -18,7 +18,7 @@ module.exports = {
     plugins: ['truffle-contract-size'],
     compilers: {
         solc: {
-            version: '0.8.7',
+            version: '0.8.30',
             settings: {
                 optimizer: {
                     enabled: true,

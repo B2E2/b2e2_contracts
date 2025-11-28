@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.1;
+pragma solidity ^0.8.30;
 
 /**
  * This library contains functionality that concerns the entire code base.

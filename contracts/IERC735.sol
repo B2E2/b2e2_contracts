@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // https://github.com/ethereum/eips/issues/735
-pragma solidity ^0.8.1;
+pragma solidity ^0.8.30;
 
 interface IERC735 {
 
