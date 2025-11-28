@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.1;
+pragma solidity ^0.8.30;
 
 import "./IdentityContractLib.sol";
 import "./IIdentityContract.sol";
@@ -88,7 +88,8 @@ contract IdentityContract is IERC725, IERC735, IIdentityContract, IERC165 {
     }
   
     function selfdestructIdc() override(IIdentityContract) external onlyOwner {
-        selfdestruct(payable(owner));
+        // selfdestruct is deprecated.
+        owner = address(0);
     }
     
     // Functions ERC-725
