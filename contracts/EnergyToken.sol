@@ -42,9 +42,9 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         _;
         reentrancyLock = false;
     }
-    
-    modifier onlyMeteringAuthorities {
-        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, "", ClaimCommons.ClaimType.IsMeteringAuthority) != 0, "Invalid IsMeteringAuthority claim.");
+
+    modifier onlyMeteringAuthorities(uint64 _balancePeriod) {
+        require(ClaimVerifier.getClaimOfType(marketAuthority, msg.sender, "", ClaimCommons.ClaimType.IsMeteringAuthority, _balancePeriod) != 0, "Invalid IsMeteringAuthority claim.");
         _;
     }
     
@@ -85,12 +85,10 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     }
     
     function mint(uint256 _id, address[] calldata _to, uint256[] calldata _quantities) external override(IEnergyToken) noReentrancy {
-        address payable generationPlantP;
         string memory realWorldPlantId;
+        (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
         { // Block for avoiding stack too deep error.
         // Token needs to be mintable.
-        (TokenKind tokenKind, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
-        generationPlantP = payable(generationPlant);
         require(tokenKind == TokenKind.AbsoluteForward || tokenKind == TokenKind.ConsumptionBasedForward || tokenKind == TokenKind.PropertyForward, "tokenKind cannot be minted.");
         
         // Just required for nicer error messages.
@@ -105,10 +103,10 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         // Forwards must have been created.
         require(id2Distributor[_id] != AbstractDistributor(address(0)), "Forwards not created.");
         
-        realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, generationPlantP);
-        require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", marketAuthority.getBalancePeriod(block.timestamp)) != 0 ||
-          ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "storage", marketAuthority.getBalancePeriod(block.timestamp)) != 0, "Invalid ExistenceClaim.");
-        checkClaimsForTransferSending(generationPlantP, realWorldPlantId, _id);
+        realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, payable(generationPlant), balancePeriod);
+        require(ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", balancePeriod) != 0 ||
+          ClaimVerifier.getClaimOfTypeWithMatchingField(marketAuthority, generationPlant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "storage", balancePeriod) != 0, "Invalid ExistenceClaim.");
+        checkClaimsForTransferSending(payable(generationPlant), realWorldPlantId, _id, tokenKind, balancePeriod);
         }
 
         // Perform a mint operation for each recipient.
@@ -119,22 +117,11 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             require(to != address(0x0), "_to must be non-zero.");
 
             if(to != msg.sender) {
-                checkClaimsForTransferReception(payable(to), ClaimVerifier.getRealWorldPlantId(marketAuthority, to), _id);
+                checkClaimsForTransferReception(payable(to), ClaimVerifier.getRealWorldPlantId(marketAuthority, to, balancePeriod), _id, tokenKind, balancePeriod);
             }
 
             // Grant the items to the caller.
             mint(to, _id, quantity);
-
-            // In the case of absolute forwards, require that the increased supply is not above the plant's capability if a MaxPowerGenerationClaim exists.
-            TokenKind tokenKind = EnergyTokenLib.tokenKindFromTokenId(_id);
-            if(tokenKind == TokenKind.AbsoluteForward) {
-                (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
-                uint256 maxGen = EnergyTokenLib.getPlantGenerationCapability(marketAuthority, generationPlantP, realWorldPlantId);
-                // Only check capability if max generation capability is known.
-                if(maxGen != 0) {
-                    require(supply[_id] * (1000 * 3600) <= maxGen * balancePeriodLength * 10**18, "Plant's capability exceeded.");
-                }
-            }
 
             // Emit the Transfer/Mint event.
             // The 0x0 source address implies a mint.
@@ -144,11 +131,18 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             if(to != msg.sender) {
                 _doSafeTransferAcceptanceCheck(msg.sender, msg.sender, to, _id, quantity, '');
             }
-            
-            { // Block for avoiding stack too deep error.
-            (, uint64 balancePeriod, address generationPlant) = getTokenIdConstituents(_id);
+
             if(tokenKind == TokenKind.ConsumptionBasedForward)
                 addPlantRelationship(generationPlant, _to[i], balancePeriod);
+        }
+
+        // In the case of absolute forwards, require that the increased supply is not above the plant's capability if a MaxPowerGenerationClaim exists.
+        if(tokenKind == TokenKind.AbsoluteForward) {
+            (uint64 balancePeriodLength, , ) = marketAuthority.balancePeriodConfiguration();
+            uint256 maxGen = EnergyTokenLib.getPlantGenerationCapability(marketAuthority, payable(generationPlant), realWorldPlantId, balancePeriod);
+            // Only check capability if max generation capability is known.
+            if(maxGen != 0) {
+                require(supply[_id] * (1000 * 3600) <= maxGen * balancePeriodLength * 10**18, "Plant's capability exceeded.");
             }
         }
     }
@@ -157,7 +151,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     // The recipient always is msg.sender. Therefore, _doSafeTransferAcceptanceCheck() is not called.
     function createForwards(uint64 _balancePeriod, TokenKind _tokenKind, SimpleDistributor _distributor) external override(IEnergyToken) onlyGenerationPlants(msg.sender, _balancePeriod) onlyDistributors(address(_distributor), _balancePeriod) {
         require(_tokenKind != TokenKind.Certificate && _tokenKind != TokenKind.PropertyForward, "_tokenKind cannot be Certificate or PropertyForward.");
-        require(_balancePeriod > marketAuthority.getBalancePeriod(block.timestamp));
+        require(_balancePeriod > marketAuthority.getBalancePeriod(block.timestamp), "balance period of forwards must be in the future");
         
         createTokenFamily(_balancePeriod, msg.sender, 0);
         
@@ -178,7 +172,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     }
     
     function createPropertyForwards(uint64 _balancePeriod, ComplexDistributor _distributor, EnergyTokenLib.Criterion[] calldata _criteria) external override(IEnergyToken) onlyStoragePlants(msg.sender, _balancePeriod) onlyDistributors(address(_distributor), _balancePeriod) {
-        require(_balancePeriod > marketAuthority.getBalancePeriod(block.timestamp));
+        require(_balancePeriod > marketAuthority.getBalancePeriod(block.timestamp), "balance period of property forwards must be in the future");
         
         bytes32 criteriaHash = keccak256(abi.encode(_criteria));
         createPropertyTokenFamily(_balancePeriod, msg.sender, 0, criteriaHash);
@@ -196,7 +190,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         _distributor.setPropertyForwardsCriteria(id, _criteria);
     }
 
-    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities {
+    function addMeasuredEnergyConsumption(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities(_balancePeriod) {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -209,13 +203,13 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
             }
         }
 
-        addMeasuredEnergyConsumption_capabilityCheck(_plant, _value);
+        addMeasuredEnergyConsumption_capabilityCheck(_plant, _value, _balancePeriod);
 
         energyDocumentations[_plant][_balancePeriod] = EnergyTokenLib.EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, false, true);
         emit EnergyDocumented(PlantType.Consumption, _value, _plant, corrected, _balancePeriod, msg.sender);
     }
     
-    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities onlyGenerationOrStoragePlants(_plant, marketAuthority.getBalancePeriod(block.timestamp)) noReentrancy {
+    function addMeasuredEnergyGeneration(address _plant, uint256 _value, uint64 _balancePeriod) external override(IEnergyToken) onlyMeteringAuthorities(_balancePeriod) onlyGenerationOrStoragePlants(_plant, marketAuthority.getBalancePeriod(_balancePeriod)) noReentrancy {
         bool corrected = false;
         // Recognize corrected energy documentations.
         if(energyDocumentations[_plant][_balancePeriod].entered) {
@@ -223,7 +217,7 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         }
         
         // Don't allow documentation of a reading above capability.
-        addMeasuredEnergyGeneration_capabilityCheck(_plant, _value);
+        addMeasuredEnergyGeneration_capabilityCheck(_plant, _value, _balancePeriod);
 
         EnergyTokenLib.EnergyDocumentation memory energyDocumentation = EnergyTokenLib.EnergyDocumentation(IdentityContract(msg.sender), _value, corrected, true, true);
         energyDocumentations[_plant][_balancePeriod] = energyDocumentation;
@@ -271,7 +265,11 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         tokenFamilyProperties[tokenFamilyBase] = EnergyTokenLib.TokenFamilyProperties(_balancePeriod, _generationPlant, _previousTokenFamilyBase);
         emit TokenFamilyCreation(tokenFamilyBase);
     }
-    
+
+    // TODO: konferenz: wenn ein distributor zertifikate zeitlich transportiert, zu welchem zeitpunkt muss der distributor gültig sein?
+    // - zeitpunkt der ursprünglichen zertifikate?
+    // - zeitpunkt der neuen zertifikate?
+    // - zeitpunkt des transports?
     function temporallyTransportCertificates(uint256 _originalCertificateId, uint256 _targetForwardId, uint256 _value) external
       onlyDistributors(msg.sender, uint64(block.timestamp)) override(IEnergyToken) returns(uint256 __targetCertificateId) {
         // Prepare variables.
@@ -334,12 +332,13 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
                 // Not even the acceptance check.
                 performSafeTransferAcceptanceCheck = false;
             } else {
-                require(ClaimVerifier.getClaimOfType(marketAuthority, _to, "", ClaimCommons.ClaimType.AcceptedDistributorClaim, marketAuthority.getBalancePeriod(block.timestamp)) != 0,
+                // TODO: konferenz: ist es ausreichend, dass der distributor einen claim von irgendeiner BA hat, oder muss der claim von einer bestimmten BA (sender, empfänger, generation plant) ausgestellt worden sein?
+                require(ClaimVerifier.getClaimOfType(marketAuthority, _to, "", ClaimCommons.ClaimType.AcceptedDistributorClaim, balancePeriod) != 0,
                 "Must be from or to distributor."); // May be intended to be from or to distributor as the forward ID check cannot tell the user's intention.
                 // If the require was passed, the user's intention is to send to a distributor.
                 // Therefore, only the sender's claims need to be checked.
-                string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
-                checkClaimsForTransferSending(payable(_from), realWorldPlantIdFrom, _id);
+                string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from, balancePeriod);
+                checkClaimsForTransferSending(payable(_from), realWorldPlantIdFrom, _id, tokenKind, balancePeriod);
             }
         } else {
             checkClaimsForTransferAllIncluded(_from, _to, _id);
@@ -459,47 +458,53 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
     }
     
     function checkClaimsForTransferAllIncluded(address _from, address _to, uint256 _id) internal view {
-        string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from);
-        string memory realWorldPlantIdTo = ClaimVerifier.getRealWorldPlantId(marketAuthority, _to);
-        checkClaimsForTransferSending(payable(_from), realWorldPlantIdFrom, _id);
-        checkClaimsForTransferReception(payable(_to), realWorldPlantIdTo, _id);
+        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, ) = getTokenIdConstituents(_id);
+        
+        string memory realWorldPlantIdFrom = ClaimVerifier.getRealWorldPlantId(marketAuthority, _from, balancePeriod);
+        string memory realWorldPlantIdTo = ClaimVerifier.getRealWorldPlantId(marketAuthority, _to, balancePeriod);
+        checkClaimsForTransferSending(payable(_from), realWorldPlantIdFrom, _id, tokenKind, balancePeriod);
+        checkClaimsForTransferReception(payable(_to), realWorldPlantIdTo, _id, tokenKind, balancePeriod);
     }
 
     /**
      * Checks all claims required for the particular given transfer regarding the sending side.
+     *
+     * Receives _tokenKind and _balancePeriod in addition to _id instead of extracting
+     * these from the ID because all callers of this function need to extract them anyway.
      */
     function checkClaimsForTransferSending(
-      address payable _from, string memory _realWorldPlantId, uint256 _id) internal view {
-        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, ) = getTokenIdConstituents(_id);
-        
-        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, balancePeriod);
+    address payable _from, string memory _realWorldPlantId, uint256 _id,
+    IEnergyToken.TokenKind _tokenKind, uint64 _balancePeriod) internal view {
+        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod);
         require(balanceClaimId != 0, "Invalid BalanceClaim.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, balancePeriod) != 0, "Invalid ExistenceClaim.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, balancePeriod) != 0, "Invalid MeteringClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0, "Invalid ExistenceClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _from, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "Invalid MeteringClaim.");
         
-        if(tokenKind != IEnergyToken.TokenKind.Certificate) {
+        if(_tokenKind != IEnergyToken.TokenKind.Certificate) {
             (, , address balanceAuthoritySender, , ,) = IdentityContract(_from).getClaim(balanceClaimId);
             AbstractDistributor distributor = id2Distributor[_id];
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthoritySender, balancePeriod) != 0, "Invalid AcceptedDistributorClaim.");
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthoritySender, _balancePeriod) != 0, "Invalid AcceptedDistributorClaim.");
         }
     }
 
     /**
      * Checks all claims required for the particular given transfer regarding the reception side.
+     *
+     * Receives _tokenKind and _balancePeriod in addition to _id instead of extracting
+     * these from the ID because all callers of this function need to extract them anyway.
      */
     function checkClaimsForTransferReception(
-      address payable _to, string memory _realWorldPlantId, uint256 _id) public view {
-        (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, ) = getTokenIdConstituents(_id);
-        
-        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, balancePeriod);
+    address payable _to, string memory _realWorldPlantId, uint256 _id,
+    IEnergyToken.TokenKind _tokenKind, uint64 _balancePeriod) public view {
+        uint256 balanceClaimId = ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod);
         require(balanceClaimId != 0, "Invalid BalanceClaim.");
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, balancePeriod) != 0, "Invalid ExistenceClaim." );
-        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, balancePeriod) != 0, "Invalid MeteringClaim.");
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0, "Invalid ExistenceClaim." );
+        require(ClaimVerifier.getClaimOfType(marketAuthority, _to, _realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "Invalid MeteringClaim.");
 
-        if(tokenKind != IEnergyToken.TokenKind.Certificate) {
+        if(_tokenKind != IEnergyToken.TokenKind.Certificate) {
             (, , address balanceAuthorityReceiver, , ,) = IdentityContract(_to).getClaim(balanceClaimId);
             AbstractDistributor distributor = id2Distributor[_id];
-            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver, balancePeriod) != 0,
+            require(ClaimVerifier.getClaimOfTypeByIssuer(marketAuthority, address(distributor), ClaimCommons.ClaimType.AcceptedDistributorClaim, balanceAuthorityReceiver, _balancePeriod) != 0,
                 "Invalid AcceptedDistributorClaim.");
         }
     }
@@ -561,14 +566,14 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         numberOfRelevantConsumptionPlantsForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
         numberOfRelevantConsumptionPlantsUnmeasuredForGenerationPlant[_balancePeriod][_generationPlant]++; // not gonna overflow
     }
-    
-    function addMeasuredEnergyGeneration_capabilityCheck(address _plant, uint256 _value) internal view {
+
+    function addMeasuredEnergyGeneration_capabilityCheck(address _plant, uint256 _value, uint64 _balancePeriod) internal view {
         // [maxGen] = W
         // [_value] = kWh / 1e18 = 1000 * 3600 / 1e18 * W * s
         // [balancePeriodLength] = s
         
-        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant);
-        uint256 maxGen = EnergyTokenLib.getPlantGenerationCapability(marketAuthority, _plant, realWorldPlantId);
+        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant, _balancePeriod);
+        uint256 maxGen = EnergyTokenLib.getPlantGenerationCapability(marketAuthority, _plant, realWorldPlantId, _balancePeriod);
         // Only check capability if max generation capability is known.
         if(maxGen == 0) {
             return;
@@ -578,13 +583,13 @@ contract EnergyToken is ERC1155, IEnergyToken, IERC165 {
         require(_value * 1000 * 3600 <= maxGen * balancePeriodLength * 10**18, "Plant's capability exceeded.");
     }
 
-    function addMeasuredEnergyConsumption_capabilityCheck(address _plant, uint256 _value) internal view {
+    function addMeasuredEnergyConsumption_capabilityCheck(address _plant, uint256 _value, uint64 _balancePeriod) internal view {
         // [maxCon] = W
         // [_value] = kWh / 1e18 = 1000 * 3600 / 1e18 * W * s
         // [balancePeriodLength] = s
         
-        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant); 
-        uint256 maxCon = EnergyTokenLib.getPlantConsumptionCapability(marketAuthority, _plant, realWorldPlantId);
+        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, _plant, _balancePeriod); 
+        uint256 maxCon = EnergyTokenLib.getPlantConsumptionCapability(marketAuthority, _plant, realWorldPlantId, _balancePeriod);
         // Only check capability if max consumption capability is known.
         if (maxCon == 0) {
             return;

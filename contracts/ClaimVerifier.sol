@@ -26,13 +26,13 @@ library ClaimVerifier {
      * are already valid at that time are considered. If it is set to zero, no expiration
      * or starting date check is performed.
      */
-    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId, uint64 _requiredValidAt, bool allowFutureValidity) public view returns(bool __valid) {
+    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId, uint64 _requiredValidAt) public view returns(bool __valid) {
         (uint256 topic, uint256 scheme, address issuer, bytes memory signature, bytes memory data, ) = IdentityContract(_subject).getClaim(_claimId);
         ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(topic);
         
         if(_requiredValidAt != 0) {
-            uint64 currentTime = marketAuthority.getBalancePeriod(_requiredValidAt);
-            if(getExpiryDate(data) < currentTime || ((!allowFutureValidity) && getStartDate(data) > currentTime))
+            uint64 balancePeriod = marketAuthority.getBalancePeriod(_requiredValidAt);
+            if(getExpiryDate(data) < balancePeriod || getStartDate(data) > balancePeriod)
                 return false;
         }
         
@@ -59,10 +59,6 @@ library ClaimVerifier {
         }
         
         revert("Claim verification failed because the claim type was not recognized.");
-    }
-    
-    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
-        return verifyClaim(marketAuthority, _subject, _claimId, uint64(block.timestamp), false);
     }
     
     /**
@@ -120,7 +116,7 @@ library ClaimVerifier {
                     continue;
             }
             
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt, false))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt))
                 continue;
             
             return claimIds[i];
@@ -128,11 +124,7 @@ library ClaimVerifier {
         
         return 0;
     }
-    
-    function getClaimOfType(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType) public view returns (uint256 __claimId) {
-        return getClaimOfType(marketAuthority, _subject, _realWorldPlantId, _claimType, marketAuthority.getBalancePeriod(block.timestamp));
-    }
-    
+
     function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256 claimId = IdentityContractLib.getClaimId(_issuer, topic);
@@ -142,16 +134,12 @@ library ClaimVerifier {
         if(cTopic != topic)
             return 0;
         
-        if(!verifyClaim(marketAuthority, _subject, claimId, _requiredValidAt, false))
+        if(!verifyClaim(marketAuthority, _subject, claimId, _requiredValidAt))
             return 0;
         
         return claimId;
     }
-    
-    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer) public view returns (uint256 __claimId) {
-        return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, marketAuthority.getBalancePeriod(block.timestamp));
-    }
-    
+
     function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
@@ -178,7 +166,7 @@ library ClaimVerifier {
             if(getClaimOfTypeWithMatchingField_temporalValidityCheck(marketAuthority, _requiredValidAt, cData))
                 continue;
             
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i]))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt))
                 continue;
             
             // Separate function call to avoid stack too deep error.
@@ -219,7 +207,7 @@ library ClaimVerifier {
             if(getClaimOfTypeWithMatchingField_temporalValidityCheck(marketAuthority, _requiredValidAt, cData))
                 continue;
             
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i]))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt))
                 continue;
             
             // Separate function call to avoid stack too deep error.
@@ -257,7 +245,7 @@ library ClaimVerifier {
             if(getClaimOfTypeWithMatchingField_temporalValidityCheck(marketAuthority, _requiredValidAt, cData))
                 continue;
             
-            if(!verifyClaim(marketAuthority, _subject, claimIds[i]))
+            if(!verifyClaim(marketAuthority, _subject, claimIds[i], _requiredValidAt))
                 continue;
             
             // Separate function call to avoid stack too deep error.
@@ -312,9 +300,9 @@ library ClaimVerifier {
     function getRealWorldPlantId(bytes memory _data) public pure returns(string memory) {
         return getStringField("realWorldPlantId", _data);
     }
-    
-    function getRealWorldPlantId(IdentityContract _marketAuthority, address _plant) public view returns(string memory) {
-        uint256 claimId = getClaimOfTypeByIssuer(_marketAuthority, _plant, ClaimCommons.ClaimType.RealWorldPlantIdClaim, _plant);
+
+    function getRealWorldPlantId(IdentityContract _marketAuthority, address _plant, uint64 _balancePeriod) public view returns(string memory) {
+        uint256 claimId = getClaimOfTypeByIssuer(_marketAuthority, _plant, ClaimCommons.ClaimType.RealWorldPlantIdClaim, _plant, _balancePeriod);
         (, , , , bytes memory data,) = IdentityContract(_plant).getClaim(claimId);
         return getRealWorldPlantId(data);
     }
@@ -341,8 +329,16 @@ library ClaimVerifier {
     // ########################
     // # Modifier functions
     // ########################
+    function f_onlyPlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
+        string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant, _balancePeriod);
+        
+        require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "Invalid BalanceClaim.");
+        require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0, "Invalid ExistenceClaim.");
+        require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "Invalid MeteringClaim.");
+    }
+    
     function f_onlyGenerationPlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
-        string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant);
+        string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant, _balancePeriod);
         
         require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "Invalid BalanceClaim.");
         require(getClaimOfTypeWithMatchingField(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", _balancePeriod) != 0, "Invalid ExistenceClaim.");
@@ -350,7 +346,7 @@ library ClaimVerifier {
     }
     
         function f_onlyStoragePlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
-        string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant);
+        string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant, _balancePeriod);
         
         require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "Invalid BalanceClaim.");
         require(getClaimOfTypeWithMatchingField(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "storage", _balancePeriod) != 0, "Invalid ExistenceClaim (type storage).");
@@ -359,7 +355,7 @@ library ClaimVerifier {
     }
     
     function f_onlyGenerationOrStoragePlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
-        string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant);
+        string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant, _balancePeriod);
         
         require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "Invalid BalanceClaim.");
         require(getClaimOfTypeWithMatchingField(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "generation", _balancePeriod) != 0

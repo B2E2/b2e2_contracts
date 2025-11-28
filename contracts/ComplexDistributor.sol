@@ -134,7 +134,7 @@ contract ComplexDistributor is AbstractDistributor {
     // ########################
     function checkApplicability(uint256 _certificateId, uint256 _forwardId) internal view {
         (, uint64 certificateBalancePeriod, address certificateGenerationPlant) = energyToken.getTokenIdConstituents(_certificateId);
-        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, certificateGenerationPlant);
+        string memory realWorldPlantId = ClaimVerifier.getRealWorldPlantId(marketAuthority, certificateGenerationPlant, certificateBalancePeriod);
         
         require(propertyForwardsCriteriaSet[_forwardId], "criteria not set");
         

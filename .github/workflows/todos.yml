@@ -1,13 +1,15 @@
-name: Todo
-
+name: "Run TODO to Issue"
 on: ["push"]
-
 jobs:
   build:
-    name: Create/update todos
-    runs-on: ubuntu-latest
+    runs-on: "ubuntu-latest"
+    # Run only in the BlockInfinity repo, not in the repo of the b2e2 org
+    if: github.repository == 'BlockInfinity/b2e2_contracts'
     steps:
-      - uses: actions/checkout@master
-      - name: TODO to Issue
-        uses: alstr/todo-to-issue-action@v4.6.3
-        id: todo
+      - uses: "actions/checkout@v4"
+      - name: "TODO to Issue"
+        uses: "alstr/todo-to-issue-action@c45b007d85c8edf3365b139a9d4c65793e7c674f" # version 5.1.13
+        with:
+          CLOSE_ISSUES: true
+          AUTO_ASSIGN: true
+          IDENTIFIERS: '[{"name": "TODO", "labels": []}, {"name": "TBD", "labels": []}]'
