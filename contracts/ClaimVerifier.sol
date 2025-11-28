@@ -31,8 +31,8 @@ library ClaimVerifier {
         ClaimCommons.ClaimType claimType = ClaimCommons.topic2ClaimType(topic);
         
         if(_requiredValidAt != 0) {
-            uint64 currentTime = marketAuthority.getBalancePeriod(_requiredValidAt);
-            if(getExpiryDate(data) < currentTime || getStartDate(data) > currentTime)
+            uint64 balancePeriod = marketAuthority.getBalancePeriod(_requiredValidAt);
+            if(getExpiryDate(data) < balancePeriod || getStartDate(data) > balancePeriod)
                 return false;
         }
         
