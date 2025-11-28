@@ -61,11 +61,6 @@ library ClaimVerifier {
         
         revert("Claim verification failed because the claim type was not recognized.");
     }
-
-    // TODO: eliminate? (unused)
-    function verifyClaim(IdentityContract marketAuthority, address _subject, uint256 _claimId) public view returns(bool __valid) {
-        return verifyClaim(marketAuthority, _subject, _claimId, uint64(block.timestamp), false);
-    }
     
     /**
      * This method does not verify that the given claim exists in the contract. It merely checks whether it is a valid claim.
@@ -131,11 +126,6 @@ library ClaimVerifier {
         return 0;
     }
 
-    // TODO: remove if unused
-    function getClaimOfType(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType) public view returns (uint256 __claimId) {
-        return getClaimOfType(marketAuthority, _subject, _realWorldPlantId, _claimType, marketAuthority.getBalancePeriod(block.timestamp));
-    }
-    
     function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256 claimId = IdentityContractLib.getClaimId(_issuer, topic);
@@ -151,11 +141,6 @@ library ClaimVerifier {
         return claimId;
     }
 
-    // TODO: remove? unused?
-    function getClaimOfTypeByIssuer(IdentityContract marketAuthority, address _subject, ClaimCommons.ClaimType _claimType, address _issuer) public view returns (uint256 __claimId) {
-        return getClaimOfTypeByIssuer(marketAuthority, _subject, _claimType, _issuer, marketAuthority.getBalancePeriod(block.timestamp));
-    }
-    
     function getClaimOfTypeWithMatchingField(IdentityContract marketAuthority, address _subject, string memory _realWorldPlantId, ClaimCommons.ClaimType _claimType, string memory _fieldName, string memory _fieldContent, uint64 _requiredValidAt) public view returns (uint256 __claimId) {
         uint256 topic = ClaimCommons.claimType2Topic(_claimType);
         uint256[] memory claimIds = IdentityContract(_subject).getClaimIdsByTopic(topic);
