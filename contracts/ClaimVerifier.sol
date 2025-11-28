@@ -345,12 +345,11 @@ library ClaimVerifier {
     // ########################
     // # Modifier functions
     // ########################
-    function f_onlyConsumptionOrStoragePlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
+    function f_onlyPlants(IdentityContract marketAuthority, address _plant, uint64 _balancePeriod) public view {
         string memory realWorldPlantId = getRealWorldPlantId(marketAuthority, _plant, _balancePeriod);
         
         require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.BalanceClaim, _balancePeriod) != 0, "Invalid BalanceClaim.");
-        require(getClaimOfTypeWithMatchingField(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "consumption", _balancePeriod) != 0
-          || getClaimOfTypeWithMatchingField(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, "type", "storage", _balancePeriod) != 0, "Invalid ExistenceClaim.");
+        require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.ExistenceClaim, _balancePeriod) != 0, "Invalid ExistenceClaim.");
         require(getClaimOfType(marketAuthority, _plant, realWorldPlantId, ClaimCommons.ClaimType.MeteringClaim, _balancePeriod) != 0, "Invalid MeteringClaim.");
     }
     

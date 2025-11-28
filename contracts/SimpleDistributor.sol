@@ -54,8 +54,13 @@ contract SimpleDistributor is AbstractDistributor {
         
         (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
 
-        // Make sure that _consumptionPlantAddress is a consumption plant.
-        ClaimVerifier.f_onlyConsumptionOrStoragePlants(marketAuthority, _consumptionPlantAddress, balancePeriod);
+        // Make sure that _consumptionPlantAddress is a plant.
+        // TODO: Konferenz: muss geprüft werden, dass es sich beim empfänger um ein consumption
+        // oder storage plant handelt, oder dürfen generation plants auch empfänger sein?
+        // Notiz: Dann muss test 'distributes tokens correctly (simple distributor).' angepasst werden.
+        // aktuell scheint idcs[1] kein generation plant zu sein. muss in zeilen 276 bis 286 von
+        // EnergieToken.test.js angepasst werden.
+        ClaimVerifier.f_onlyPlants(marketAuthority, _consumptionPlantAddress, balancePeriod);
         
         // Time period check
         require(testing || balancePeriod < getBalancePeriod(block.timestamp), "balancePeriod has not yet ended.");
