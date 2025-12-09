@@ -41,26 +41,22 @@ contract SimpleDistributor is AbstractDistributor {
             interfaceID == 0x1fd50459 ||
             interfaceID == 0xad467c35;
     }
-    
-    function distribute(address payable _consumptionPlantAddress, uint256 _tokenId) external {
+
+    // _plantAddress may be the address of any plant, not just of a consumption plant.
+    function distribute(address payable _plantAddress, uint256 _tokenId) external {
         // Distributor applicability check. Required because this contract holding the necessary certificates to pay the consumption plant
         // is not sufficient grouns to assume that this is the correct distributor as soon as several forwards may cause payout of the
         // same certificates.
         require(energyToken.id2Distributor(_tokenId) == this, "Distributor contract does not belong to this _tokenId");
         
         // Single execution check
-        require(testing || !completedDistributions[_tokenId][_consumptionPlantAddress], "_consumptionPlantAddress can only call distribute() once.");
-        completedDistributions[_tokenId][_consumptionPlantAddress] = true;
+        require(testing || !completedDistributions[_tokenId][_plantAddress], "_plantAddress can only call distribute() once.");
+        completedDistributions[_tokenId][_plantAddress] = true;
         
         (IEnergyToken.TokenKind tokenKind, uint64 balancePeriod, address generationPlantAddress) = energyToken.getTokenIdConstituents(_tokenId);
 
-        // Make sure that _consumptionPlantAddress is a plant.
-        // TODO: Konferenz: muss geprüft werden, dass es sich beim empfänger um ein consumption
-        // oder storage plant handelt, oder dürfen generation plants auch empfänger sein?
-        // Notiz: Dann muss test 'distributes tokens correctly (simple distributor).' angepasst werden.
-        // aktuell scheint idcs[1] kein generation plant zu sein. muss in zeilen 276 bis 286 von
-        // EnergieToken.test.js angepasst werden.
-        ClaimVerifier.f_onlyPlants(marketAuthority, _consumptionPlantAddress, balancePeriod);
+        // Make sure that _plantAddress is a plant.
+        ClaimVerifier.f_onlyPlants(marketAuthority, _plantAddress, balancePeriod);
         
         // Time period check
         require(testing || balancePeriod < getBalancePeriod(block.timestamp), "balancePeriod has not yet ended.");
@@ -71,28 +67,28 @@ contract SimpleDistributor is AbstractDistributor {
         // Distribution
         if(tokenKind == IEnergyToken.TokenKind.AbsoluteForward) {
             uint256 totalForwards = energyToken.totalSupply(_tokenId);
-            uint256 absoluteForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
+            uint256 absoluteForwardsOfConsumer = energyToken.balanceOf(_plantAddress, _tokenId);
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId,
+            energyToken.safeTransferFrom(address(this), _plantAddress, certificateTokenId,
               Commons.min(absoluteForwardsOfConsumer, (absoluteForwardsOfConsumer * generatedEnergy) / totalForwards), tokenIdEncoded);
             return;
         }
         
         if(tokenKind == IEnergyToken.TokenKind.GenerationBasedForward) {
-            uint256 generationBasedForwardsOfConsumer = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
+            uint256 generationBasedForwardsOfConsumer = energyToken.balanceOf(_plantAddress, _tokenId);
             (, uint256 generatedEnergy, , bool generated, ) = energyToken.energyDocumentations(generationPlantAddress, balancePeriod);
             require(generated, "Generation plant has not produced any energy.");
 
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId,
+            energyToken.safeTransferFrom(address(this), _plantAddress, certificateTokenId,
               (generationBasedForwardsOfConsumer * generatedEnergy) / 100E18, tokenIdEncoded);
             return;
         }
         
         if(tokenKind == IEnergyToken.TokenKind.ConsumptionBasedForward) {
-            uint256 consumptionBasedForwards = energyToken.balanceOf(_consumptionPlantAddress, _tokenId);
-            (uint256 generatedEnergy, uint256 consumedEnergy) = distribute_getGeneratedAndConsumedEnergy(generationPlantAddress, _consumptionPlantAddress, balancePeriod);
+            uint256 consumptionBasedForwards = energyToken.balanceOf(_plantAddress, _tokenId);
+            (uint256 generatedEnergy, uint256 consumedEnergy) = distribute_getGeneratedAndConsumedEnergy(generationPlantAddress, _plantAddress, balancePeriod);
             uint256 totalConsumedEnergy = energyToken.energyConsumedRelevantForGenerationPlant(balancePeriod, generationPlantAddress);
 
             // Block to reduce the stack depth.
@@ -112,7 +108,7 @@ contract SimpleDistributor is AbstractDistributor {
             
             numberOfCompletedConsumptionBasedDistributions[balancePeriod][generationPlantAddress]++;
             
-            energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, certificateTokenId, min, tokenIdEncoded);
+            energyToken.safeTransferFrom(address(this), _plantAddress, certificateTokenId, min, tokenIdEncoded);
             return;
         }
         

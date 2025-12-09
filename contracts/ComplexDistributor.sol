@@ -13,7 +13,7 @@ import "./IEnergyToken.sol";
 contract ComplexDistributor is AbstractDistributor {
     EnergyToken public energyToken;
     
-    // consumption plant address => forward ID => certificate ID => value used up
+    // plant address => forward ID => certificate ID => value used up
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) distributionValueUsedUp;
     // forward ID => criteria
     mapping(uint256 => EnergyTokenLib.Criterion[]) propertyForwardsCriteria;
@@ -91,16 +91,16 @@ contract ComplexDistributor is AbstractDistributor {
         return 0xbc197c81;
     }
     
-    function distribute(address payable _consumptionPlantAddress, uint256 _forwardId, uint256 _certificateId, uint256 _value) external {
-        // Distributor applicability check. Required because this contract holding the necessary certificates to pay the consumption plant
+    function distribute(address payable _plantAddress, uint256 _forwardId, uint256 _certificateId, uint256 _value) external {
+        // Distributor applicability check. Required because this contract holding the necessary certificates to pay the receiving plant
         // is not sufficient grouns to assume that this is the correct distributor as soon as several forwards may cause payout of the
         // same certificates.
         require(energyToken.id2Distributor(_forwardId) == this, "Distributor contract does not belong to this _tokenId");
         
         // Check whether enough forwards are present.
-        distributionValueUsedUp[_consumptionPlantAddress][_forwardId][_certificateId] += _value;
-        uint256 forwardsBalance = energyToken.balanceOf(_consumptionPlantAddress, _forwardId);
-        require(forwardsBalance >= distributionValueUsedUp[_consumptionPlantAddress][_forwardId][_certificateId], "insufficient forwards");
+        distributionValueUsedUp[_plantAddress][_forwardId][_certificateId] += _value;
+        uint256 forwardsBalance = energyToken.balanceOf(_plantAddress, _forwardId);
+        require(forwardsBalance >= distributionValueUsedUp[_plantAddress][_forwardId][_certificateId], "insufficient forwards");
         
         // Time period check
         (IEnergyToken.TokenKind forwardKind, uint64 balancePeriod, address debtorAddress) = energyToken.getTokenIdConstituents(_forwardId);
@@ -118,7 +118,7 @@ contract ComplexDistributor is AbstractDistributor {
         uint256 newCertificateId = energyToken.temporallyTransportCertificates(_certificateId, _forwardId, _value);
         
         // Actual distribution.
-        energyToken.safeTransferFrom(address(this), _consumptionPlantAddress, newCertificateId, _value, abi.encode(_forwardId));
+        energyToken.safeTransferFrom(address(this), _plantAddress, newCertificateId, _value, abi.encode(_forwardId));
     }
     
     /**
