@@ -27,7 +27,7 @@
   "author": "B2E2 Community <b2e2@enbw.com>",
   "license": "MIT",
   "devDependencies": {
-    "@eslint/js": "^9.24.0",
+    "@eslint/js": "^9.39.2",
     "eslint": "^9.39.0"
   }
 }
